@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v2.6 Monster Capture for RPG Maker MZ 
+ * @plugindesc v2.7 Monster Capture for RPG Maker MZ 
  *
  *@help
  *
@@ -496,7 +496,7 @@
 let SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
-SynrecMC.Version = '2.6';
+SynrecMC.Version = '2.7';
 SynrecMC.Author = 'Synrec';
 
 SynrecMC.playerChar = eval(SynrecMC.Plugins['Non-Battler Player']);

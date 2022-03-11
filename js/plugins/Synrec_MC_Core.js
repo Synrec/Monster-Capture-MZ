@@ -741,6 +741,15 @@ Game_Action.prototype.playCaptureFail = function(target){
     $gameTemp.requestAnimation([target], SynrecMC.failCaptureAnim);
 }
 
+SynrecMCGmBattBseDie = Game_BattlerBase.prototype.die;
+Game_BattlerBase.prototype.die = function() {
+    if(this._isCaptured){
+        this.clearStates();
+        this.clearBuffs();
+    }
+    SynrecMCGmBattBseDie.call(this);
+}
+
 SynrecMCGmBattBseRevive = Game_BattlerBase.prototype.revive;
 Game_BattlerBase.prototype.revive = function() {
     if(this._isCaptured)return;

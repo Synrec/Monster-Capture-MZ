@@ -731,6 +731,7 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
     const mpSet = target._mp;
     const gender = target._gender;
     $gameTemp.requestAnimation([target], SynrecMC.successCaptureAnim);
+    target._isCaptured = true;
     target.die();
     target.refresh();
     $gameParty.addActor(actor, captureLevel, hpSet, mpSet, gender);
@@ -738,6 +739,12 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
 
 Game_Action.prototype.playCaptureFail = function(target){
     $gameTemp.requestAnimation([target], SynrecMC.failCaptureAnim);
+}
+
+SynrecMCGmBattBseRevive = Game_BattlerBase.prototype.revive;
+Game_BattlerBase.prototype.revive = function() {
+    if(this._isCaptured)return;
+    SynrecMCGmBattBseRevive.call(this);
 }
 
 Game_BattlerBase.prototype.setGender = function(gender){

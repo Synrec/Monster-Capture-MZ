@@ -826,7 +826,7 @@ Game_Party.prototype.allMembers = function() {
 }
 
 Game_Party.prototype.removeInvalidMembers = function() {
-    for(i = 0; i < this._actors.length; i++){
+    for(let i = 0; i < this._actors.length; i++){
         if(!this._actors[i] && i >= 0){
             this._actors.splice(i, 1);
             i--;
@@ -842,7 +842,7 @@ Game_Party.prototype.removeInvalidMembers = function() {
 
 Game_Party.prototype.setupStartingMembers = function() {
     this._actors = [];
-    for (i = 0; i < $dataSystem.partyMembers.length; i++) {
+    for (let i = 0; i < $dataSystem.partyMembers.length; i++) {
         let actor = new Game_Actor($dataSystem.partyMembers[i]);
         actor.setGender();
         if(SynrecMC.lockActors){
@@ -877,7 +877,7 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
 }
 
 Game_Party.prototype.addToReserve = function(actor){
-    for(i = 0; i < this._reserveBoxes.length; i++){
+    for(let i = 0; i < this._reserveBoxes.length; i++){
         let box = this._reserveBoxes[i]['box'];
         for(j = 0; j < box.length; j++){
             if(!box[j]){
@@ -890,7 +890,7 @@ Game_Party.prototype.addToReserve = function(actor){
 }
 
 Game_Party.prototype.removeActor = function(actorId) {
-    for(i = 0; i < this._actors.length; i++){
+    for(let i = 0; i < this._actors.length; i++){
         if(this._actors[i].actorId() == actorId){
             let actor = this._actors.splice(i, 1);
             if(this.inBattle())actor.onBattleEnd();
@@ -902,7 +902,7 @@ Game_Party.prototype.removeActor = function(actorId) {
 }
 
 Game_Party.prototype.removeDeadMembers = function(){
-    for(i = 0; i < this._actors.length; i++){
+    for(let i = 0; i < this._actors.length; i++){
         if(i < 0) i = 0;
         this._actors[i].refresh();
         if(this._actors[i].isDead() && this._actors.length > 0){
@@ -983,6 +983,20 @@ Window_StatusBase.prototype.placeGauge = function(actor, type, x, y) {
 
 Window_MenuStatus.prototype.selectLast = function() {
     this.smoothSelect(0);
+}
+
+SynrecMCWnBattLogDispAddState = Window_BattleLog.prototype.displayAddedStates
+Window_BattleLog.prototype.displayAddedStates = function(target) {
+    if(!target._isCaptured){
+        return SynrecMCWnBattLogDispAddState.call(this, target);
+    }
+    const result = target.result();
+    const states = result.addedStateObjects();
+    for (const state of states) {
+        if (state.id === target.deathStateId()) {
+            this.push("performCollapse", target);
+        }
+    }
 }
 
 SynrecMCWnBattLogDispFail = Window_BattleLog.prototype.displayFailure;

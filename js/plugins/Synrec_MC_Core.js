@@ -92,6 +92,12 @@
  * 
  * @param UI
  * 
+ * @param Capture Success Text
+ * @desc Text for capture success, %1 = Target name.
+ * @type text
+ * @default %1 has been captured!
+ * @parent UI
+ * 
  * @param Team Box Name
  * @desc Name of Team Box.
  * @type text
@@ -539,6 +545,7 @@ for(gend = 0; gend < SynrecMC.genders.length; gend++){
 }
 
 
+SynrecMC.CaptureSuccess = SynrecMC.Plugins['Capture Success Text'];
 SynrecMC.teamBoxName = SynrecMC.Plugins['Team Box Name'];
 SynrecMC.reserveSceneBackground = SynrecMC.Plugins['Reserve Scene Background'];
 SynrecMC.hpIcon = eval(SynrecMC.Plugins['HP Icon']);
@@ -983,7 +990,7 @@ Window_BattleLog.prototype.displayFailure = function(target) {
     if(!target._isCaptured){
         SynrecMCWnBattLogDispFail.call(this, target);
     }else{
-        let fmt = `%1 has been captured!`;
+        let fmt = `${SynrecMC.CaptureSuccess}`;
         this.push("addText", fmt.format(target.name()));
     }
 }
@@ -993,7 +1000,7 @@ Window_BattleLog.prototype.displayMiss = function(target) {
     if(!target._isCaptured){
         SynrecMCWnBattLogDispMiss.call(this, target);
     }else{
-        let fmt = `%1 has been captured!`;
+        let fmt = `${SynrecMC.CaptureSuccess}`;
         this.push("addText", fmt.format(target.name()));
     }
 }

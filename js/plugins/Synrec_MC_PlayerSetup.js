@@ -1380,7 +1380,6 @@ Game_Actor.prototype.paramBase = function(paramId) {
         const global = $gameParty._globalLevel;
         const local = this._level;
         const level = isNaN(global) || isNaN(local) ? local : Math.min(local, global);
-        console.log(this.currentClass().params)
         return this.currentClass().params[paramId][level];
     }
     return synrecGmActorParamBase.call(this, paramId);

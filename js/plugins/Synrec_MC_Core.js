@@ -978,6 +978,26 @@ Window_MenuStatus.prototype.selectLast = function() {
     this.smoothSelect(0);
 }
 
+SynrecMCWnBattLogDispFail = Window_BattleLog.prototype.displayFailure;
+Window_BattleLog.prototype.displayFailure = function(target) {
+    if(!target._isCaptured){
+        SynrecMCWnBattLogDispFail.call(this, target);
+    }else{
+        let fmt = `%1 has been captured!`;
+        this.push("addText", fmt.format(target.name()));
+    }
+}
+
+SynrecMCWnBattLogDispMiss = Window_BattleLog.prototype.displayMiss;
+Window_BattleLog.prototype.displayMiss = function(target) {
+    if(!target._isCaptured){
+        SynrecMCWnBattLogDispMiss.call(this, target);
+    }else{
+        let fmt = `%1 has been captured!`;
+        this.push("addText", fmt.format(target.name()));
+    }
+}
+
 synrecWinBatStatUpdate = Window_BattleStatus.prototype.update;
 Window_BattleStatus.prototype.update = function() {
     synrecWinBatStatUpdate.call(this);

@@ -1,6 +1,6 @@
 /*:
  * @author Synrec
- * @plugindesc v1.1 Preloads all image and audio for the game on start
+ * @plugindesc v1.2 Preloads all image and audio for the game on start
  * 
  * @target MZ
  * 
@@ -252,7 +252,7 @@
  */
 
 let SynrecPL = {};
-SynrecPL.Version = '1.1';
+SynrecPL.Version = '1.2';
 SynrecPL.Plugin = PluginManager.parameters('Synrec_Preloader')
 
 SynrecPL.IgnoreBGM = JSON.parse(SynrecPL.Plugin['BGM To Ignore']);

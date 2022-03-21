@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v2.7 Monster Capture for RPG Maker MZ 
+ * @plugindesc v2.8 Monster Capture for RPG Maker MZ 
  *
  *@help
  *
@@ -30,7 +30,51 @@
  * - Notify the author of your use of the plugin. 
  * 
  * Plugin documentation may be found on source website.
- * Please see https://synrec.dev for more info and updates on this and other projects. 
+ * Please see https://synrec.dev for more info and updates on this and other projects.
+ * 
+ * [Actor Note Tags]
+ * -- <genderArray:[gender, gender, gender...]>
+ * >> A list of genders the actor is capable of having.
+ * >>> Please use the name of the gender set in the plugin parameters
+ * 
+ * [Enemy Note Tags]
+ * -- <captureActor: actorId>
+ * >> Syncs the enemy data to the actor data (initial level)
+ * >>> Syncs equipment data for the actor as well.
+ * >> Must be set to capture the enemy
+ * 
+ * -- <hpBonus: number>
+ * >> Must be a number between 1 and 255
+ * >>> Default value is 255
+ * >> Grants bonus to capture rate based on HP
+ * 
+ * -- <mpBonus: number>
+ * >> Must be a number between 1 and 255
+ * >>> Default value is 255
+ * >> Grants bonus to capture rate based on MP
+ * 
+ * -- <tpBonus: number>
+ * >> Must be a number between 1 and 255
+ * >>> Default value is 255
+ * >> Grants bonus to capture rate based on TP
+ * 
+ * -- <blockCaptureState: stateId>
+ * >> If battler is affected by state, capture blocked.
+ * 
+ * -- <allowCaptureState: stateId>
+ * >> If battler is affected by state, capture allowed.
+ * >> If battler is not affected by state, capture blocked.
+ * >>> Capture can only be allowed if battler is affected by state.
+ * 
+ * [Skill/Item Note Tags]
+ * -- <captureRate: number>
+ * >> Must be a number between 1 and 255
+ * >>> 255 = Guaranteed capture
+ * >>> Using as <captureRate> uses default rate
+ * 
+ * You can access the reserve box in game by using the script call:
+ * -- SceneManager.push(Scene_RsvpBox)
+ * >> Opens reserve box scene
  * 
  * @param Gameplay
  * 
@@ -502,7 +546,7 @@
 let SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
-SynrecMC.Version = '2.7';
+SynrecMC.Version = '2.8';
 SynrecMC.Author = 'Synrec';
 
 SynrecMC.playerChar = eval(SynrecMC.Plugins['Non-Battler Player']);

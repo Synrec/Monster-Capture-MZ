@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v2.8 Monster Capture for RPG Maker MZ 
+ * @plugindesc v2.9 Monster Capture for RPG Maker MZ 
  *
  *@help
  *
@@ -546,7 +546,7 @@
 let SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
-SynrecMC.Version = '2.8';
+SynrecMC.Version = '2.9';
 SynrecMC.Author = 'Synrec';
 
 SynrecMC.playerChar = eval(SynrecMC.Plugins['Non-Battler Player']);
@@ -897,7 +897,7 @@ Game_Party.prototype.setupStartingMembers = function() {
 }
 
 Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
-    if(!isObject(actorId)){
+    if(!isNaN(actorId)){
         let actor = new Game_Actor(actorId);
         if(level)actor.changeLevel(level, false);
         if(hp)actor.setHp(hp);
@@ -1000,6 +1000,27 @@ Window.prototype._createClientArea = function() {
 }
 
 Window.prototype.createSprites = function(){};
+
+SynrecMCWinStsBseDrwActrName = Window_StatusBase.prototype.drawActorName;
+Window_StatusBase.prototype.drawActorName = function(actor, x, y, width) {
+    width = width || 168;
+    this.changeTextColor(ColorManager.hpColor(actor));
+    this.drawGenderIcon(actor, x, y);
+    this.drawText(actor.name(), x + ImageManager.iconWidth, y, width - ImageManager.iconWidth);
+}
+
+Window_StatusBase.prototype.drawGenderIcon = function(actor, x, y){
+    const gender = actor._gender;
+    if(!gender)return this.drawIcon(0, x, y);
+    const allGenders = SynrecMC.genders;
+    let data = undefined;
+    for(let i = 0; i < allGenders.length; i++){
+        const genderData = allGenders[i];
+        if(genderData['Gender Name'].toLowerCase() == gender){
+            return this.drawIcon(genderData['Gender Icon'], x, y);
+        }
+    }
+}
 
 Window_StatusBase.prototype.placeActorName = function(actor, x, y) {
     const key = ["actor%1-name".format(actor.actorId()), actor.index()];
@@ -1510,6 +1531,13 @@ Window_ActorData.prototype.refresh = function(){
     }
 }
 
+function Window_RsvpCmd (){
+    this.initialize(...arguments);
+}
+
+Window_RsvpCmd.prototype = Object.create(Window_Command.prototype);
+Window_RsvpCmd.prototype.constructor = Window_RsvpCmd;
+
 function Scene_RsvpBox (){
     this.initialize(...arguments);
 }
@@ -1568,6 +1596,7 @@ Scene_RsvpBox.prototype.createWindows = function(){
     this.createTeamWindow();
     this.createTeamNameWindow();
     this.createReserveBoxNameWindow();
+    this.createCmdOption();
     this.refreshAllWindows();
 }
 
@@ -1621,7 +1650,7 @@ Scene_RsvpBox.prototype.createTeamWindow = function(){
     this._teamWindow._dataWindow = this._actorDataWindow;
     this._teamWindow.activate();
     this._teamWindow.select(0);
-    this._teamWindow.setHandler('ok', this.swapToReserve.bind(this));
+    this._teamWindow.setHandler('ok', this.openCmdWindow.bind(this));
     this._teamWindow.setHandler('cancel', this.popScene.bind(this));
     this.addWindow(this._teamWindow);
 }
@@ -1634,7 +1663,7 @@ Scene_RsvpBox.prototype.createReserveBoxWindow = function(){
     const rect = new Rectangle(x, y, w, h);
     this._reserveWindow = new Window_ReserveBox(rect);
     this._reserveWindow._dataWindow = this._actorDataWindow;
-    this._reserveWindow.setHandler('ok', this.swapComplete.bind(this));
+    this._reserveWindow.setHandler('ok', this.openCmdWindow.bind(this));
     this._reserveWindow.setHandler('cancel', this.cancelSwap.bind(this));
     this._reserveWindow._dataWindow = this._actorDataWindow;
     this.addWindow(this._reserveWindow);
@@ -1662,12 +1691,75 @@ Scene_RsvpBox.prototype.createReserveBoxNameWindow = function(){
     this.addWindow(this._reserveNameWindow);
 }
 
+Scene_RsvpBox.prototype.createCmdOption = function(){
+    const w = 300;
+    const h = 400;
+    const x = (Graphics.width / 2) - (w / 2);
+    const y = (Graphics.height / 2) - (h / 2);
+    const rect = new Rectangle(x, y, w, h);
+    this._rsvpCmd = new Window_RsvpCmd(rect);
+    this._rsvpCmd.setHandler('swap', this.doSwap.bind(this));
+    this._rsvpCmd.setHandler('delete', this.doDelete.bind(this));
+    this._rsvpCmd.setHandler('cancel', this.closeRsvpCmd.bind(this));
+    this._rsvpCmd.deactivate();
+    this._rsvpCmd.hide();
+    this.addWindow(this._rsvpCmd);
+}
+
 Scene_RsvpBox.prototype.refreshAllWindows = function(){
     this._actorDataWindow.refresh();
     this._teamWindow.refresh();
     this._reserveWindow.refresh();
     this._teamNameWindow.refresh();
     this._reserveNameWindow.refresh();
+}
+
+Scene_RsvpBox.prototype.doSwap = function(){
+    if(this._winType == 'team'){
+        this.swapToReserve();
+    }
+    if(this._winType == 'rsvp'){
+        this.swapComplete();
+        this._winType = undefined;
+    }
+    this._rsvpCmd.deactivate();
+    this._rsvpCmd.hide();
+}
+
+Scene_RsvpBox.prototype.doDelete = function(){
+    if(this._winType == 'team'){
+        const index = this._teamWindow.index();
+        if($gameParty._actors[index]){
+            $gameParty._actors.splice(index, 1);
+        }else SoundManager.playBuzzer();
+    }
+    if(this._winType == 'rsvp'){
+        const boxIndex = this._reserveWindow._boxIdx;
+        const box = $gameParty._reserveBoxes[boxIndex]['box'];
+        const index = this._reserveWindow.index();
+        if(box[index]){
+            box.splice(index, 1);
+        }else SoundManager.playBuzzer();
+    }
+    this.closeCmdWindow();
+}
+
+Scene_RsvpBox.prototype.openCmdWindow = function(){
+    this._winType = undefined;
+    if(this._teamWindow.active)this._winType = 'team';
+    if(this._reserveWindow.active)this._winType = 'rsvp';
+    this._teamWindow.deactivate();
+    this._reserveWindow.deactivate();
+    this._rsvpCmd.activate();
+    this._rsvpCmd.show();
+}
+
+Scene_RsvpBox.prototype.closeCmdWindow = function(){
+    if(this._winType == 'team')this._teamWindow.activate();;
+    if(this._winType == 'rsvp')this._reserveWindow.activate();;
+    this._winType = undefined;
+    this._rsvpCmd.deactivate();
+    this._rsvpCmd.hide();
 }
 
 Scene_RsvpBox.prototype.swapToReserve = function(){

@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v2.9 Monster Capture for RPG Maker MZ 
+ * @plugindesc v3.0 Monster Capture for RPG Maker MZ 
  *
  *@help
  *
@@ -546,7 +546,7 @@
 let SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
-SynrecMC.Version = '2.9';
+SynrecMC.Version = '3.0';
 SynrecMC.Author = 'Synrec';
 
 SynrecMC.playerChar = eval(SynrecMC.Plugins['Non-Battler Player']);
@@ -1538,6 +1538,13 @@ function Window_RsvpCmd (){
 Window_RsvpCmd.prototype = Object.create(Window_Command.prototype);
 Window_RsvpCmd.prototype.constructor = Window_RsvpCmd;
 
+Window_RsvpCmd.prototype.makeCommandList = function() {
+    Window_Command.prototype.makeCommandList.call(this);
+    this.addCommand('Swap', 'swap');
+    this.addCommand('Destroy', 'delete');
+    this.addCommand('Cancel', 'cancel');
+};
+
 function Scene_RsvpBox (){
     this.initialize(...arguments);
 }
@@ -1650,7 +1657,7 @@ Scene_RsvpBox.prototype.createTeamWindow = function(){
     this._teamWindow._dataWindow = this._actorDataWindow;
     this._teamWindow.activate();
     this._teamWindow.select(0);
-    this._teamWindow.setHandler('ok', this.openCmdWindow.bind(this));
+    this._teamWindow.setHandler('ok', this.openCmdWindowTeam.bind(this));
     this._teamWindow.setHandler('cancel', this.popScene.bind(this));
     this.addWindow(this._teamWindow);
 }
@@ -1663,7 +1670,7 @@ Scene_RsvpBox.prototype.createReserveBoxWindow = function(){
     const rect = new Rectangle(x, y, w, h);
     this._reserveWindow = new Window_ReserveBox(rect);
     this._reserveWindow._dataWindow = this._actorDataWindow;
-    this._reserveWindow.setHandler('ok', this.openCmdWindow.bind(this));
+    this._reserveWindow.setHandler('ok', this.openCmdWindowRsvp.bind(this));
     this._reserveWindow.setHandler('cancel', this.cancelSwap.bind(this));
     this._reserveWindow._dataWindow = this._actorDataWindow;
     this.addWindow(this._reserveWindow);
@@ -1700,7 +1707,7 @@ Scene_RsvpBox.prototype.createCmdOption = function(){
     this._rsvpCmd = new Window_RsvpCmd(rect);
     this._rsvpCmd.setHandler('swap', this.doSwap.bind(this));
     this._rsvpCmd.setHandler('delete', this.doDelete.bind(this));
-    this._rsvpCmd.setHandler('cancel', this.closeRsvpCmd.bind(this));
+    this._rsvpCmd.setHandler('cancel', this.closeCmdWindow.bind(this));
     this._rsvpCmd.deactivate();
     this._rsvpCmd.hide();
     this.addWindow(this._rsvpCmd);
@@ -1744,12 +1751,14 @@ Scene_RsvpBox.prototype.doDelete = function(){
     this.closeCmdWindow();
 }
 
-Scene_RsvpBox.prototype.openCmdWindow = function(){
-    this._winType = undefined;
-    if(this._teamWindow.active)this._winType = 'team';
-    if(this._reserveWindow.active)this._winType = 'rsvp';
-    this._teamWindow.deactivate();
-    this._reserveWindow.deactivate();
+Scene_RsvpBox.prototype.openCmdWindowTeam = function(){
+    this._winType = 'team';
+    this._rsvpCmd.activate();
+    this._rsvpCmd.show();
+}
+
+Scene_RsvpBox.prototype.openCmdWindowRsvp = function(){
+    this._winType = 'rsvp';
     this._rsvpCmd.activate();
     this._rsvpCmd.show();
 }

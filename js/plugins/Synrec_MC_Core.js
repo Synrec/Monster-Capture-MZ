@@ -1700,7 +1700,7 @@ Scene_RsvpBox.prototype.createReserveBoxNameWindow = function(){
 
 Scene_RsvpBox.prototype.createCmdOption = function(){
     const w = 300;
-    const h = 400;
+    const h = 160;
     const x = (Graphics.width / 2) - (w / 2);
     const y = (Graphics.height / 2) - (h / 2);
     const rect = new Rectangle(x, y, w, h);

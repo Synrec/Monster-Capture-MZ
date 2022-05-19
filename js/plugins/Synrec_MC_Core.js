@@ -849,6 +849,15 @@ Game_BattlerBase.prototype.setGender = function(gender){
     return false;
 }
 
+SynrecMCGmActrSetup = Game_Actor.prototype.setup;
+Game_Actor.prototype.setup = function(actorId) {
+    const length = $dataActors.length;
+    if(actorId <= 0 || actorId >= length){
+        throw new Error(`Actor Id ${actorId} is invalid. It is either greater than the number of actors or less than. Please check database setup.`)
+    }
+    SynrecMCGmActrSetup.call(this, actorId);
+}
+
 SynrecGmPartyInitialize = Game_Party.prototype.initialize;
 Game_Party.prototype.initialize = function() {
     SynrecGmPartyInitialize.call(this);

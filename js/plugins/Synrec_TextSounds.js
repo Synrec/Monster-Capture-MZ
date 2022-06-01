@@ -94,7 +94,7 @@
  */
 
 let SynrecTS = {};
-SynrecTS.Version = "1.1";
+SynrecTS.Version = "1.2";
 SynrecTS.Plugins = PluginManager.parameters('Synrec_TextSounds');
 
 SynrecTS.UseFontVol = eval(SynrecTS.Plugins['Use Font Size Volume']);
@@ -207,9 +207,9 @@ Window_Message.prototype.playSound = function(textState){
                 const baseSize = $gameSystem.mainFontSize();
                 const diff = Math.abs(baseSize - fontSize);
                 if(fontSize > baseSize){
-                    sound.volume += (diff / baseSize) * sound.volume;
+                    sound.volume += Math.floor((diff / baseSize) * sound.volume);
                 }else if(fontSize < baseSize){
-                    sound.volume -= (diff / baseSize) * sound.volume;
+                    sound.volume -= Math.floor((diff / baseSize) * sound.volume);
                 }
             }
             AudioManager.stopSe();

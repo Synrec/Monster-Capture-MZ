@@ -1,10 +1,15 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.0 Create Text Sounds
+ * @plugindesc v1.1 Create Text Sounds
  *
  * @help Create text sounds which play by default or based on
  * face graphic set.
+ * 
+ * @param Use Font Size Volume
+ * @desc Changes volume based on variance from font size
+ * @type boolean
+ * @default false
  * 
  * You must credit Synrec.
  * 
@@ -30,6 +35,11 @@
  * @type number
  * @max 100
  * @min -100
+ * @default 0
+ * 
+ * @param Default Pitch Variance
+ * @desc Pitch changes randomly +/- this value
+ * @type number
  * @default 0
  * 
  * @param Custom Text Sounds
@@ -69,6 +79,11 @@
  * @max 150
  * @default 100
  * 
+ * @param Pitch Variance
+ * @desc Pitch changes randomly +/- this value
+ * @type number
+ * @default 0
+ * 
  * @param Pan
  * @desc Sound effect pan
  * @type number
@@ -79,13 +94,17 @@
  */
 
 let SynrecTS = {};
-SynrecTS.Version = "1.0";
+SynrecTS.Version = "1.1";
 SynrecTS.Plugins = PluginManager.parameters('Synrec_TextSounds');
 
+SynrecTS.UseFontVol = eval(SynrecTS.Plugins['Use Font Size Volume']);
+
 SynrecTS.DefaultSound = SynrecTS.Plugins['Default Se'];
-SynrecTS.DefaultVol = SynrecTS.Plugins['Default Volume'];
-SynrecTS.DefaultPch = SynrecTS.Plugins['Default Pitch'];
-SynrecTS.DefaultPan = SynrecTS.Plugins['Default Pan'];
+SynrecTS.DefaultVol = eval(SynrecTS.Plugins['Default Volume']);
+SynrecTS.DefaultPch = eval(SynrecTS.Plugins['Default Pitch']);
+SynrecTS.DefaultPchVar = eval(SynrecTS.Plugins['Default Pitch Variance']);
+SynrecTS.DefaultPan = eval(SynrecTS.Plugins['Default Pan']);
+SynrecTS.DefaultPan = eval(SynrecTS.Plugins['Default Pan']);
 
 SynrecTS.SoundJSON = JSON.parse(SynrecTS.Plugins['Custom Text Sounds']);
 SynrecTS.SoundObjects = [];
@@ -101,6 +120,7 @@ for(sound = 0; sound < SynrecTS.SoundJSON.length; sound++){
     soundFX.effectName = SynrecTS.SoundJSON[sound]['Sound Effect'] ? SynrecTS.SoundJSON[sound]['Sound Effect'] : SynrecTS.DefaultSound;
     soundFX.effectVol = !isNaN(SynrecTS.SoundJSON[sound]['Volume']) ? eval(SynrecTS.SoundJSON[sound]['Volume']) : SynrecTS.DefaultVol;
     soundFX.effectPch = !isNaN(SynrecTS.SoundJSON[sound]['Pitch']) ? eval(SynrecTS.SoundJSON[sound]['Pitch']) : SynrecTS.DefaultPch;
+    soundFX.effectPchVar = !isNaN(SynrecTS.SoundJSON[sound]['Pitch']) ? eval(SynrecTS.SoundJSON[sound]['Pitch Variance']) : SynrecTS.DefaultPchVar;
     soundFX.effectPan = !isNaN(SynrecTS.SoundJSON[sound]['Pan']) ? eval(SynrecTS.SoundJSON[sound]['Pan']) : SynrecTS.DefaultPan;
     SynrecTS.SoundObjects.push(soundFX);
 }
@@ -118,15 +138,16 @@ Window_Message.prototype.createSoundData = function(){
     const faceName = $gameMessage._faceName;
     const faceIndex = $gameMessage._faceIndex;
     const soundObjs = SynrecTS.SoundObjects;
-    for(chkSnd = 0; chkSnd < soundObjs.length; chkSnd++){
-        var sound = soundObjs[chkSnd];
+    for(let chkSnd = 0; chkSnd < soundObjs.length; chkSnd++){
+        const sound = soundObjs[chkSnd];
         if(sound.file == faceName){
             if(sound.indices.includes(faceIndex)){
-                var name = sound.effectName;
+                const name = sound.effectName;
                 if(name){
-                    var vol = sound.effectVol;
-                    var pch = sound.effectPch;
-                    var pan = sound.effectPan;
+                    const vol = sound.effectVol;
+                    const pch = sound.effectPch;
+                    const pan = sound.effectPan;
+                    this._pchVar = sound.effectPchVar;
                     this._soundText = {name:name, pitch:pch, pan:pan, volume:vol};
                     return true;
                 }
@@ -134,10 +155,11 @@ Window_Message.prototype.createSoundData = function(){
         }
     }
     const nameDef = SynrecTS.DefaultSound;
-    if(!name)return false;
+    if(!nameDef)return false;
     const pchDef = SynrecTS.DefaultPch;
     const volDef = SynrecTS.DefaultVol;
     const panDef = SynrecTS.DefaultPan;
+    this._pchVar = SynrecTS.DefaultPchVar;
     this._soundText = {name:nameDef, pitch:pchDef, pan:panDef, volume:volDef};
     return true;
 }
@@ -173,8 +195,25 @@ Window_Message.prototype.playSound = function(textState){
     const chara = text[index];
     if(chara.match(matchChar)){
         if(this._soundText){
+            let sound = JsonEx.makeDeepCopy(this._soundText);
+            if(!isNaN(this._pchVar)){
+                const minPch = sound.pitch - this._pchVar;
+                const maxPch = sound.pitch + this._pchVar;
+                const diff = maxPch - minPch;
+                sound.pitch = minPch + Math.random() * diff;
+            }
+            if(SynrecTS.UseFontVol){
+                const fontSize = this.contents.fontSize;
+                const baseSize = $gameSystem.mainFontSize();
+                const diff = Math.abs(baseSize - fontSize);
+                if(fontSize > baseSize){
+                    sound.volume += (diff / baseSize) * sound.volume;
+                }else if(fontSize < baseSize){
+                    sound.volume -= (diff / baseSize) * sound.volume;
+                }
+            }
             AudioManager.stopSe();
-            AudioManager.playSe(this._soundText);
+            AudioManager.playSe(sound);
         }
     }
 }

@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v3.0 Monster Capture for RPG Maker MZ 
+ * @plugindesc v3.1 Monster Capture for RPG Maker MZ 
  *
  *@help
  *
@@ -41,7 +41,8 @@
  * -- <captureActor: actorId>
  * >> Syncs the enemy data to the actor data (initial level)
  * >>> Syncs equipment data for the actor as well.
- * >> Must be set to capture the enemy
+ * >> Must be set to capture the enemy.
+ * >>> This number must correspond to the actor ID NOT the enemy ID
  * 
  * -- <hpBonus: number>
  * >> Must be a number between 1 and 255
@@ -546,7 +547,7 @@
 let SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
-SynrecMC.Version = '3.0';
+SynrecMC.Version = '3.1';
 SynrecMC.Author = 'Synrec';
 
 SynrecMC.playerChar = eval(SynrecMC.Plugins['Non-Battler Player']);
@@ -741,7 +742,7 @@ Game_Action.prototype.performCapture = function(target){
         const itemCaptureRate = !isNaN(item.meta.captureRate)? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
         if(!item.meta.captureRate)return;
         const enemyData = target.enemy();
-        const captureActorId = enemyData.meta.captureActor;
+        const captureActorId = eval(enemyData.meta.captureActor);
         const hpBonus = enemyData.meta.hpBonus ? eval(enemyData.meta.hpBonus) : 255;
         if(isNaN(hpBonus) || hpBonus > captureDivisor)hpBonus = 255;
         const mpBonus = enemyData.meta.mpBonus ? eval(enemyData.meta.mpBonus) : 255;
@@ -852,8 +853,8 @@ Game_BattlerBase.prototype.setGender = function(gender){
 SynrecMCGmActrSetup = Game_Actor.prototype.setup;
 Game_Actor.prototype.setup = function(actorId) {
     const length = $dataActors.length;
-    if(actorId <= 0 || actorId >= length){
-        throw new Error(`Actor Id ${actorId} is invalid. It is either greater than the number of actors or less than. Please check database setup.`)
+    if(actorId <= 0 || actorId >= length || isNaN(actorId)){
+        throw new Error(`Actor Id ${actorId} is invalid. It is either greater than the number of actors or less than or completely invalid. Please check database setup.`)
     }
     SynrecMCGmActrSetup.call(this, actorId);
 }

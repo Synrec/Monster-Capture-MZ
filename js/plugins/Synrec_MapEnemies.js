@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.3 Enemies spawn on the map based on notetags
+ * @plugindesc v1.4 Enemies spawn on the map based on notetags
  *
  * @help
  * You are not permitted to:
@@ -29,8 +29,18 @@
  * Use enemy notetag <moveType:x> to set the move type when enemy detects player.
  * x = flee, observe, random or approach.
  * 
- * Use map notetag <enemies:x,y,z> to setup map enemies.
+ * Use map notetag <enemies:[x,y,z]> to setup map enemies.
  * x, y, z are enemy IDs from the database.
+ * 
+ * Use map notetag <enemyCount:x> to set the number of enemies for the map.
+ * x is a number or script which can be evaluated as such.
+ * 
+ * Use script call $gameSystem._escapeMapEnemy = true to allow
+ * actor to escape map enemy. Default value is true.
+ * 
+ * Use script call $gameSystem._loseMapEnemy = true to allow
+ * actor to lose to map enemy. Default value is false.
+ * 
  * 
  * @param Default Character Image
  * @desc Image used for character when none specified
@@ -84,7 +94,7 @@
 
 
 SynrecME = {};
-SynrecME.Version = "1.3";
+SynrecME.Version = "1.4";
 
 SynrecME.Plugins = PluginManager.parameters('Synrec_MapEnemies');
 SynrecME.DefaultEnemyImage = SynrecME.Plugins['Default Character Image'];
@@ -240,6 +250,10 @@ Game_MapEnemy.prototype.updateOnPlayer = function(){
         this.fixEnemyPositions();
         this._engaged = true;
         $gameTroop.makeUniqueNames();
+        BattleManager.initMembers();
+        BattleManager.makeEscapeRatio();
+        BattleManager._canEscape = $gameSystem._escapeMapEnemy || true;
+        BattleManager._canLose = $gameSystem._loseMapEnemy || false;
         BattleManager.onEncounter();
         SceneManager.push(Scene_Battle);
     }
@@ -254,11 +268,11 @@ Game_MapEnemy.prototype.updateDead = function(){
 Game_MapEnemy.prototype.grabEnemies = function(){
     let scene = SceneManager._scene
     for (let emem = 0; emem < scene._mapEnemies.length; emem++){
-        var targetEnem = scene._mapEnemies[emem];
-        var pluX = this._x + this._detectRange;
-        var negX = this._x - this._detectRange;
-        var pluY = this._y + this._detectRange;
-        var negY = this._y - this._detectRange;
+        const targetEnem = scene._mapEnemies[emem];
+        const pluX = this._x + this._detectRange;
+        const negX = this._x - this._detectRange;
+        const pluY = this._y + this._detectRange;
+        const negY = this._y - this._detectRange;
         if(!$gameTroop._enemies.includes(targetEnem) && targetEnem._gameEnemy.isAlive()){
             if(targetEnem._x >= negX && targetEnem._x <= pluX && targetEnem._y >= negY && targetEnem._y <= pluY){
                 $gameTroop._enemies.push(targetEnem._gameEnemy);
@@ -307,14 +321,14 @@ Scene_Map.prototype.refreshEnemies = function(){
 }
 
 Scene_Map.prototype.checkForDead = function(){
-    var scene = SceneManager._scene;
-    var spriteset = scene._spriteset;
-    for(deid = 0; deid < this._mapEnemies.length; deid++){
-        var enem = this._mapEnemies[deid];
+    const scene = SceneManager._scene;
+    const spriteset = scene._spriteset;
+    for(let deid = 0; deid < this._mapEnemies.length; deid++){
+        const enem = this._mapEnemies[deid];
         if(enem){
             if(enem._gameEnemy.isDead()){
                 for(let sprtChk = 0; sprtChk < spriteset._characterSprites.length; sprtChk++){
-                    var chara = spriteset._characterSprites[sprtChk];
+                    const chara = spriteset._characterSprites[sprtChk];
                     if(chara._character == enem){
                         spriteset._characterSprites.splice(spriteset._characterSprites.indexOf(chara), 1);
                         chara.parent.removeChild(chara);

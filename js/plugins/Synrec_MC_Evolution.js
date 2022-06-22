@@ -1,10 +1,13 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.6 Creates a simple scene which allows actor evolution
+ * @plugindesc v1.7 Creates a simple scene which allows actor evolution
  * 
  * @help
  * This plugin follows the permissions outlined in Synrec_MC_Core.js
+ * 
+ * Call evolution scene with script call:
+ * SceneManager.push(Scene_Evolution)
  * 
  * This plugin acts as the core for evolution for monster capture.
  * 
@@ -98,7 +101,7 @@
 if(!SynrecMC)throw new Error("Core Plugin Missing.");
 if(!isObject(SynrecMC))throw new Error("Bad Core Files.");
 SynrecMC.EvolutionCore = {};
-SynrecMC.EvolutionCore.Version = "1.6";
+SynrecMC.EvolutionCore.Version = "1.7";
 
 SynrecMC.EvolutionCore.Plugins = PluginManager.parameters('Synrec_MC_Evolution');
 SynrecMC.EvolutionCore.EvolveHeal = eval(SynrecMC.EvolutionCore.Plugins['Evolve Healing']);

@@ -253,7 +253,7 @@ Game_MapEnemy.prototype.updateDead = function(){
 
 Game_MapEnemy.prototype.grabEnemies = function(){
     let scene = SceneManager._scene
-    for (emem = 0; emem < scene._mapEnemies.length; emem++){
+    for (let emem = 0; emem < scene._mapEnemies.length; emem++){
         var targetEnem = scene._mapEnemies[emem];
         var pluX = this._x + this._detectRange;
         var negX = this._x - this._detectRange;
@@ -271,7 +271,7 @@ Game_MapEnemy.prototype.fixEnemyPositions = function(){
     const numEnemies = $gameTroop._enemies.length;
     const offsetX = 0;
     const offsetY = 300;
-    for(pos = 0; pos < numEnemies; pos++){
+    for(let pos = 0; pos < numEnemies; pos++){
         let posX = (((Graphics.width / numEnemies) / 2) + (((Graphics.width / numEnemies) / 2) * pos)) + offsetX;
         let posY = offsetY;
         $gameTroop._enemies[pos]._screenX = posX;
@@ -313,8 +313,7 @@ Scene_Map.prototype.checkForDead = function(){
         var enem = this._mapEnemies[deid];
         if(enem){
             if(enem._gameEnemy.isDead()){
-                console.log(enem);
-                for(sprtChk = 0; sprtChk < spriteset._characterSprites.length; sprtChk++){
+                for(let sprtChk = 0; sprtChk < spriteset._characterSprites.length; sprtChk++){
                     var chara = spriteset._characterSprites[sprtChk];
                     if(chara._character == enem){
                         spriteset._characterSprites.splice(spriteset._characterSprites.indexOf(chara), 1);
@@ -345,20 +344,19 @@ Scene_Map.prototype.createEnemies = function(){
     if(retainEnemy){
         if(SceneManager._mapEnemies && SceneManager._mapId == $gameMap._mapId){
             this._mapEnemies = SceneManager._mapEnemies;
-            for(chkr = 0; chkr < this._mapEnemies.length; chkr++){
-                var chkE = this._mapEnemies[chkr];
+            for(let chkr = 0; chkr < this._mapEnemies.length; chkr++){
+                const chkE = this._mapEnemies[chkr];
                 chkE.update();
-                console.log(chkE._gameEnemy.isDead());
                 if(chkE._gameEnemy.isDead()){
                     this._mapEnemies.splice(chkr, 1);
                     chkr--;
                 }
             }
             this._mapEnemies.forEach(function(enemy){
-                let scene = SceneManager._scene;
-                var gameEnem = enemy._gameEnemy;
+                const scene = SceneManager._scene;
+                const gameEnem = enemy._gameEnemy;
                 if(gameEnem.isAlive()){
-                    var sprite = new Sprite_Character(enemy);
+                    const sprite = new Sprite_Character(enemy);
                     scene._spriteset._characterSprites.push(sprite);
                     scene._spriteset._tilemap.addChild(sprite);
                     enemy.locate(enemy._x, enemy._y);
@@ -371,9 +369,9 @@ Scene_Map.prototype.createEnemies = function(){
     if(enemyArr){
         if(!chckArr(enemyArr))throw new Error("Incorrect form of enemies note tag. Please visit https://synrec.dev and check documentation.")
         while(this._mapEnemies.length < enemyCnt){
-            var rndmEnemyIdx = Math.floor(Math.random() * enemyArr.length);
-            var rndmEnemy = enemyArr[rndmEnemyIdx];
-            var enemData = new Game_MapEnemy(rndmEnemy);
+            const rndmEnemyIdx = Math.floor(Math.random() * enemyArr.length);
+            const rndmEnemy = enemyArr[rndmEnemyIdx];
+            const enemData = new Game_MapEnemy(rndmEnemy);
 
             if(!enemData._noEnemy){
                 var rndmX = Math.floor(Math.random() * $gameMap.width());

@@ -500,8 +500,7 @@ Scene_AutoEvolve.prototype.processEvolution = function(){
             confirmWindow._evolveStatus = "success";
         }else if(this._cancelledEvolve){
             const animCancel = SynrecMC.EvolutionCore.EvolveAnimCancel;
-            if(!isNaN(animCancel)){
-                console.log(animCancel);
+            if(!isNaN(animCancel) && animCancel > 0){
                 $gameTemp.requestAnimation([this._evolutionChar], animCancel);
             }
             confirmWindow._evolveStatus = "failed";

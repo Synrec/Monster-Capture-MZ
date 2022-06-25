@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.4 Enemies spawn on the map based on notetags
+ * @plugindesc v1.5 Enemies spawn on the map based on notetags
  *
  * @help
  * You are not permitted to:
@@ -41,6 +41,15 @@
  * Use script call $gameSystem._loseMapEnemy = true to allow
  * actor to lose to map enemy. Default value is false.
  * 
+ * @param Enemy Placement Positions
+ * @desc Setup enemy positioning.
+ * @type struct<PlacementPos>[]
+ * @default []
+ * 
+ * @param Max Enemy Count
+ * @desc Maximum number of enemies in troop
+ * @type number
+ * @default 8
  * 
  * @param Default Character Image
  * @desc Image used for character when none specified
@@ -91,15 +100,26 @@
  * @default false
  * 
  */
+/*~struct~PlacementPos:
+ * @param Position X
+ * @desc X - position of this index
+ * @type number
+ * @default 0
+ * 
+ * @param Position Y
+ * @desc Y - position of this index
+ * @type number
+ * @default 0
+ */
 
 
 SynrecME = {};
-SynrecME.Version = "1.4";
+SynrecME.Version = "1.5";
 
 SynrecME.Plugins = PluginManager.parameters('Synrec_MapEnemies');
 SynrecME.DefaultEnemyImage = SynrecME.Plugins['Default Character Image'];
-SynrecME.DefaultEnemyIndex = eval(SynrecME.Plugins['Default Character Index']);
-SynrecME.DefaultEnemyRange = eval(SynrecME.Plugins['Enemy Detection Range']);
+SynrecME.DefaultEnemyIndex = eval(SynrecME.Plugins['Default Character Index']) || 0;
+SynrecME.DefaultEnemyRange = eval(SynrecME.Plugins['Enemy Detection Range']) || 5;
 SynrecME.DefaultEnemyMove = SynrecME.Plugins['Enemy Move Type'].toLowerCase();
 
 if(SynrecME.Plugins['No Spawn Regions']){
@@ -109,10 +129,24 @@ if(SynrecME.Plugins['No Spawn Regions']){
     }
 }else SynrecME.NoSpwnRgn = [];
 
-SynrecME.DefaultCount = eval(SynrecME.Plugins['Default Enemy Count']);
-SynrecME.DefaultTroop = eval(SynrecME.Plugins['Encounter Troop ID']);
+SynrecME.DefaultCount = eval(SynrecME.Plugins['Default Enemy Count']) || 10;
+SynrecME.DefaultTroop = eval(SynrecME.Plugins['Encounter Troop ID']) || 1;
+SynrecME.TroopMax = eval(SynrecME.Plugins['Max Enemy Count']) || 8;
 
 SynrecME.RetainEnemy = eval(SynrecME.Plugins['Retain Enemies']);
+SynrecME.EnemyPositions = [];
+try{
+    SynrecME.EnemyPositions = JSON.parse(SynrecME.Plugins['Enemy Placement Positions']);
+    for(let i = 0; i < SynrecME.TroopMax; i++){
+        if(SynrecME.EnemyPositions[i]){
+            SynrecME.EnemyPositions[i] = JSON.parse(SynrecME.EnemyPositions[i]);
+            SynrecME.EnemyPositions[i]['Position X'] = eval(SynrecME.EnemyPositions[i]['Position X']);
+            SynrecME.EnemyPositions[i]['Position Y'] = eval(SynrecME.EnemyPositions[i]['Position Y']);
+        }
+    }
+}catch(e){
+    console.error(e);
+}
 
 function chckArr(arr){
     const arrChk = JSON.stringify(arr);
@@ -266,28 +300,35 @@ Game_MapEnemy.prototype.updateDead = function(){
 }
 
 Game_MapEnemy.prototype.grabEnemies = function(){
-    let scene = SceneManager._scene
+    const scene = SceneManager._scene
     for (let emem = 0; emem < scene._mapEnemies.length; emem++){
         const targetEnem = scene._mapEnemies[emem];
         const pluX = this._x + this._detectRange;
         const negX = this._x - this._detectRange;
         const pluY = this._y + this._detectRange;
         const negY = this._y - this._detectRange;
+        if($gameTroop._enemies.length + 1 >= SynrecME.TroopMax)return;
         if(!$gameTroop._enemies.includes(targetEnem) && targetEnem._gameEnemy.isAlive()){
             if(targetEnem._x >= negX && targetEnem._x <= pluX && targetEnem._y >= negY && targetEnem._y <= pluY){
                 $gameTroop._enemies.push(targetEnem._gameEnemy);
             }
         }
+        if($gameTroop._enemies.length >= SynrecME.TroopMax)return;
     }
 }
 
 Game_MapEnemy.prototype.fixEnemyPositions = function(){
     const numEnemies = $gameTroop._enemies.length;
+    const paramPosArr = SynrecME.EnemyPositions;
     const offsetX = 0;
     const offsetY = 300;
     for(let pos = 0; pos < numEnemies; pos++){
         let posX = (((Graphics.width / numEnemies) / 2) + (((Graphics.width / numEnemies) / 2) * pos)) + offsetX;
         let posY = offsetY;
+        if(SynrecME.EnemyPositions[pos]){
+            posX = SynrecME.EnemyPositions[pos]['Position X'];
+            posY = SynrecME.EnemyPositions[pos]['Position Y'];
+        }
         $gameTroop._enemies[pos]._screenX = posX;
         $gameTroop._enemies[pos]._screenY = posY;
     }

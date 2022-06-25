@@ -13,6 +13,16 @@
  * @type struct<ActorCombine>[]
  * @default []
  * 
+ * @param Show Breed Menu Command
+ * @desc Enable menu Command?
+ * @type boolean
+ * @default true
+ * 
+ * @param Breed Command Name
+ * @desc Command Name
+ * @type text
+ * @default Eggs
+ * 
  * @param Breeder Scene Setup
  * @desc Setup breeding scene
  * 
@@ -76,6 +86,11 @@
  * @desc Random number between 0 and this removed from required.
  * @type number
  * @default 5
+ * 
+ * @param Delete Parents
+ * @desc Delete parents
+ * @type boolean
+ * @default false
  */
 /*~struct~ActorGender:
  * @param Actor
@@ -101,6 +116,7 @@ try{
         SynrecMC.Breeder.CombinationArray[i]['Result Actor'] = eval(SynrecMC.Breeder.CombinationArray[i]['Result Actor']);
         SynrecMC.Breeder.CombinationArray[i]['Required Steps'] = eval(SynrecMC.Breeder.CombinationArray[i]['Required Steps']);
         SynrecMC.Breeder.CombinationArray[i]['Random Steps'] = eval(SynrecMC.Breeder.CombinationArray[i]['Random Steps']);
+        SynrecMC.Breeder.CombinationArray[i]['Delete Parents'] = eval(SynrecMC.Breeder.CombinationArray[i]['Delete Parents']);
         SynrecMC.Breeder.CombinationArray[i]['Required Actors'] = JSON.parse(SynrecMC.Breeder.CombinationArray[i]['Required Actors']);
         for(let j = 0; j < SynrecMC.Breeder.CombinationArray[i]['Required Actors'].length; j++){
             SynrecMC.Breeder.CombinationArray[i]['Required Actors'][j] = JSON.parse(SynrecMC.Breeder.CombinationArray[i]['Required Actors'][j]);
@@ -118,6 +134,9 @@ SynrecMC.Breeder.CharIdx = SynrecMC.Breeder['Breed Character Index'];
 SynrecMC.Breeder.MaxSteps = eval(SynrecMC.Breeder['Max Steps for Pre-Breed Generate']);
 SynrecMC.Breeder.ParentEXP = eval(SynrecMC.Breeder['Parent Step EXP']);
 SynrecMC.Breeder.AnimHatch = eval(SynrecMC.Breeder['Breed Character Anim Hatch']);
+
+SynrecMC.Breeder.MenuCmd = eval(SynrecMC.Breeder['Show Breed Menu Command']);
+SynrecMC.Breeder.MenuCmdName = SynrecMC.Breeder['Breed Command Name'];
 
 console.log(SynrecMC.Breeder.CombinationArray);
 
@@ -173,6 +192,10 @@ Game_Party.prototype.progressPreBreed = function(){
                 obj['Result Actor'] = actorId;
                 obj['Max Steps'] = steps;
                 this._breederChild = obj;
+                if(data['Delete Parents']){
+                    this._breederParent1 = undefined;
+                    this._breederParent2 = undefined;
+                }
             }
         }else this._preBreedSteps++;
     }
@@ -264,6 +287,57 @@ Game_Player.prototype.moveStraight = function(d) {
         }
     }
     SynrecBrdrGmPlyrMvStrt.call(this, d);
+}
+
+SynrecBrdrWinMenuCmdAddOrigCmds = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    SynrecBrdrWinMenuCmdAddOrigCmds.call(this);
+    if(SynrecMC.Breeder.MenuCmd)this.addBreederCmd();
+}
+
+Window_MenuCommand.prototype.addBreederCmd = function(){
+    this.addCommand(SynrecMC.Breeder.MenuCmdName, 'breed', true);
+    let scene = SceneManager._scene;
+    this.setHandler("breed", scene.openBreeder.bind(scene));
+}
+
+function Window_ViewBreed(){
+    this.initialize(...arguments);
+}
+
+Window_ViewBreed.prototype = Object.create(Window_Selectable.prototype);
+Window_ViewBreed.prototype.constructor = Window_ViewBreed;
+
+Window_ViewBreed.prototype.maxItems = function(){
+    return $gameParty._breederArray.length;
+}
+
+Window_ViewBreed.prototype.maxCols = function(){
+    return 4;
+}
+
+Window_ViewBreed.prototype.itemHeight = function(){
+    return 64;
+}
+
+Window_ViewBreed.prototype.update = function(){
+    Window_Selectable.prototype.update.call(this);
+    this.refresh();
+}
+
+Window_ViewBreed.prototype.drawItem = function(index){
+    const rect = this.itemRect(index);
+    const data = $gameParty._breederArray[index];
+    if(data){
+        const actorId = data['Result Actor'];
+        const actorData = $dataActors[actorId];
+        const progress = data['Step Progress'];
+        const complete = data['Step Complete'];
+        const charName = actorData.characterName;
+        const charIndx = actorData.characterIndex;
+        this.drawCharacter(charName, charIndx, rect.x + 48, rect.y + 55);
+        this.drawText(`${progress}/${complete}`, rect.x - 48, rect.y, rect.width, 'right');
+    }
 }
 
 function Window_ParentBreed(){
@@ -672,4 +746,47 @@ Scene_Hatch.prototype.startExit = function(){
     $gameScreen.startFlash([255, 255, 255, 255], 60);
     SoundManager.playUseItem();
     SceneManager.pop();
+}
+
+function Scene_BreederSteps(){
+    this.initialize(...arguments);
+}
+
+Scene_BreederSteps.prototype = Object.create(Scene_Base.prototype);
+Scene_BreederSteps.prototype.constructor = Scene_BreederSteps;
+
+Scene_BreederSteps.prototype.create = function(){
+    this.createBackground();
+    this.createWindowLayer();
+    this.createBreedingWindow();
+}
+
+Scene_BreederSteps.prototype.createBackground = function(){
+    this._backgroundFilter = new PIXI.filters.BlurFilter();
+    this._backgroundSprite = new Sprite();
+    this._backgroundSprite.bitmap = SceneManager.backgroundBitmap();
+    this._backgroundSprite.filters = [this._backgroundFilter];
+    this.addChild(this._backgroundSprite);
+    this.setBackgroundOpacity(192);
+}
+
+Scene_BreederSteps.prototype.setBackgroundOpacity = function(opacity) {
+    this._backgroundSprite.opacity = opacity;
+};
+
+Scene_BreederSteps.prototype.createBreedingWindow = function(){
+    const x = 0;
+    const y = 0;
+    const w = Graphics.width - 8;
+    const h = Graphics.height - 8;
+    const rect = new Rectangle(x, y, w, h);
+    this._viewBreeds = new Window_ViewBreed(rect);
+    this._viewBreeds.setHandler('cancel', this.popScene.bind(this));
+    this._viewBreeds.activate();
+    this._viewBreeds.select(0);
+    this.addWindow(this._viewBreeds);
+}
+
+Scene_Menu.prototype.openBreeder = function(){
+    SceneManager.push(Scene_BreederSteps);
 }

@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.5 Enemies spawn on the map based on notetags
+ * @plugindesc v1.6 Enemies spawn on the map based on notetags
  *
  * @help
  * You are not permitted to:
@@ -114,7 +114,7 @@
 
 
 SynrecME = {};
-SynrecME.Version = "1.5";
+SynrecME.Version = "1.6";
 
 SynrecME.Plugins = PluginManager.parameters('Synrec_MapEnemies');
 SynrecME.DefaultEnemyImage = SynrecME.Plugins['Default Character Image'];
@@ -270,26 +270,34 @@ Game_MapEnemy.prototype.updateSelfMovement = function() {
 }
 
 Game_MapEnemy.prototype.updateOnPlayer = function(){
-    if($gameMap.isEventRunning())return false;
-    if(this._spawnDur > 0)return false;
-    if(this.menuCalling)return false;
+    if($gameMap.isEventRunning())return;
+    if($gameTemp.isCommonEventReserved())return;
+    if(this._spawnDur > 0)return;
+    if(this.menuCalling)return;
     if(this._gameEnemy.isDead()){
         this._noEnemy = true;
-        return false;
+        return;
     }
     if(this.isCollidedWithPlayer() && $gameTroop._enemies.length <= 0 && !this._engaged && this._gameEnemy.isAlive()){
         $gameTroop.clear();
         $gameTroop._troopId = SynrecME.DefaultTroop;
-        this.grabEnemies();
-        this.fixEnemyPositions();
-        this._engaged = true;
-        $gameTroop.makeUniqueNames();
-        BattleManager.initMembers();
-        BattleManager.makeEscapeRatio();
-        BattleManager._canEscape = $gameSystem._escapeMapEnemy || true;
-        BattleManager._canLose = $gameSystem._loseMapEnemy || false;
-        BattleManager.onEncounter();
-        SceneManager.push(Scene_Battle);
+        const data = this._gameEnemy.enemy();
+        const mapEvnt = data.meta['Map Enemy Event'] ? eval(data.meta['Map Enemy Event']) : 0;
+        if(mapEvnt){
+            if(isNaN(mapEvnt))throw new Error('Map Event must be evaluated as a number.');
+            $gameTemp.reserveCommonEvent(mapEvnt);
+        }else{
+            this.grabEnemies();
+            this.fixEnemyPositions();
+            this._engaged = true;
+            $gameTroop.makeUniqueNames();
+            BattleManager.initMembers();
+            BattleManager.makeEscapeRatio();
+            BattleManager._canEscape = $gameSystem._escapeMapEnemy || true;
+            BattleManager._canLose = $gameSystem._loseMapEnemy || false;
+            BattleManager.onEncounter();
+            SceneManager.push(Scene_Battle);
+        }
     }
 }
 

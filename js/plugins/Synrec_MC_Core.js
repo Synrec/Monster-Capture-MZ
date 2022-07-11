@@ -812,7 +812,7 @@ Game_BattlerBase.prototype.setGender = function(gender){
     if(SynrecMC.genders.length <= 0)return this._gender = undefined;
     if(this._gender)return true;
 	if(gender){
-        gender = gender.toLowerCase();
+        gender = gender.toLowerCase().replace(/\s/g, '');
 		this._gender = gender;
 	}else{
 		if(this.isEnemy()){
@@ -826,7 +826,7 @@ Game_BattlerBase.prototype.setGender = function(gender){
                 }
             }else{
                 for(ga = 0; ga < genderArr.length; ga++){
-                    genderArr[ga] = genderArr[ga].toLowerCase();
+                    genderArr[ga] = genderArr[ga].toLowerCase().replace(/\s/g, '');
                 }
             }
             const genderIdx = Math.floor(Math.random() * genderArr.length);

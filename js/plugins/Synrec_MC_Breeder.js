@@ -1,7 +1,7 @@
 /*:
  * @author Synrec/kylestclr
  * @target MZ
- * @plugindesc v1.0 Breeding System for Monster Capture Plugins
+ * @plugindesc v1.1 Breeding System for Monster Capture Plugins
  * 
  * @help
  * 
@@ -91,6 +91,78 @@
  * @desc Delete parents
  * @type boolean
  * @default false
+ * 
+ * @param Fuse Stats
+ * @desc Allow stat fusion from parents
+ * @type boolean
+ * @default false
+ * 
+ * @param Stat Transfer Value
+ * @parent Fuse Stats
+ * @desc Default values are 0
+ * 
+ * @param Stat Transfer Global Value
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered (globally, additive)
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param HP Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param MP Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param ATK Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param DEF Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param MAT Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param MDF Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param AGI Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param LUK Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
  */
 /*~struct~ActorGender:
  * @param Actor
@@ -117,6 +189,16 @@ try{
         SynrecMC.Breeder.CombinationArray[i]['Required Steps'] = eval(SynrecMC.Breeder.CombinationArray[i]['Required Steps']);
         SynrecMC.Breeder.CombinationArray[i]['Random Steps'] = eval(SynrecMC.Breeder.CombinationArray[i]['Random Steps']);
         SynrecMC.Breeder.CombinationArray[i]['Delete Parents'] = eval(SynrecMC.Breeder.CombinationArray[i]['Delete Parents']);
+        SynrecMC.Breeder.CombinationArray[i]['Fuse Stats'] = eval(SynrecMC.Breeder.CombinationArray[i]['Fuse Stats']);
+        SynrecMC.Breeder.CombinationArray[i]['Stat Transfer Global Value'] = eval(SynrecMC.Breeder.CombinationArray[i]['Stat Transfer Global Value']);
+        SynrecMC.Breeder.CombinationArray[i]['HP Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['HP Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['MP Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['MP Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['ATK Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['ATK Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['DEF Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['DEF Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['MAT Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['MAT Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['MDF Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['MDF Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['AGI Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['AGI Transfer']);
+        SynrecMC.Breeder.CombinationArray[i]['LUK Transfer'] = eval(SynrecMC.Breeder.CombinationArray[i]['LUK Transfer']);
         SynrecMC.Breeder.CombinationArray[i]['Required Actors'] = JSON.parse(SynrecMC.Breeder.CombinationArray[i]['Required Actors']);
         for(let j = 0; j < SynrecMC.Breeder.CombinationArray[i]['Required Actors'].length; j++){
             SynrecMC.Breeder.CombinationArray[i]['Required Actors'][j] = JSON.parse(SynrecMC.Breeder.CombinationArray[i]['Required Actors'][j]);
@@ -166,6 +248,7 @@ Game_Party.prototype.addBreed = function(data){
     obj['Result Actor'] = data['Result Actor'];
     obj['Step Progress'] = 0;
     obj['Step Complete'] = data['Max Steps'];
+    obj['Fusion Params'] = data['Fusion Params'];
     this._breederArray.push(obj);
 }
 
@@ -191,11 +274,31 @@ Game_Party.prototype.progressPreBreed = function(){
                 const obj = {};
                 obj['Result Actor'] = actorId;
                 obj['Max Steps'] = steps;
-                this._breederChild = obj;
+                const percGlobal = ((data['Stat Transfer Global Value'] / 100) || 0)
+                const percAppHp = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppMp = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppAtk = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppDef = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppMat = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppMdf = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppAgi = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppLuk = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                if(data['Fuse Stats']){
+                    const hp = ((this._breederParent1.param(0) + this._breederParent2.param(0)) / 2) * percAppHp;
+                    const mp = ((this._breederParent1.param(1) + this._breederParent2.param(1)) / 2) * percAppMp;
+                    const atk = ((this._breederParent1.param(2) + this._breederParent2.param(2)) / 2) * percAppAtk;
+                    const def = ((this._breederParent1.param(3) + this._breederParent2.param(3)) / 2) * percAppDef;
+                    const mat = ((this._breederParent1.param(4) + this._breederParent2.param(4)) / 2) * percAppMat;
+                    const mdf = ((this._breederParent1.param(5) + this._breederParent2.param(5)) / 2) * percAppMdf;
+                    const agi = ((this._breederParent1.param(6) + this._breederParent2.param(6)) / 2) * percAppAgi;
+                    const luk = ((this._breederParent1.param(7) + this._breederParent2.param(7)) / 2) * percAppLuk;
+                    obj['Fusion Params'] = [hp, mp, atk, def, mat, mdf, agi, luk];
+                }
                 if(data['Delete Parents']){
                     this._breederParent1 = undefined;
                     this._breederParent2 = undefined;
                 }
+                this._breederChild = obj;
             }
         }else this._preBreedSteps++;
     }
@@ -267,11 +370,43 @@ Game_Map.prototype.updateHatch = function(){
             const item = $gameParty._breederArray[i];
             const progress = item['Step Progress'];
             const complete = item['Step Complete'];
+            const averageStats = item['Fusion Params'];
             if(progress >= complete){
-                const actorId = item['Result Actor'];
-                $gameParty.addActor(actorId);
-                $gameParty._breederArray.splice(i, 1);
-                i--
+                if(averageStats){
+                    const actorId = item['Result Actor'];
+                    const actor = new Game_Actor(actorId);
+                    const hp = actor.param(0);
+                    const mp = actor.param(1);
+                    const atk = actor.param(2);
+                    const def = actor.param(3);
+                    const mat = actor.param(4);
+                    const mdf = actor.param(5);
+                    const agi = actor.param(6);
+                    const luk = actor.param(7);
+                    const parAvgs = item['Fusion Params'];
+                    actor._paramPlus[0] += parAvgs[0] - hp;
+                    actor._paramPlus[1] += parAvgs[1] - mp;
+                    actor._paramPlus[2] += parAvgs[2] - atk;
+                    actor._paramPlus[3] += parAvgs[3] - def;
+                    actor._paramPlus[4] += parAvgs[4] - mat;
+                    actor._paramPlus[5] += parAvgs[5] - mdf;
+                    actor._paramPlus[6] += parAvgs[6] - agi;
+                    actor._paramPlus[7] += parAvgs[7] - luk;
+                    actor.setTp(0);
+                    actor.setGender();
+                    if($gameParty._actors.length >= $gameParty.maxBattleMembers()){
+                        actor.onBattleEnd();
+                        $gameParty.addToReserve(actor);
+                    }else{
+                        actor.onBattleStart();
+                        $gameParty._actors.push(actor);
+                    }
+                }else{
+                    const actorId = item['Result Actor'];
+                    $gameParty.addActor(actorId);
+                    $gameParty._breederArray.splice(i, 1);
+                    i--
+                }
             }
         }
     }
@@ -606,6 +741,7 @@ Scene_Breeding.prototype.swapWith1 = function(){
         this._breedCommand.activate();
         return;
     }
+    this.immediateBreed();
     this.cancelCommand();
 }
 
@@ -625,6 +761,7 @@ Scene_Breeding.prototype.swapWith2 = function(){
         this._breedCommand.activate();
         return;
     }
+    this.immediateBreed();
     this.cancelCommand();
 }
 
@@ -637,6 +774,16 @@ Scene_Breeding.prototype.getBreedResult = function(){
         SoundManager.playBuzzer();
         this._breedCommand.activate();
     }
+}
+
+Scene_Breeding.prototype.immediateBreed = function(){
+    if(!$gameParty._breederParent1)return;
+    if(!$gameParty._breederParent2)return;
+    if($gameParty._breederChild)return;
+    if($gameParty._preBreedSteps < $gameParty._preBreedMaxSteps)return;
+    $gameParty.progressPreBreed();
+    $gameParty._preBreedSteps = 0;
+    SoundManager.playRecovery();
 }
 
 Scene_Breeding.prototype.cancelCommand = function(){
@@ -697,7 +844,38 @@ Scene_Hatch.prototype.startHatch = function(){
         }
     }
     const actorId = data['Result Actor'];
-    $gameParty.addActor(actorId);
+    const averageStats = data['Fusion Params'];
+    if(averageStats){
+        const actor = new Game_Actor(actorId);
+        const hp = actor.param(0);
+        const mp = actor.param(1);
+        const atk = actor.param(2);
+        const def = actor.param(3);
+        const mat = actor.param(4);
+        const mdf = actor.param(5);
+        const agi = actor.param(6);
+        const luk = actor.param(7);
+        const parAvgs = data['Fusion Params'];
+        actor._paramPlus[0] += parAvgs[0] - hp;
+        actor._paramPlus[1] += parAvgs[1] - mp;
+        actor._paramPlus[2] += parAvgs[2] - atk;
+        actor._paramPlus[3] += parAvgs[3] - def;
+        actor._paramPlus[4] += parAvgs[4] - mat;
+        actor._paramPlus[5] += parAvgs[5] - mdf;
+        actor._paramPlus[6] += parAvgs[6] - agi;
+        actor._paramPlus[7] += parAvgs[7] - luk;
+        actor.setTp(0);
+        actor.setGender();
+        if($gameParty._actors.length >= $gameParty.maxBattleMembers()){
+            actor.onBattleEnd();
+            $gameParty.addToReserve(actor);
+        }else{
+            actor.onBattleStart();
+            $gameParty._actors.push(actor);
+        }
+    }else{
+        $gameParty.addActor(actorId);
+    }
     const actorData = $dataActors[actorId];
     const img = actorData.characterName;
     const idx = actorData.characterIndex;

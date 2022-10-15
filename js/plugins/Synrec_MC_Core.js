@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v3.1 Monster Capture for RPG Maker MZ 
+ * @plugindesc v3.2 Monster Capture for RPG Maker MZ 
  *
  *@help
  *
@@ -1746,7 +1746,10 @@ Scene_RsvpBox.prototype.doSwap = function(){
 Scene_RsvpBox.prototype.doDelete = function(){
     if(this._winType == 'team'){
         const index = this._teamWindow.index();
-        if($gameParty._actors[index]){
+        if(
+            $gameParty._actors[index] &&
+            $gameParty._actors.length <= 1
+        ){
             $gameParty._actors.splice(index, 1);
         }else SoundManager.playBuzzer();
     }
@@ -1827,3 +1830,23 @@ Scene_RsvpBox.prototype.cancelSwap = function(){
     this._reserveWindow.deactivate();
     this._teamWindow.activate();
 }
+
+function Scene_Rename(){
+    this.initialize(...arguments);
+}
+
+Scene_Rename.prototype = Object.create(Scene_Base.prototype);
+Scene_Rename.prototype.constructor = Scene_Rename;
+
+Scene_Rename.prototype.create = function(){
+    this.createWindowLayer();
+    this.createAllWindows();
+}
+
+Scene_Rename.prototype.createAllWindows = function(){
+    this.createNameEdit();
+    this.createNameInput();
+    this.createNameBox();
+}
+
+Scene_Rename.prototype.createNameEdit = function(){}

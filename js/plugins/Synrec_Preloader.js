@@ -1,19 +1,16 @@
 /*:
  * @author Synrec
- * @plugindesc v1.2 Preloads all image and audio for the game on start
- * 
+ * @plugindesc v2.0 Preloads all image and audio for the game on start
+ * @url https://synrec.itch.io
  * @target MZ
  * 
  * @help
  * This plugin will load the audio and image data that usually appears
  * when loading a new project.
  * 
- * Plugin will NOT load animations. Don't ask because it never will either.
+ * Plugin will NEVER preload animations. Don't ask because it never will either.
  * 
- * Please check out my site https://synrec.dev for more info.
  * 
- * WARNING: This is extremely consumptive on the device memory.
- * May require increasing the device requirements for your project.
  * 
  * TERMS OF USE:
  * > You are REQUIRED to credit Synrec in your project.
@@ -23,1293 +20,347 @@
  * > Do not redistribute for educational purposes.
  * > Do not use for malicious intent.
  * 
+ * @param General Settings
+ * 
+ * @param Load Rate
+ * @desc Speed to preload data
+ * @type number
+ * @default 1
+ * @parent General Settings
+ * 
+ * @param Preload Background
+ * @desc Background Image used for the preload scene.
+ * @type file
+ * @dir img/pictures
+ * @parent General Settings
+ * 
+ * @param Preload Text
+ * @desc Text to display when preload ends.
+ * @type text
+ * @default COMPLETE!
+ * @parent General Settings
  * 
  * @param Audio Settings
  * 
- * @param BGM To Ignore
+ * @param Audio To Ignore
  * @desc List of BGM files to ignore when loading data.
  * @type file[]
- * @dir audio/bgm
+ * @dir audio
  * @default []
  * @parent Audio Settings
  * 
- * @param Ignore All BGM
- * @desc Ignores all audio in folder
+ * @param Ignore All Audio
+ * @desc Ignores all audio.
  * @type boolean
  * @default true
  * @parent BGM To Ignore
  * 
- * @param BGS To Ignore
- * @desc List of BGS files to ignore when loading data.
- * @type file[]
- * @dir audio/bgs
- * @default []
- * @parent Audio Settings
- * 
- * @param Ignore All BGS
- * @desc Ignores all audio in folder
- * @type boolean
- * @default true
- * @parent BGS To Ignore
- * 
- * @param ME To Ignore
- * @desc List of ME files to ignore when loading data.
- * @type file[]
- * @dir audio/me
- * @default []
- * @parent Audio Settings
- * 
- * @param Ignore All ME
- * @desc Ignores all audio in folder
- * @type boolean
- * @default true
- * @parent ME To Ignore
- * 
- * @param SE To Ignore
- * @desc List of SE files to ignore when loading data.
- * @type file[]
- * @dir audio/se
- * @default []
- * @parent Audio Settings
- * 
- * @param Ignore All SE
- * @desc Ignores all audio in folder
- * @type boolean
- * @default true
- * @parent SE To Ignore
- * 
  * @param Image Settings
  * 
- * @param BattleBacks1 To Ignore
+ * @param Image To Ignore
  * @desc Ignores listed images
  * @type file[]
- * @dir img/battlebacks1
+ * @dir img
  * @default []
  * @parent Image Settings
  * 
- * @param Ignore All BattleBacks1
- * @desc Ignores entire folder
+ * @param Ignore All Image
+ * @desc Ignores all images.
  * @type boolean
  * @default true
  * @parent BattleBacks1 To Ignore
  * 
- * @param BattleBacks2 To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/battlebacks2
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All BattleBacks2
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent BattleBacks2 To Ignore
- * 
- * @param Characters To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/characters
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Characters
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Characters To Ignore
- * 
- * @param Enemies To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/enemies
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Enemies
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Enemies To Ignore
- * 
- * @param Faces To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/faces
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Faces
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Faces To Ignore
- * 
- * @param Parallaxes To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/parallaxes
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Parallaxes
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Parallaxes To Ignore
- * 
- * @param Pictures To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/pictures
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Pictures
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Pictures To Ignore
- * 
- * @param SV Actors To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/sv_actors
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All SV Actors
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent SV Actors To Ignore
- * 
- * @param SV Enemies To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/sv_enemies
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All SV Enemies
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent SV Enemies To Ignore
- * 
- * @param System To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/system
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All System
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent System To Ignore
- * 
- * @param Tilesets To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/tilesets
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Tilesets
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Tilesets To Ignore
- * 
- * @param Titles1 To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/titles1
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Titles1
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Titles1 To Ignore
- * 
- * @param Titles2 To Ignore
- * @desc Ignores listed images
- * @type file[]
- * @dir img/titles2
- * @default []
- * @parent Image Settings
- * 
- * @param Ignore All Titles2
- * @desc Ignores entire folder
- * @type boolean
- * @default true
- * @parent Titles2 To Ignore
- * 
  */
+const fs = require('fs');
+const path = require('path');
 
 let SynrecPL = {};
-SynrecPL.Version = '1.2';
 SynrecPL.Plugin = PluginManager.parameters('Synrec_Preloader')
 
-SynrecPL.IgnoreBGM = JSON.parse(SynrecPL.Plugin['BGM To Ignore']);
-SynrecPL.IgnoreBGS = JSON.parse(SynrecPL.Plugin['BGS To Ignore']);
-SynrecPL.IgnoreME = JSON.parse(SynrecPL.Plugin['ME To Ignore']);
-SynrecPL.IgnoreSE = JSON.parse(SynrecPL.Plugin['SE To Ignore']);
+SynrecPL.Background = SynrecPL.Plugin['Preload Background'];
+SynrecPL.PreloadText = SynrecPL.Plugin['Preload Text'];
+SynrecPL.PreloadRate = eval(SynrecPL.Plugin['Load Rate']) || 0;
 
-SynrecPL.IgnoreAllBGM = eval(SynrecPL.Plugin['Ignore All BGM']);
-SynrecPL.IgnoreAllBGS = eval(SynrecPL.Plugin['Ignore All BGS']);
-SynrecPL.IgnoreAllME = eval(SynrecPL.Plugin['Ignore All ME']);
-SynrecPL.IgnoreAllSE = eval(SynrecPL.Plugin['Ignore All SE']);
+SynrecPL.IgnoreAudioAll = eval(SynrecPL.Plugin['Ignore All Audio']);
+SynrecPL.IgnoreImageAll = eval(SynrecPL.Plugin['Ignore All Image']);
 
-SynrecPL.IgnoreBattBack1 = JSON.parse(SynrecPL.Plugin['BattleBacks1 To Ignore']);
-SynrecPL.IgnoreBattBack2 = JSON.parse(SynrecPL.Plugin['BattleBacks2 To Ignore']);
-SynrecPL.IgnoreCharas = JSON.parse(SynrecPL.Plugin['Characters To Ignore']);
-SynrecPL.IgnoreEnems = JSON.parse(SynrecPL.Plugin['Enemies To Ignore']);
-SynrecPL.IgnoreFaces = JSON.parse(SynrecPL.Plugin['Faces To Ignore']);
-SynrecPL.IgnoreParallax = JSON.parse(SynrecPL.Plugin['Parallaxes To Ignore']);
-SynrecPL.IgnorePictures = JSON.parse(SynrecPL.Plugin['Pictures To Ignore']);
-SynrecPL.IgnoreSvAct = JSON.parse(SynrecPL.Plugin['SV Actors To Ignore']);
-SynrecPL.IgnoreSvEnem = JSON.parse(SynrecPL.Plugin['SV Enemies To Ignore']);
-SynrecPL.IgnoreSys = JSON.parse(SynrecPL.Plugin['System To Ignore']);
-SynrecPL.IgnoreTileset = JSON.parse(SynrecPL.Plugin['Tilesets To Ignore']);
-SynrecPL.IgnoreTitle1 = JSON.parse(SynrecPL.Plugin['Titles1 To Ignore']);
-SynrecPL.IgnoreTitle2 = JSON.parse(SynrecPL.Plugin['Titles2 To Ignore']);
-
-SynrecPL.IgnoreAllBattBack1 = eval(SynrecPL.Plugin['Ignore All BattleBacks1']);
-SynrecPL.IgnoreAllBattBack2 = eval(SynrecPL.Plugin['Ignore All BattleBacks2']);
-SynrecPL.IgnoreAllCharas = eval(SynrecPL.Plugin['Ignore All Characters']);
-SynrecPL.IgnoreAllEnems = eval(SynrecPL.Plugin['Ignore All Enemies']);
-SynrecPL.IgnoreAllFaces = eval(SynrecPL.Plugin['Ignore All Faces']);
-SynrecPL.IgnoreAllParallax = eval(SynrecPL.Plugin['Ignore All Parallaxes']);
-SynrecPL.IgnoreAllPictures = eval(SynrecPL.Plugin['Ignore All Pictures']);
-SynrecPL.IgnoreAllSvAct = eval(SynrecPL.Plugin['Ignore All SV Actors']);
-SynrecPL.IgnoreAllSvEnem = eval(SynrecPL.Plugin['Ignore All SV Enemies']);
-SynrecPL.IgnoreAllSys = eval(SynrecPL.Plugin['Ignore All System']);
-SynrecPL.IgnoreAllTileset = eval(SynrecPL.Plugin['Ignore All Tilesets']);
-SynrecPL.IgnoreAllTitle1 = eval(SynrecPL.Plugin['Ignore All Titles1']);
-SynrecPL.IgnoreAllTitle2 = eval(SynrecPL.Plugin['Ignore All Titles2']);
-
-
-PrelrdScnBse = Scene_Base.prototype.start;
-Scene_Base.prototype.start = function() {
-    PrelrdScnBse.call(this);
-    SceneManager.preloadData();
+try{
+    SynrecPL.IgnoreAudio = JSON.parse(SynrecPL.Plugin['Audio To Ignore']);
+}catch(e){
+    console.error(e);
+    SynrecPL.IgnoreAudio = [];
+}
+try{
+    SynrecPL.IgnoreImage = JSON.parse(SynrecPL.Plugin['Image To Ignore']);
+}catch(e){
+    console.error(e);
+    SynrecPL.IgnoreImage = [];
 }
 
-SceneManager.preloadData = function(){
-    this.preloadAudio();
-    this.preloadImage();
+ImageManager._preloadedImages = {};
+AudioManager._preloadedAudio = {};
+
+SynrecPLImgMngrLoadBitmap = ImageManager.loadBitmap;
+ImageManager.loadBitmap = function(folder, filename) {
+    const preloads = ImageManager._preloadedImages;
+    const folderPreload = preloads[`${folder}`];
+    if(folderPreload){
+        if(folderPreload[`${filename}`]){
+            const savedBitmap = folderPreload[`${filename}`];
+            savedBitmap._paintOpacity = 255;
+            return savedBitmap;
+        }
+    }else ImageManager._preloadedImages[`${folder}`] = {};
+    const newBitmap = SynrecPLImgMngrLoadBitmap.call(this, folder, filename);
+    newBitmap.destroy = function(){this._paintOpacity = 0}
+    if(!this.isIgnored(folder, filename))ImageManager._preloadedImages[`${folder}`][`${filename}`] = newBitmap;
+    return newBitmap;
 }
 
-SceneManager.preloadAudio = function(){
-    if(!this._savedBgm)this._savedBgm = [];
-    if(!this._savedBgs)this._savedBgs = [];
-    if(!this._savedMe)this._savedMe = [];
-    if(!this._savedSe)this._savedSe = [];
-    //const source = process.cwd().replace(/\\/g, '/');
-    const fs = require('fs');
-    const bgmDir = `./audio/bgm/`;
-    const bgsDir = `./audio/bgs/`;
-    const meDir = `./audio/me/`;
-    const seDir = `./audio/se/`;
-    const bgmFiles = fs.readdirSync(`${bgmDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const bgsFiles = fs.readdirSync(`${bgsDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const meFiles = fs.readdirSync(`${meDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const seFiles = fs.readdirSync(`${seDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    if(this._savedBgm.length <= 0 && !SynrecPL.IgnoreAllBGM)this.preloadBgm(bgmFiles, bgmDir);
-    if(this._savedBgs.length <= 0 && !SynrecPL.IgnoreAllBGS)this.preloadBgs(bgsFiles, bgsDir);
-    if(this._savedMe.length <= 0 && !SynrecPL.IgnoreAllME)this.preloadMe(meFiles, meDir);
-    if(this._savedSe.length <= 0 && !SynrecPL.IgnoreAllSE)this.preloadSe(seFiles, seDir);
-}
-
-SceneManager.preloadImage = function(){
-    if(!this._savedBattBack1)this._savedBattBack1 = [];
-    if(!this._savedBattBack2)this._savedBattBack2 = [];
-    if(!this._savedCharas)this._savedCharas = [];
-    if(!this._savedEnems)this._savedEnems = [];
-    if(!this._savedFaces)this._savedFaces = [];
-    if(!this._savedParallax)this._savedParallax = [];
-    if(!this._savedPictures)this._savedPictures = [];
-    if(!this._savedSvAct)this._savedSvAct = [];
-    if(!this._savedSvEnem)this._savedSvEnem = [];
-    if(!this._savedSys)this._savedSys = [];
-    if(!this._savedTileset)this._savedTileset = [];
-    if(!this._savedTitles1)this._savedTitles1 = [];
-    if(!this._savedTitles2)this._savedTitles2 = [];
-    const fs = require('fs');
-    const battBack1Dir = `./img/battlebacks1/`;
-    const battBack2Dir = `./img/battlebacks2/`;
-    const charasDir = `./img/characters/`;
-    const enemsDir = `./img/enemies/`;
-    const facesDir = `./img/faces/`;
-    const parallaxDir = `./img/parallaxes/`;
-    const picturesDir = `./img/pictures/`;
-    const svActDir = `./img/sv_actors/`;
-    const svEnemDir = `./img/sv_enemies/`;
-    const sysDir = `./img/system/`;
-    const tilesetDir = `./img/tilesets/`;
-    const titles1Dir = `./img/titles1/`;
-    const titles2Dir = `./img/titles2/`;
-    const battBack1Files = fs.readdirSync(`${battBack1Dir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const battBack2Files = fs.readdirSync(`${battBack2Dir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const charasFiles = fs.readdirSync(`${charasDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const enemsFiles = fs.readdirSync(`${enemsDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const facesFiles = fs.readdirSync(`${facesDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const parallaxFiles = fs.readdirSync(`${parallaxDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const picturesFiles = fs.readdirSync(`${picturesDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const svActFiles = fs.readdirSync(`${svActDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const svEnemFiles = fs.readdirSync(`${svEnemDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const sysFiles = fs.readdirSync(`${sysDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const tilesetFiles = fs.readdirSync(`${tilesetDir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const titles1Files = fs.readdirSync(`${titles1Dir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    const titles2Files = fs.readdirSync(`${titles2Dir}`, 'utf-8', (e,f)=>{
-        if(e){
-            throw (`No such directory: ${e}`);
-        }
-        return f;
-    });
-    if(this._savedBattBack1.length <= 0 && !SynrecPL.IgnoreAllBattBack1)this.preloadBattBack1(battBack1Files, battBack1Dir);
-    if(this._savedBattBack2.length <= 0 && !SynrecPL.IgnoreAllBattBack2)this.preloadBattBack2(battBack2Files, battBack2Dir);
-    if(this._savedCharas.length <= 0 && !SynrecPL.IgnoreAllCharas)this.preloadCharas(charasFiles, charasDir);
-    if(this._savedEnems.length <= 0 && !SynrecPL.IgnoreAllEnems)this.preloadEnems(enemsFiles, enemsDir);
-    if(this._savedFaces.length <= 0 && !SynrecPL.IgnoreAllFaces)this.preloadFaces(facesFiles, facesDir);
-    if(this._savedParallax.length <= 0 && !SynrecPL.IgnoreAllParallax)this.preloadParallax(parallaxFiles, parallaxDir);
-    if(this._savedPictures.length <= 0 && !SynrecPL.IgnoreAllPictures)this.preloadPictures(picturesFiles, picturesDir);
-    if(this._savedSvAct.length <= 0 && !SynrecPL.IgnoreAllSvAct)this.preloadSvAct(svActFiles, svActDir);
-    if(this._savedSvEnem.length <= 0 && !SynrecPL.IgnoreAllSvEnem)this.preloadSvEnem(svEnemFiles, svEnemDir);
-    if(this._savedSys.length <= 0 && !SynrecPL.IgnoreAllSys)this.preloadSys(sysFiles, sysDir);
-    if(this._savedTileset.length <= 0 && !SynrecPL.IgnoreAllTileset)this.preloadTileset(tilesetFiles, tilesetDir);
-    if(this._savedTitles1.length <= 0 && !SynrecPL.IgnoreAllTitle1)this.preloadTitle1(titles1Files, titles1Dir);
-    if(this._savedTitles2.length <= 0 && !SynrecPL.IgnoreAllTitle2)this.preloadTitle2(titles2Files, titles2Dir);
-}
-
-SceneManager.preloadBgm = function(files, dir){
-    this._savedBgm = [];
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadBGM(url);
-        if(!isIgnored){
-            const buffer = new WebAudio(url);
-            buffer.name = path.basename(file, audioExt);
-            this._savedBgm.push(buffer);
-        }
+ImageManager.isIgnored = function(path, name){
+    const folder = path.split('/')[2];
+    const folderFile = folder.concat('/',name);
+    if(SynrecPL.IgnoreImage.includes(folderFile)){
+        console.log(folderFile);
+        return true;
     }
 }
 
-SceneManager.ignorePreloadBGM = function(BGM){
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    if(!BGM)return false;
-    for(let i = 0; i < SynrecPL.IgnoreBGM.length; i++){
-        const bgm = `${SynrecPL.IgnoreBGM[i]}${audioExt}`;
-        const baseBgm = path.basename(bgm);
-        const checkBgm = path.basename(BGM);
-        if(checkBgm == baseBgm)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadBgs = function(files, dir){
-    this._savedBgs = [];
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadBGS(url);
-        if(!isIgnored){
-            const buffer = new WebAudio(url);
-            buffer.name = path.basename(file, audioExt);
-            this._savedBgs.push(buffer);
+SynrecPLAudMngrCrtBuffer = AudioManager.createBuffer;
+AudioManager.createBuffer = function(folder, name) {
+    const preloads = AudioManager._preloadedAudio;
+    const folderPreload = preloads[`${folder}`];
+    if(folderPreload){
+        if(folderPreload[`${name}`]){
+            folderPreload[`${name}`].frameCount = Graphics.frameCount;
+            const savedBuffer = folderPreload[`${name}`];
+            return savedBuffer;
         }
+    }else AudioManager._preloadedAudio[`${folder}`] = {};
+    const newBuffer = SynrecPLAudMngrCrtBuffer.call(this, folder, name);
+    newBuffer.destroy = function(){this.stop()} //Special thanks to snaphat for the mod.
+    if(!this.isIgnored(folder.concat(name)))AudioManager._preloadedAudio[`${folder}`][`${name}`] = newBuffer;
+    return newBuffer;
+}
+
+AudioManager.isIgnored = function(folderFile){
+    if(SynrecPL.IgnoreAudio.includes(folderFile)){
+        return true;
     }
 }
 
-SceneManager.ignorePreloadBGS = function(BGS){
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    if(!BGS)return false;
-    for(let i = 0; i < SynrecPL.IgnoreBGS.length; i++){
-        const bgs = `${SynrecPL.IgnoreBGS[i]}${audioExt}`;
-        const baseBgs = path.basename(bgs);
-        const checkBgs = path.basename(BGS);
-        if(checkBgs == baseBgs)return true;
-    }
-    return false;
+function Sprite_PreloadGauge(){
+    this.initialize(...arguments);
 }
 
-SceneManager.preloadMe = function(files, dir){
-    this._savedMe = [];
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadME(url);
-        if(!isIgnored){
-            const buffer = new WebAudio(url);
-            buffer.name = path.basename(file, audioExt);
-            this._savedMe.push(buffer);
-        }
-    }
+Sprite_PreloadGauge.prototype = Object.create(Sprite.prototype);
+Sprite_PreloadGauge.prototype.constructor = Sprite_PreloadGauge;
+
+Sprite_PreloadGauge.prototype.initialize = function(bitmap){
+    Sprite.prototype.initialize.call(this, bitmap);
+    this.createBackSprite();
+    this.createGaugeSprite();
 }
 
-SceneManager.ignorePreloadME = function(ME){
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    if(!ME)return false;
-    for(let i = 0; i < SynrecPL.IgnoreME.length; i++){
-        const me = `${SynrecPL.IgnoreME[i]}${audioExt}`;
-        const baseMe = path.basename(me);
-        const checkMe = path.basename(ME);
-        if(checkMe == baseMe)return true;
-    }
-    return false;
+Sprite_PreloadGauge.prototype.createBackSprite = function(){
+    this._backSprite = new Sprite();
+    this._backSprite.bitmap = new Bitmap(Graphics.width, Graphics.height * 0.1);
+    this.addChild(this._backSprite);
+    const bitmap = this._backSprite.bitmap
+    bitmap.fillRect(0, 0, bitmap.width, bitmap.height, '#000000');
+    bitmap.fillRect(2, 2, bitmap.width - 4, bitmap.height - 4, '#ffffff');
 }
 
-SceneManager.preloadSe = function(files, dir){
-    this._savedSe = [];
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadSE(url);
-        if(!isIgnored){
-            const buffer = new WebAudio(url);
-            buffer.name = path.basename(file, audioExt);
-            this._savedSe.push(buffer);
-        }
-    }
+Sprite_PreloadGauge.prototype.createGaugeSprite = function(){
+    this._gaugeSprite = new Sprite();
+    this._gaugeSprite.bitmap = new Bitmap(Graphics.width, Graphics.height * 0.1);
+    this.addChild(this._gaugeSprite);
 }
 
-SceneManager.ignorePreloadSE = function(SE){
-    const path = require('path');
-    const audioExt = AudioManager.audioFileExt();
-    if(!SE)return false;
-    for(let i = 0; i < SynrecPL.IgnoreSE.length; i++){
-        const se = `${SynrecPL.IgnoreSE[i]}${audioExt}`;
-        const baseSe = path.basename(se);
-        const checkSe = path.basename(SE);
-        if(checkSe == baseSe)return true;
-    }
-    return false;
+Sprite_PreloadGauge.prototype.update = function(){
+    Sprite.prototype.update.call(this);
+    this.updatePreloadGauge();
 }
 
-SceneManager.preloadBattBack1 = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadBattBack1(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedBattBack1.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadBattBack1 = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreBattBack1.length; i++){
-        const img = `${SynrecPL.IgnoreBattBack1[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadBattBack2 = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadBattBack2(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedBattBack2.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadBattBack2 = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreBattBack2.length; i++){
-        const img = `${SynrecPL.IgnoreBattBack2[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadCharas = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadCharas(url);
-        if(!isIgnored){
-            let image = {}
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedCharas.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadCharas = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreCharas.length; i++){
-        const img = `${SynrecPL.IgnoreCharas[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadEnems = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadEnems(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedEnems.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadEnems = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreEnems.length; i++){
-        const img = `${SynrecPL.IgnoreEnems[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadFaces = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadFaces(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedFaces.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadFaces = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreFaces.length; i++){
-        const img = `${SynrecPL.IgnoreFaces[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadParallax = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadParallax(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedParallax.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadParallax = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreParallax.length; i++){
-        const img = `${SynrecPL.IgnoreParallax[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadPictures = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadPicture(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedPictures.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadPicture = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnorePictures.length; i++){
-        const img = `${SynrecPL.IgnorePictures[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadSvAct = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadSvAct(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedSvAct.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadSvAct = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreSvAct.length; i++){
-        const img = `${SynrecPL.IgnoreSvAct[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadSvEnem = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadSvEnem(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedSvEnem.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadSvEnem = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreSvEnem.length; i++){
-        const img = `${SynrecPL.IgnoreSvEnem[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadSys = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadSys(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedSys.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadSys = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreSys.length; i++){
-        const img = `${SynrecPL.IgnoreSys[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadTileset = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadTileset(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedTileset.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadTileset = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreTileset.length; i++){
-        const img = `${SynrecPL.IgnoreTileset[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadTitle1 = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadTitle1(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedTitles1.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadTitle1 = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreTitle1.length; i++){
-        const img = `${SynrecPL.IgnoreTitle1[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-SceneManager.preloadTitle2 = function(files, dir){
-    const path = require('path');
-    for(let i = 0; i < files.length; i++){
-        const file = files[i];
-        const url = `${dir}/${file}`
-        const isIgnored = this.ignorePreloadTitle2(url);
-        if(!isIgnored){
-            let image = {};
-            image.name = path.basename(file, '.png');
-            image.data = Bitmap.load(url);
-            this._savedTitles2.push(image);
-        }
-    }
-}
-
-SceneManager.ignorePreloadTitle2 = function(img){
-    const path = require('path');
-    const imageExt = '.png';
-    if(!img)return false;
-    for(let i = 0; i < SynrecPL.IgnoreTitle2.length; i++){
-        const img = `${SynrecPL.IgnoreTitle2[i]}${imageExt}`;
-        const baseImg = path.basename(img);
-        const checkImg = path.basename(img);
-        if(checkImg == baseImg)return true;
-    }
-    return false;
-}
-
-PrelrdAudioPlyBgm = AudioManager.playBgm;
-AudioManager.playBgm = function(bgm, pos) {
-    if (this.isCurrentBgm(bgm)) {
-        PrelrdAudioPlyBgm.call(this, bgm, pos);
+Sprite_PreloadGauge.prototype.updatePreloadGauge = function(){
+    const scene = SceneManager._scene;
+    const maxLoad = scene._preloadMax;
+    const currentLoad = scene._preloadCur;
+    const rate = currentLoad/maxLoad;
+    const bitmap = this._gaugeSprite.bitmap;
+    const x = 4;
+    const y = 4;
+    const w = bitmap.width - 8;
+    const h = bitmap.height - 8;
+    bitmap.clear();
+    if(rate < 1){
+        bitmap.fillRect(x, y, w * rate, h, '#00ff00');
     }else{
-        if(this.hasSavedBgm(bgm, pos))return;
+        this._backSprite.bitmap.clear();
+        bitmap.drawText(SynrecPL.PreloadText, 0, 0, bitmap.width, bitmap.height, 'center');
     }
 }
 
-PrelrdAudioPlyBgs = AudioManager.playBgs;
-AudioManager.playBgs = function(bgs, pos) {
-    if (this.isCurrentBgs(bgs)) {
-        PrelrdAudioPlyBgs.call(this, bgs, pos)
-    } else {
-        if(this.hasSavedBgs(bgs, pos))return;
-    }
+function Scene_Preload(){
+    this.initialize(...arguments);
 }
 
-PrelrdAudioPlyMe = AudioManager.playMe;
-AudioManager.playMe = function(me) {
-    this.stopMe();
-    if (me.name) {
-        if(this.hasSavedMe(me))return;
-        PrelrdAudioPlyMe.call(this, me);
-    }
+Scene_Preload.prototype = Object.create(Scene_Base.prototype);
+Scene_Preload.prototype.constructor = Scene_Preload;
+
+Scene_Preload.prototype.initialize = function(){
+    Scene_Base.prototype.initialize.call(this);
+    this._preloadCur = 0;
+    this._preloadMax = Infinity;
 }
 
-PrelrdAudioPlySe = AudioManager.playSe;
-AudioManager.playSe = function(se) {
-    if (se.name) {
-        if(this.hasSavedSe(se))return;
-        PrelrdAudioPlySe.call(this, se);
-    }
-};
+Scene_Preload.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackground();
+    this.createSpriteGauge();
+    this.createPreloadList();
+}
 
-AudioManager.hasSavedBgm = function(bgm, pos){
-    const savedBgm = SceneManager._savedBgm;
-    const name = bgm.name;
-    for(let i = 0; i < savedBgm.length; i++){
-        const saved = savedBgm[i];
-        if(saved.name == name){
-            saved.frameCount = Graphics.frameCount;
-            this.stopBgm();
-            this._bgmBuffer = saved;
-            this.updateBgmParameters(bgm);
-            if (!this._meBuffer) {
-                this._bgmBuffer.play(true, pos || 0);
+Scene_Preload.prototype.createBackground = function(){
+    this._background = new TilingSprite();
+    if(SynrecPL.Background)this._background.bitmap = ImageManager.loadPicture(SynrecPL.Background);
+    this._background.move(0, 0, Graphics.width, Graphics.height);
+    this.addChild(this._background);
+}
+
+Scene_Preload.prototype.createSpriteGauge = function(){
+    this._loadGauge = new Sprite_PreloadGauge();
+    this.addChild(this._loadGauge);
+}
+
+Scene_Preload.prototype.createPreloadList = function(){
+    this._preloadList = {};
+    this._preloadList.audio = [];
+    this._preloadList.image = [];
+    if(!SynrecPL.IgnoreAudioAll)this.createAudioPreload();
+    if(!SynrecPL.IgnoreImageAll)this.createImagePreload();
+    this.initPreload();
+}
+
+Scene_Preload.prototype.createAudioPreload = function(){
+    const audioList = [];
+    try{
+        const folders = fs.readdirSync('./audio/');
+        folders.forEach((folder)=>{
+            try{
+                const files = fs.readdirSync(`./audio/${folder}/`);
+                files.forEach((file)=>{
+                    if(file.match(/.*.ogg/gi)){
+                        const obj = {};
+                        obj.dir = `${folder}/`;
+                        obj.file = path.basename(file, '.ogg');
+                        audioList.push(obj);
+                    }
+                })
+            }catch(e){
+                console.error(`Failed to preload audio file.`)
             }
-            this.updateCurrentBgm(bgm, pos);
-            return true;
-        }
+        })
+    }catch(e){
+        console.error(e);
     }
-    return false;
+    this._preloadList.audio = audioList;
 }
 
-AudioManager.hasSavedBgs = function(bgs, pos){
-    const savedBgs = SceneManager._savedBgs;
-    const name = bgs.name;
-    for(let i = 0; i < savedBgs.length; i++){
-        const saved = savedBgs[i];
-        if(saved.name == name){
-            saved.frameCount = Graphics.frameCount;
-            this.stopBgs();
-            this._bgsBuffer = saved;
-            this.updateBgsParameters(bgs);
-            if (!this._meBuffer) {
-                this._bgsBuffer.play(true, pos || 0);
+Scene_Preload.prototype.createImagePreload = function(){
+    const imageList = [];
+    try{
+        const folders = fs.readdirSync('./img/');
+        folders.forEach((folder)=>{
+            try{
+                const files = fs.readdirSync(`./img/${folder}/`);
+                files.forEach((file)=>{
+                    if(file.match(/.*.png/gi)){
+                        const obj = {};
+                        obj.dir = `./img/${folder}/`;
+                        obj.file = path.basename(file, '.png');
+                        imageList.push(obj);
+                    }
+                })
+            }catch(e){
+                console.error(`Failed to image audio file.`)
             }
-            this.updateCurrentBgs(bgs, pos);
-            return true;
+        })
+    }catch(e){
+        console.error(e);
+    }
+    this._preloadList.image = imageList;
+}
+
+Scene_Preload.prototype.initPreload = function(){
+    this._preloadCur = 0;
+    this._preloadMax = this._preloadList.image.length + this._preloadList.audio.length;
+    this._preloadMode = 'audio';
+    this._audioPreload = 0;
+    this._audioMax = this._preloadList.audio.length;
+    this._imagePreload = 0;
+    this._imageMax = this._preloadList.image.length;
+    this._initPreload = true;
+}
+
+Scene_Preload.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updatePreload();
+}
+
+Scene_Preload.prototype.updatePreload = function(){
+    if(!this._initPreload)return;
+    if(!this._preloadList)return SceneManager.goto(Scene_Title);
+    if(this._preloadMax <= 0)return SceneManager.goto(Scene_Title);
+    this._preloadCur = this._audioPreload + this._imagePreload;
+    switch(this._preloadMode){
+        case 'audio': return this.audioPreload();
+        case 'image': return this.imagePreload();
+        case 'complete': return this.completePreload();
+    }
+}
+
+Scene_Preload.prototype.audioPreload = function(){
+    for(let i = 0; i < SynrecPL.PreloadRate; i++){
+        const index = this._audioPreload;
+        const audio_object = this._preloadList.audio[index];
+        const folder = audio_object.dir;
+        const name = audio_object.file;
+        AudioManager.createBuffer(folder, name);
+        this._audioPreload++;
+        if(this._audioPreload >= this._audioMax){
+            this._preloadMode = 'image';
+            break;
         }
     }
-    return false;
 }
 
-AudioManager.hasSavedMe = function(me){
-    const savedMe = SceneManager._savedMe;
-    const name = me.name;
-    for(let i = 0; i < savedMe.length; i++){
-        const saved = savedMe[i];
-        if(saved.name == name){
-            saved.frameCount = Graphics.frameCount;
-            if (this._bgmBuffer && this._currentBgm) {
-                this._currentBgm.pos = this._bgmBuffer.seek();
-                this._bgmBuffer.stop();
-            }
-            this._meBuffer = saved;
-            this.updateMeParameters(me);
-            this._meBuffer.play(false);
-            this._meBuffer.addStopListener(this.stopMe.bind(this));
-            return true;
+Scene_Preload.prototype.imagePreload = function(){
+    for(let i = 0; i < SynrecPL.PreloadRate; i++){
+        const index = this._imagePreload;
+        const image_object = this._preloadList.image[index];
+        const folder = image_object.dir;
+        const name = image_object.file;
+        ImageManager.loadBitmap(folder, name);
+        this._imagePreload++;
+        if(this._imagePreload >= this._imageMax){
+            this._preloadMode = 'complete';
+            break;
         }
     }
-    return false;
 }
 
-AudioManager.hasSavedSe = function(se){
-    const savedSe = SceneManager._savedSe;
-    const name = se.name;
-    for(let i = 0; i < savedSe.length; i++){
-        const saved = savedSe[i];
-        if(saved.name == name){
-            saved.frameCount = Graphics.frameCount;
-            const latestBuffers = this._seBuffers.filter(
-                buffer => buffer.frameCount === Graphics.frameCount
-            );
-            if (latestBuffers.find(buffer => buffer.name === se.name)) {
-                return;
-            }
-            const buffer = saved;
-            this.updateSeParameters(buffer, se);
-            buffer.play(false);
-            this._seBuffers.push(buffer);
-            this.cleanupSe();
-            return true;
-        }
+Scene_Preload.prototype.completePreload = function(){
+    if(Input.isTriggered('ok') || Input.isTriggered('cancel')){
+        SceneManager.goto(Scene_Title);
     }
-    return false;
 }
 
-SynrecPLImgManLoadBattBack1 = ImageManager.loadBattleback1;
-ImageManager.loadBattleback1 = function(filename) {
-    const base = SynrecPLImgManLoadBattBack1.call(this, filename);
-    const preload = this.preloadBattBack1(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadBattBack1 = function(filename){
-    if(!SceneManager._savedBattBack1)return undefined;
-    for(let i = 0; i < SceneManager._savedBattBack1.length; i++){
-        const image = SceneManager._savedBattBack1[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadBattBack2 = ImageManager.loadBattleback2;
-ImageManager.loadBattleback2 = function(filename) {
-    const base = SynrecPLImgManLoadBattBack2.call(this, filename);
-    const preload = this.preloadBattBack2(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadBattBack2 = function(filename){
-    if(!SceneManager._savedBattBack2)return undefined;
-    for(let i = 0; i < SceneManager._savedBattBack2.length; i++){
-        const image = SceneManager._savedBattBack2[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadEnem = ImageManager.loadEnemy;
-ImageManager.loadEnemy = function(filename) {
-    const base = SynrecPLImgManLoadEnem.call(this, filename);
-    const preload = this.preloadEnem(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadEnem = function(filename){
-    if(!SceneManager._savedEnems)return undefined;
-    for(let i = 0; i < SceneManager._savedEnems.length; i++){
-        const image = SceneManager._savedEnems[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadChar = ImageManager.loadCharacter;
-ImageManager.loadCharacter = function(filename) {
-    const base = SynrecPLImgManLoadChar.call(this, filename);
-    const preload = this.preloadChar(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadChar = function(filename){
-    if(!SceneManager._savedCharas)return undefined;
-    for(let i = 0; i < SceneManager._savedCharas.length; i++){
-        const image = SceneManager._savedCharas[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadFace = ImageManager.loadFace;
-ImageManager.loadFace = function(filename) {
-    const base = SynrecPLImgManLoadFace.call(this, filename);
-    const preload = this.preloadFace(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadFace = function(filename){
-    if(!SceneManager._savedFaces)return undefined;
-    for(let i = 0; i < SceneManager._savedFaces.length; i++){
-        const image = SceneManager._savedFaces[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadParallax = ImageManager.loadParallax;
-ImageManager.loadParallax = function(filename) {
-    const base = SynrecPLImgManLoadParallax.call(this, filename);
-    const preload = this.preloadParallax(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadParallax = function(filename){
-    if(!SceneManager._savedParallax)return undefined;
-    for(let i = 0; i < SceneManager._savedParallax.length; i++){
-        const image = SceneManager._savedParallax[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadPicture = ImageManager.loadPicture;
-ImageManager.loadPicture = function(filename) {
-    const base = SynrecPLImgManLoadPicture.call(this, filename);
-    const preload = this.preloadPicture(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadPicture = function(filename){
-    if(!SceneManager._savedPictures)return undefined;
-    for(let i = 0; i < SceneManager._savedPictures.length; i++){
-        const image = SceneManager._savedPictures[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadSvAct = ImageManager.loadSvActor;
-ImageManager.loadSvActor = function(filename) {
-    const base = SynrecPLImgManLoadSvAct.call(this, filename);
-    const preload = this.preloadSvAct(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadSvAct = function(filename){
-    if(!SceneManager._savedSvAct)return undefined;
-    for(let i = 0; i < SceneManager._savedSvAct.length; i++){
-        const image = SceneManager._savedSvAct[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadSvEnem = ImageManager.loadSvEnemy;
-ImageManager.loadSvEnemy = function(filename) {
-    const base = SynrecPLImgManLoadSvEnem.call(this, filename);
-    const preload = this.preloadSvEnem(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadSvEnem = function(filename){
-    if(!SceneManager._savedSvEnem)return undefined;
-    for(let i = 0; i < SceneManager._savedSvEnem.length; i++){
-        const image = SceneManager._savedSvEnem[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadSys = ImageManager.loadSystem;
-ImageManager.loadSystem = function(filename) {
-    const base = SynrecPLImgManLoadSys.call(this, filename);
-    const preload = this.preloadSys(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadSys = function(filename){
-    if(!SceneManager._savedSys)return undefined;
-    for(let i = 0; i < SceneManager._savedSys.length; i++){
-        const image = SceneManager._savedSys[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadTileset = ImageManager.loadTileset;
-ImageManager.loadTileset = function(filename) {
-    const base = SynrecPLImgManLoadTileset.call(this, filename);
-    const preload = this.preloadTileset(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadTileset = function(filename){
-    if(!SceneManager._savedTileset)return undefined;
-    for(let i = 0; i < SceneManager._savedTileset.length; i++){
-        const image = SceneManager._savedTileset[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadTitle1 = ImageManager.loadTitle1;
-ImageManager.loadTitle1 = function(filename) {
-    const base = SynrecPLImgManLoadTitle1.call(this, filename);
-    const preload = this.preloadTitle1(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadTitle1 = function(filename){
-    if(!SceneManager._savedTitles1)return undefined;
-    for(let i = 0; i < SceneManager._savedTitles1.length; i++){
-        const image = SceneManager._savedTitles1[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
-}
-
-SynrecPLImgManLoadTitle2 = ImageManager.loadTitle2;
-ImageManager.loadTitle2 = function(filename) {
-    const base = SynrecPLImgManLoadTitle2.call(this, filename);
-    const preload = this.preloadTitle2(filename);
-    return preload ? preload : base;
-}
-
-ImageManager.preloadTitle2 = function(filename){
-    if(!SceneManager._savedTitles2)return undefined;
-    for(let i = 0; i < SceneManager._savedTitles2.length; i++){
-        const image = SceneManager._savedTitles2[i]
-        const name = image.name;
-        if(name == filename){
-            return image.data;
-        }
-    }
-    return undefined;
+SynrecPLScnBootStrtNormGame = Scene_Boot.prototype.startNormalGame;
+Scene_Boot.prototype.startNormalGame = function() {
+    if(SynrecPL.IgnoreAudioAll && SynrecPL.IgnoreImageAll)return SynrecPLScnBootStrtNormGame.call(this);
+    this.checkPlayerLocation();
+    DataManager.setupNewGame();
+    SceneManager.goto(Scene_Preload);
+    Window_TitleCommand.initCommandPosition();
 }

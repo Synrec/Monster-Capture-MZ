@@ -51,6 +51,18 @@
  * @default false
  * @parent Gameplay
  * 
+ * @param Equipment Weapon Evolve Modifier
+ * @desc Checked first, overrides base modifier
+ * @type struct<weapMod>[]
+ * @default []
+ * @parent Gameplay
+ * 
+ * @param Equipment Armor Evolve Modifier
+ * @desc Checked last, overrides weapon modifier
+ * @type struct<armrMod>[]
+ * @default []
+ * @parent Gameplay
+ * 
  * @param Graphics
  * 
  * @param Evolve Animation
@@ -96,6 +108,42 @@
  * @type boolean
  * @default false
  */
+/*~struct~weapMod:
+ * 
+ * @param Weapon ID
+ * @type weapon
+ * @default 1
+ * @desc Weapon under consideration
+ * 
+ * @param Actor ID
+ * @type actor
+ * @default 1
+ * @desc Actor under consideration
+ * 
+ * @param Evolve Actor ID
+ * @type actor
+ * @default 2
+ * @desc Actor, the actor will evolve to with this equip
+ * 
+ */
+/*~struct~armrMod:
+ * 
+ * @param Armor ID
+ * @type armor
+ * @default 1
+ * @desc Weapon under consideration
+ * 
+ * @param Actor ID
+ * @type actor
+ * @default 1
+ * @desc Actor under consideration
+ * 
+ * @param Evolve Actor ID
+ * @type actor
+ * @default 2
+ * @desc Actor, the actor will evolve to with this equip
+ * 
+ */
 
 
 if(!SynrecMC)throw new Error("Core Plugin Missing.");
@@ -118,6 +166,34 @@ SynrecMC.EvolutionCore.evolveNo = SynrecMC.EvolutionCore.Plugins['Can Not Evolve
 SynrecMC.EvolutionCore.evolveTarget = SynrecMC.EvolutionCore.Plugins['Will Evolve To'];
 SynrecMC.EvolutionCore.itemReqTxt = SynrecMC.EvolutionCore.Plugins['Required Items Text'];
 SynrecMC.EvolutionCore.itemReqHide = eval(SynrecMC.EvolutionCore.Plugins['Hide if No Item']);
+
+try{
+    const weaponMods = JSON.parse(SynrecMC.EvolutionCore.Plugins['Equipment Weapon Evolve Modifier']);
+    SynrecMC.EvolutionCore.weaponMods = weaponMods.map((mod)=>{
+        mod = JSON.parse(mod);
+        mod['Weapon ID'] = eval(mod['Weapon ID']);
+        mod['Actor ID'] = eval(mod['Actor ID']);
+        mod['Evolve Actor ID'] = eval(mod['Evolve Actor ID']);
+        return mod;
+    })
+}catch(e){
+    console.error(e);
+    SynrecMC.EvolutionCore.weaponMods = [];
+}
+
+try{
+    const armorMods = JSON.parse(SynrecMC.EvolutionCore.Plugins['Equipment Armor Evolve Modifier']);
+    SynrecMC.EvolutionCore.armorMods = armorMods.map((mod)=>{
+        mod = JSON.parse(mod);
+        mod['Armor ID'] = eval(mod['Armor ID']);
+        mod['Actor ID'] = eval(mod['Actor ID']);
+        mod['Evolve Actor ID'] = eval(mod['Evolve Actor ID']);
+        return mod;
+    })
+}catch(e){
+    console.error(e);
+    SynrecMC.EvolutionCore.armorMods = [];
+}
 
 function Spriteset_Evolution(){
     this.initialize(...arguments);
@@ -146,7 +222,6 @@ Spriteset_Evolution.prototype.createEvolveField = function() {
 Spriteset_Evolution.prototype.createBackground = function(){
     const bitmapName = SynrecMC.EvolutionCore.EvolveBackground;
     this._background = new Sprite();
-    console.log(bitmapName);
     if(bitmapName){
         this._background.bitmap = ImageManager.loadBackground(bitmapName);
     }else{
@@ -239,7 +314,8 @@ Game_Actor.prototype.hasEvolveItems = function(arr){
 }
 
 Game_Actor.prototype.evolve = function(){
-    const targetActor = eval(this.actor().meta.evolveTarget);
+    const defaultTarget = eval(this.actor().meta.evolveTarget)
+    const targetActor = this.modifyTarget(defaultTarget);
     const evolveSwitchId = eval(this.actor().meta.evolveSwitch);
     if(!targetActor)return false;
     const actor = $dataActors[targetActor];
@@ -259,6 +335,41 @@ Game_Actor.prototype.evolve = function(){
     }
     this.refresh();
     $gameParty.refresh();
+}
+
+Game_Actor.prototype.modifyTarget = function(target){
+    const actorId = this._actorId;
+    const weapons = this.weapons().map((equip)=>{
+        return equip.id;
+    });
+    const armors = this.armors().map((equip)=>{
+        return equip.id;
+    });
+    const weaponMods = SynrecMC.EvolutionCore.weaponMods.filter((mod)=>{
+        if(
+            mod['Actor ID'] == actorId &&
+            weapons.includes(mod['Weapon ID'])
+        )return true;
+        return false;
+    });
+    const armorMods = SynrecMC.EvolutionCore.armorMods.filter((mod)=>{
+        if(
+            mod['Actor ID'] == actorId &&
+            weapons.includes(mod['Armor ID'])
+        )return true;
+        return false;
+    });
+    if(weaponMods.length > 0){
+        const index = Math.floor(Math.random() * weaponMods.length);
+        const weapMod = weaponMods[index];
+        target = weapMod['Evolve Actor ID'];
+    }
+    if(armorMods.length > 0){
+        const index = Math.floor(Math.random() * armorMods.length);
+        const armrMod = armorMods[index];
+        target = armrMod['Evolve Actor ID'];
+    }
+    return target;
 }
 
 function Scene_Evolution(){
@@ -399,7 +510,6 @@ Scene_AutoEvolve.prototype.create = function(){
 Scene_AutoEvolve.prototype.createBackground = function(){
     const bitmapName = SynrecMC.EvolutionCore.EvolveBackground;
     this._background = new Sprite();
-    console.log(bitmapName);
     if(bitmapName){
         this._background.bitmap = ImageManager.loadBackground(bitmapName);
     }else{
@@ -644,7 +754,8 @@ Window_EvolveData.prototype.drawData = function(){
     const halfHeight = this.contentsHeight() / 2 - this.lineHeight() /2;
     if(this._data){
         const currentData = eval(this._data.actor());
-        const targetId = eval(currentData.meta.evolveTarget);
+        const deftargetId = eval(currentData.meta.evolveTarget);
+        const targetId = this._data.modifyTarget(deftargetId);
         const targetData = $dataActors[targetId];
         const currentLevel = this._data._level;
         const requiredLevel = eval(currentData.meta.evolveLevel);

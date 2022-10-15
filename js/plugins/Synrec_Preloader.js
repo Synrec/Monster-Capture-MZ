@@ -356,11 +356,27 @@ Scene_Preload.prototype.completePreload = function(){
     }
 }
 
-SynrecPLScnBootStrtNormGame = Scene_Boot.prototype.startNormalGame;
-Scene_Boot.prototype.startNormalGame = function() {
-    if(SynrecPL.IgnoreAudioAll && SynrecPL.IgnoreImageAll)return SynrecPLScnBootStrtNormGame.call(this);
-    this.checkPlayerLocation();
-    DataManager.setupNewGame();
-    SceneManager.goto(Scene_Preload);
-    Window_TitleCommand.initCommandPosition();
+if(Utils.RPGMAKER_NAME == 'MZ'){
+    SynrecPLScnBootStrtNormGame = Scene_Boot.prototype.startNormalGame;
+    Scene_Boot.prototype.startNormalGame = function() {
+        if(SynrecPL.IgnoreAudioAll && SynrecPL.IgnoreImageAll)return SynrecPLScnBootStrtNormGame.call(this);
+        this.checkPlayerLocation();
+        DataManager.setupNewGame();
+        SceneManager.goto(Scene_Preload);
+        Window_TitleCommand.initCommandPosition();
+    }
+}else{
+    SynrecPLScnBootStrt = Scene_Boot.prototype.start;
+    Scene_Boot.prototype.start = function() {
+        Scene_Base.prototype.start.call(this);
+        if (DataManager.isBattleTest() || DataManager.isEventTest()) {
+            SynrecPLScnBootStrt.call(this);
+        } else {
+            this.checkPlayerLocation();
+            DataManager.setupNewGame();
+            SceneManager.goto(Scene_Preload);
+            Window_TitleCommand.initCommandPosition();
+        }
+        this.updateDocumentTitle();
+    }
 }

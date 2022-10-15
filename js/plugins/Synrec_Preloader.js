@@ -79,7 +79,7 @@ SynrecPL.Plugin = PluginManager.parameters('Synrec_Preloader')
 
 SynrecPL.Background = SynrecPL.Plugin['Preload Background'];
 SynrecPL.PreloadText = SynrecPL.Plugin['Preload Text'];
-SynrecPL.PreloadRate = eval(SynrecPL.Plugin['Load Rate']) || 0;
+SynrecPL.PreloadRate = eval(SynrecPL.Plugin['Load Rate']) || 1;
 
 SynrecPL.IgnoreAudioAll = eval(SynrecPL.Plugin['Ignore All Audio']);
 SynrecPL.IgnoreImageAll = eval(SynrecPL.Plugin['Ignore All Image']);

@@ -43,7 +43,7 @@
  * @param Audio Settings
  * 
  * @param Audio To Ignore
- * @desc List of BGM files to ignore when loading data.
+ * @desc List of audio files to ignore when loading data.
  * @type file[]
  * @dir audio
  * @default []
@@ -53,7 +53,7 @@
  * @desc Ignores all audio.
  * @type boolean
  * @default true
- * @parent BGM To Ignore
+ * @parent Audio To Ignore
  * 
  * @param Image Settings
  * 
@@ -68,7 +68,7 @@
  * @desc Ignores all images.
  * @type boolean
  * @default true
- * @parent BattleBacks1 To Ignore
+ * @parent Image To Ignore
  * 
  */
 const fs = require('fs');

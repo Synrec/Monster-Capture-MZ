@@ -1,6 +1,6 @@
 /*:
  * @author Synrec
- * @plugindesc v2.0 Preloads all image and audio for the game on start
+ * @plugindesc v2.1 Preloads all image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -71,10 +71,10 @@
  * @parent Image To Ignore
  * 
  */
-const fs = require('fs');
-const path = require('path');
 
 let SynrecPL = {};
+SynrecPL.fs = require('fs');
+SynrecPL.path = require('path');
 SynrecPL.Plugin = PluginManager.parameters('Synrec_Preloader')
 
 SynrecPL.Background = SynrecPL.Plugin['Preload Background'];
@@ -243,6 +243,8 @@ Scene_Preload.prototype.createPreloadList = function(){
 }
 
 Scene_Preload.prototype.createAudioPreload = function(){
+    const fs = SynrecPL.fs;
+    const path = SynrecPL.path;
     const audioList = [];
     try{
         const folders = fs.readdirSync('./audio/');
@@ -268,6 +270,8 @@ Scene_Preload.prototype.createAudioPreload = function(){
 }
 
 Scene_Preload.prototype.createImagePreload = function(){
+    const fs = SynrecPL.fs;
+    const path = SynrecPL.path;
     const imageList = [];
     try{
         const folders = fs.readdirSync('./img/');

@@ -1,36 +1,31 @@
-/*:@author Synrec 
+/*:@author Synrec/Kylestclr
  * @target MZ
+ * @url https://synrec.itch.io
+ * @plugindesc v4.0 An enemy capture system
  *
- * @plugindesc v3.2 Monster Capture for RPG Maker MZ 
- *
- *@help
+ * @help
+ * This plugin allows you to set capturable enemies by designating an actor
+ * ID result.
+ * 
+ * What the above means is that when an enemy is captured, you gain the related
+ * actor.
+ * 
+ * TERMS OF USE:
+ * - You may not use this plugin as a means to steal assets or resources.
+ * This includes making fan games with the intent of monetary profit.
+ * - You may use this plugin in games intended for release (free or commercial)
+ * provided credit is given to Synrec/Kylestclr
+ * - You may NOT use this plugin for educational purposes nor as a means to
+ * provide public tutoring or any other use case which is not solely for
+ * releasing a game.
+ * - Do not use this plugin as a means of harassment in any way.
  *
  * Use $gameParty._actors[x]._teamLock = true to lock an actor at index x
  * in the party.
  * 
  * The first actor in the party begins at 0.
  * 
- *Synrec Monster Capture Plugin is intended for use with RPG Maker MZ.
- *You are *only* permitted to:
- * - Use this plugin in your RPG Maker MZ project with the intention of
- * distributing a completed game.
- * - Distribute this plugin as part of a completed game only.
- *
- *You are not permitted to:
- * - Use this plugin in projects not mentioned above without authorization
- * from the author.
- * - Use this plugin as part of a method to steal assets from other projects.
- * - Use this plugin to create fan projects which you gain monetary or any otherwise
- * financial benefit
- * - Use this plugin as a form of harassment
- * - Claim this plugin as your own
- *
- * You are required to:
- * - Give credit to the author.
- * - Notify the author of your use of the plugin. 
  * 
- * Plugin documentation may be found on source website.
- * Please see https://synrec.dev for more info and updates on this and other projects.
  * 
  * [Actor Note Tags]
  * -- <genderArray:[gender, gender, gender...]>
@@ -1102,9 +1097,11 @@ Window_BattleStatus.prototype.update = function() {
 
 Window_BattleStatus.prototype.updateSprites = function(){
     for(let sprite in this._additionalSprites){
-        if(this._additionalSprites[sprite]._battler._hidden){
-            this._additionalSprites[sprite].alpha = 0;
-        }else this._additionalSprites[sprite].alpha = 1;
+        if(this._additionalSprites[sprite]._battler){
+            if(this._additionalSprites[sprite]._battler._hidden){
+                this._additionalSprites[sprite].alpha = 0;
+            }else this._additionalSprites[sprite].alpha = 1;
+        }else this._additionalSprites[sprite].alpha = 0;
     }
     if(!this._c){
         this._c = true;

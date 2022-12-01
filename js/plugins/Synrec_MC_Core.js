@@ -764,7 +764,7 @@ Game_Action.prototype.applyItemUserEffect = function(target) {
 Game_Action.prototype.checkCapture = function(target){
     const captureDivisor = 255;
     const item = this.item();
-    const itemCaptureRate = !isNaN(item.meta.captureRate)? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
+    const itemCaptureRate = !isNaN(eval(item.meta.captureRate))? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
     if(!itemCaptureRate)return;
     if(this.subject().isActor())this.performCapture(target);
 }
@@ -773,7 +773,7 @@ Game_Action.prototype.performCapture = function(target){
     if(target.isEnemy()){
         const item = this.item();
         const captureDivisor = 255;
-        const itemCaptureRate = !isNaN(item.meta.captureRate)? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
+        const itemCaptureRate = !isNaN(eval(item.meta.captureRate))? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
         if(!item.meta.captureRate)return;
         const enemyData = target.enemy();
         const captureActorId = eval(enemyData.meta.captureActor);

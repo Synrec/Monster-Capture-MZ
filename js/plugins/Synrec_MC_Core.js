@@ -72,6 +72,21 @@
  * -- SceneManager.push(Scene_RsvpBox)
  * >> Opens reserve box scene
  * 
+ * Each actor is its own instance and as such, to access a specific
+ * actor, you need to use a specific script call:
+ * -- $gameParty._actors[x]
+ * >> x refers to the party position of the actor, begins at 0.
+ * 
+ * To find a particular actor, you need to have a javascript variable
+ * be equal to the array find function:
+ * -- const partyMember = $gameParty._actors.find((actor)=>{
+ *  return actor._actorId == actorId
+ * })
+ * >> actorId refers to the ID of the actor you are trying to find.
+ * >> This will return the first instance of the actor
+ * >> Use findAll to return an array of all matching actors.
+ * >>> You need javascript knowledge to learn how to handle arrays.
+ * 
  * @param Gameplay
  * 
  * @param Lock Initial Actor
@@ -85,6 +100,12 @@
  * @desc Number of followers for player.
  * @type number
  * @default 0
+ * 
+ * @param Max Rename Characters
+ * @parent Gameplay
+ * @desc Maximum number of characters for rename
+ * @type number
+ * @default 8
  * 
  * @param Base Item Capture
  * @parent Gameplay
@@ -542,19 +563,21 @@
 let SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
-SynrecMC.Version = '3.1';
-SynrecMC.Author = 'Synrec';
 
 SynrecMC.playerChar = eval(SynrecMC.Plugins['Non-Battler Player']);
 SynrecMC.lockActors = eval(SynrecMC.Plugins['Lock Initial Actor']);
 SynrecMC.followerLimit = eval(SynrecMC.Plugins['Follower Limit']);
 SynrecMC.baseCapture = eval(SynrecMC.Plugins['Base Item Capture']);
+SynrecMC.MaxNameChars = eval(SynrecMC.Plugins['Max Rename Characters']);
+
 SynrecMC.successCaptureAnim = eval(SynrecMC.Plugins['Capture Success Animation']);
 SynrecMC.failCaptureAnim = eval(SynrecMC.Plugins['Capture Failure Animation']);
 SynrecMC.permaDeath = eval(SynrecMC.Plugins['Perma Death']);
 SynrecMC.numberReserveBoxes = eval(SynrecMC.Plugins['Number of Reserve Boxes']);
 SynrecMC.sizeReserveBoxes = eval(SynrecMC.Plugins['Reserve Box Size']);
 SynrecMC.permaDeath = eval(SynrecMC.Plugins['Perma Death']);
+
+
 SynrecMC.genders = JSON.parse(SynrecMC.Plugins['Genders']);
 for(gend = 0; gend < SynrecMC.genders.length; gend++){
     if(SynrecMC.genders[gend]){   
@@ -669,6 +692,18 @@ ImageManager.loadBackground = function(filename){
 
 ColorManager.customColor = function(hexStr){
     if(isStr(hexStr))return hexStr;
+}
+
+Game_Temp.prototype.bootRequiredScenes = function(scenes){
+    if(!Array.isArray(scenes)){
+        scenes = [scenes];
+    }
+    scenes.forEach((scene)=>{
+        const name = scene.scene;
+        const prep = scene.prep;
+        SceneManager.push(name);
+        SceneManager.prepareNextScene(...prep);
+    })
 }
 
 synrecGamePlayerRefresh = Game_Player.prototype.refresh;
@@ -902,8 +937,9 @@ Game_Party.prototype.setupStartingMembers = function() {
 }
 
 Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
+    let actor;
     if(!isNaN(actorId)){
-        let actor = new Game_Actor(actorId);
+        actor = new Game_Actor(actorId);
         if(level)actor.changeLevel(level, false);
         if(hp)actor.setHp(hp);
         if(mp)actor.setMp(mp);
@@ -923,6 +959,18 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
     $gamePlayer.refresh();
     $gameMap.requestRefresh();
     $gameTemp.requestBattleRefresh();
+    if(actor)this.doAddActorExtra(actor);
+}
+
+Game_Party.prototype.doAddActorExtra = function(actor){
+    this.callRenameScene(actor);
+}
+
+Game_Party.prototype.callRenameScene = function(actor){
+    const scene = Scene_Rename;
+    const max_name_chars = SynrecMC.MaxNameChars;
+    const scenesToBoot = [{scene,prep:[actor, max_name_chars]}];
+    $gameTemp.bootRequiredScenes(scenesToBoot);
 }
 
 Game_Party.prototype.addToReserve = function(actor){
@@ -1832,18 +1880,19 @@ function Scene_Rename(){
     this.initialize(...arguments);
 }
 
-Scene_Rename.prototype = Object.create(Scene_Base.prototype);
+Scene_Rename.prototype = Object.create(Scene_Name.prototype);
 Scene_Rename.prototype.constructor = Scene_Rename;
 
-Scene_Rename.prototype.create = function(){
+Scene_Rename.prototype.prepare = function(actorId, maxLength) {
+    this._actor = actorId;
+    this._maxLength = maxLength;
+}
+
+Scene_Rename.prototype.create = function() {
+    Scene_Base.prototype.create.call(this);
+    this.createBackground();
     this.createWindowLayer();
-    this.createAllWindows();
+    this.createButtons();
+    this.createEditWindow();
+    this.createInputWindow();
 }
-
-Scene_Rename.prototype.createAllWindows = function(){
-    this.createNameEdit();
-    this.createNameInput();
-    this.createNameBox();
-}
-
-Scene_Rename.prototype.createNameEdit = function(){}

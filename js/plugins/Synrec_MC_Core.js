@@ -577,34 +577,38 @@ SynrecMC.numberReserveBoxes = eval(SynrecMC.Plugins['Number of Reserve Boxes']);
 SynrecMC.sizeReserveBoxes = eval(SynrecMC.Plugins['Reserve Box Size']);
 SynrecMC.permaDeath = eval(SynrecMC.Plugins['Perma Death']);
 
-
-SynrecMC.genders = JSON.parse(SynrecMC.Plugins['Genders']);
-for(gend = 0; gend < SynrecMC.genders.length; gend++){
-    if(SynrecMC.genders[gend]){   
-        SynrecMC.genders[gend] = JSON.parse(SynrecMC.genders[gend]); 
-        SynrecMC.genders[gend]['Gender Name'] = SynrecMC.genders[gend]['Gender Name'].toLowerCase();
-        SynrecMC.genders[gend]['Gender Icon'] = eval(SynrecMC.genders[gend]['Gender Icon']);
-        SynrecMC.genders[gend]['Hit Rate'] = eval(SynrecMC.genders[gend]['Hit Rate']);
-        SynrecMC.genders[gend]['Evasion Rate'] = eval(SynrecMC.genders[gend]['Evasion Rate']);
-        SynrecMC.genders[gend]['Critical Rate'] = eval(SynrecMC.genders[gend]['Critical Rate']);
-        SynrecMC.genders[gend]['Critical Evasion'] = eval(SynrecMC.genders[gend]['Critical Evasion']);
-        SynrecMC.genders[gend]['Magic Evasion'] = eval(SynrecMC.genders[gend]['Magic Evasion']);
-        SynrecMC.genders[gend]['Magic Reflection'] = eval(SynrecMC.genders[gend]['Magic Reflection']);
-        SynrecMC.genders[gend]['Counter Attack'] = eval(SynrecMC.genders[gend]['Counter Attack']);
-        SynrecMC.genders[gend]['HP Regen'] = eval(SynrecMC.genders[gend]['HP Regen']);
-        SynrecMC.genders[gend]['MP Regen'] = eval(SynrecMC.genders[gend]['MP Regen']);
-        SynrecMC.genders[gend]['TP Regen'] = eval(SynrecMC.genders[gend]['TP Regen']);
-        SynrecMC.genders[gend]['Target Rate'] = eval(SynrecMC.genders[gend]['Target Rate']);
-        SynrecMC.genders[gend]['Guard Effect'] = eval(SynrecMC.genders[gend]['Guard Effect']);
-        SynrecMC.genders[gend]['Recovery Effect'] = eval(SynrecMC.genders[gend]['Recovery Effect']);
-        SynrecMC.genders[gend]['Pharmacology'] = eval(SynrecMC.genders[gend]['Pharmacology']);
-        SynrecMC.genders[gend]['MP Cost Rate'] = eval(SynrecMC.genders[gend]['MP Cost Rate']);
-        SynrecMC.genders[gend]['TP Charge Rate'] = eval(SynrecMC.genders[gend]['TP Charge Rate']);
-        SynrecMC.genders[gend]['Physical Damage'] = eval(SynrecMC.genders[gend]['Physical Damage']);
-        SynrecMC.genders[gend]['Magical Damage'] = eval(SynrecMC.genders[gend]['Magical Damage']);
-        SynrecMC.genders[gend]['Floor Damage'] = eval(SynrecMC.genders[gend]['Floor Damage']);
-        SynrecMC.genders[gend]['Experience'] = eval(SynrecMC.genders[gend]['Experience']);
+try{
+    SynrecMC.genders = JSON.parse(SynrecMC.Plugins['Genders']);
+    for(gend = 0; gend < SynrecMC.genders.length; gend++){
+        if(SynrecMC.genders[gend]){   
+            SynrecMC.genders[gend] = JSON.parse(SynrecMC.genders[gend]); 
+            SynrecMC.genders[gend]['Gender Name'] = SynrecMC.genders[gend]['Gender Name'].toLowerCase();
+            SynrecMC.genders[gend]['Gender Icon'] = eval(SynrecMC.genders[gend]['Gender Icon']);
+            SynrecMC.genders[gend]['Hit Rate'] = eval(SynrecMC.genders[gend]['Hit Rate']);
+            SynrecMC.genders[gend]['Evasion Rate'] = eval(SynrecMC.genders[gend]['Evasion Rate']);
+            SynrecMC.genders[gend]['Critical Rate'] = eval(SynrecMC.genders[gend]['Critical Rate']);
+            SynrecMC.genders[gend]['Critical Evasion'] = eval(SynrecMC.genders[gend]['Critical Evasion']);
+            SynrecMC.genders[gend]['Magic Evasion'] = eval(SynrecMC.genders[gend]['Magic Evasion']);
+            SynrecMC.genders[gend]['Magic Reflection'] = eval(SynrecMC.genders[gend]['Magic Reflection']);
+            SynrecMC.genders[gend]['Counter Attack'] = eval(SynrecMC.genders[gend]['Counter Attack']);
+            SynrecMC.genders[gend]['HP Regen'] = eval(SynrecMC.genders[gend]['HP Regen']);
+            SynrecMC.genders[gend]['MP Regen'] = eval(SynrecMC.genders[gend]['MP Regen']);
+            SynrecMC.genders[gend]['TP Regen'] = eval(SynrecMC.genders[gend]['TP Regen']);
+            SynrecMC.genders[gend]['Target Rate'] = eval(SynrecMC.genders[gend]['Target Rate']);
+            SynrecMC.genders[gend]['Guard Effect'] = eval(SynrecMC.genders[gend]['Guard Effect']);
+            SynrecMC.genders[gend]['Recovery Effect'] = eval(SynrecMC.genders[gend]['Recovery Effect']);
+            SynrecMC.genders[gend]['Pharmacology'] = eval(SynrecMC.genders[gend]['Pharmacology']);
+            SynrecMC.genders[gend]['MP Cost Rate'] = eval(SynrecMC.genders[gend]['MP Cost Rate']);
+            SynrecMC.genders[gend]['TP Charge Rate'] = eval(SynrecMC.genders[gend]['TP Charge Rate']);
+            SynrecMC.genders[gend]['Physical Damage'] = eval(SynrecMC.genders[gend]['Physical Damage']);
+            SynrecMC.genders[gend]['Magical Damage'] = eval(SynrecMC.genders[gend]['Magical Damage']);
+            SynrecMC.genders[gend]['Floor Damage'] = eval(SynrecMC.genders[gend]['Floor Damage']);
+            SynrecMC.genders[gend]['Experience'] = eval(SynrecMC.genders[gend]['Experience']);
+        }
     }
+}catch(e){
+    console.error(`Failed to parse genders, error: ${e}`);
+    SynrecMC.genders = [];
 }
 
 
@@ -1595,7 +1599,7 @@ Window_RsvpCmd.prototype.constructor = Window_RsvpCmd;
 
 Window_RsvpCmd.prototype.makeCommandList = function() {
     Window_Command.prototype.makeCommandList.call(this);
-    this.addCommand('Swap', 'swap');
+    this.addCommand('Reserve', 'swap');
     this.addCommand('Destroy', 'delete');
     this.addCommand('Cancel', 'cancel');
 };
@@ -1846,6 +1850,7 @@ Scene_RsvpBox.prototype.swapComplete = function(){
         return;
     }
     this.facilitateSwap();
+    this._reserveWindow.deselect();
     this._reserveWindow.deactivate();
 }
 

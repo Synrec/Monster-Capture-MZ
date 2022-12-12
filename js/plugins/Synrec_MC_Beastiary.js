@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.5 Creates a simple scene which allows actor evolution
+ * @plugindesc v1.5 A beastiary for captured enemies
  * 
  * @help
  * This plugin functions as a menu command,

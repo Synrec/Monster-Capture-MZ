@@ -1,11 +1,12 @@
 /*:
  * @author Synrec/kylestclr
  * @target MZ
- * @plugindesc v1.1 Breeding System for Monster Capture Plugins
+ * @plugindesc v1.2 Breeding System for Monster Capture Plugins
  * 
  * @help
  * 
- * ...
+ * Call the breeding scene with the script call:
+ * > SceneManager.push(Scene_Breeding)
  * 
  * 
  * @param Combination Array
@@ -207,6 +208,7 @@ try{
     }
 }catch(e){
     console.error(e);
+    SynrecMC.Breeder.CombinationArray = [];
 }
 
 SynrecMC.Breeder.ScnBack = SynrecMC.Breeder['Scene Background'];
@@ -220,7 +222,6 @@ SynrecMC.Breeder.AnimHatch = eval(SynrecMC.Breeder['Breed Character Anim Hatch']
 SynrecMC.Breeder.MenuCmd = eval(SynrecMC.Breeder['Show Breed Menu Command']);
 SynrecMC.Breeder.MenuCmdName = SynrecMC.Breeder['Breed Command Name'];
 
-console.log(SynrecMC.Breeder.CombinationArray);
 
 Game_Actor.prototype.gainExpBreed = function(exp) {
     const newExp = this.currentExp() + Math.round(exp);

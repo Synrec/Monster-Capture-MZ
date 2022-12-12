@@ -26,7 +26,6 @@
  * 
  * Tags => (<critHp>, <critMp>, <critTp> require a capture actor to be set.)
  * 
- * Instructions for use may be found on my webpage https://synrec.dev
  * 
  * @param Gameplay
  * 
@@ -330,6 +329,16 @@ Game_Enemy.prototype.setupActorEnemy = function(){
 }
 
 Game_Enemy.prototype.setLevel = function(){
+    if(!$dataMap){
+        this._actor._level = $gameParty.monsterLevel();
+        this._actor.initExp();
+        this._actor.initSkills();
+        this._level = this._actor._level;
+        this._skills = this._actor._skills;
+        this._classId = this._actor._classId;
+        this._equips = this._actor._equips;
+        return;
+    }
     const minLevel = $dataMap.meta.minEnemyLevel ? eval($dataMap.meta.minEnemyLevel) : SynrecMC.Battle.minLevel;
     const maxLevel = $dataMap.meta.maxEnemyLevel ? eval($dataMap.meta.maxEnemyLevel) : SynrecMC.Battle.maxLevel;
     if(maxLevel < minLevel)throw new Error("Max level is set less than min level. Please check plugin / map settings.");
@@ -518,6 +527,15 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender){
         }
     }
     $gameParty.refresh();
+}
+
+Game_Party.prototype.monsterLevel = function(){
+    const battleMembers = this.battleMembers();
+    let level = 0;
+    battleMembers.forEach((member)=>{
+        level += member._level;
+    })
+    return Math.ceil(level / battleMembers.length);
 }
 
 SynrecMCBCSprtActUdtBitmap = Sprite_Actor.prototype.updateBitmap;

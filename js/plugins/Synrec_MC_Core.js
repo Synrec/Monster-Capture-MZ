@@ -698,7 +698,7 @@ ColorManager.customColor = function(hexStr){
     if(isStr(hexStr))return hexStr;
 }
 
-Game_Temp.prototype.bootRequiredScenes = function(scenes){
+Game_Temp.prototype.bootRequiredScenesMC = function(scenes){
     if(!Array.isArray(scenes)){
         scenes = [scenes];
     }
@@ -974,7 +974,7 @@ Game_Party.prototype.callRenameScene = function(actor){
     const scene = Scene_Rename;
     const max_name_chars = SynrecMC.MaxNameChars;
     const scenesToBoot = [{scene,prep:[actor, max_name_chars]}];
-    $gameTemp.bootRequiredScenes(scenesToBoot);
+    $gameTemp.bootRequiredScenesMC(scenesToBoot);
 }
 
 Game_Party.prototype.addToReserve = function(actor){

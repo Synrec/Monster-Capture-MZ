@@ -1,6 +1,6 @@
 /*:
  * @author Synrec
- * @plugindesc v2.1 Preloads all image and audio for the game on start
+ * @plugindesc v2.2 Preloads all image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -8,7 +8,8 @@
  * This plugin will load the audio and image data that usually appears
  * when loading a new project.
  * 
- * Plugin will NEVER preload animations. Don't ask because it never will either.
+ * Plugin will NEVER preload animations (MZ). 
+ * Don't ask because it never will either.
  * 
  * 
  * 
@@ -70,6 +71,11 @@
  * @default true
  * @parent Image To Ignore
  * 
+ * @param Event Processing
+ * @desc Process events frame by frame instead of all at once
+ * @type boolean
+ * @default false
+ * 
  */
 
 let SynrecPL = {};
@@ -83,6 +89,8 @@ SynrecPL.PreloadRate = eval(SynrecPL.Plugin['Load Rate']) || 1;
 
 SynrecPL.IgnoreAudioAll = eval(SynrecPL.Plugin['Ignore All Audio']);
 SynrecPL.IgnoreImageAll = eval(SynrecPL.Plugin['Ignore All Image']);
+
+SynrecPL.EvntProc = eval(SynrecPL.Plugin['Event Processing']);
 
 try{
     SynrecPL.IgnoreAudio = JSON.parse(SynrecPL.Plugin['Audio To Ignore']);
@@ -147,6 +155,24 @@ AudioManager.isIgnored = function(folderFile){
     if(SynrecPL.IgnoreAudio.includes(folderFile)){
         return true;
     }
+}
+
+SynrecPL_GmMapUpdtEvnts = Game_Map.prototype.updateEvents;
+Game_Map.prototype.updateEvents = function() {
+    if(SynrecPL.EvntProc){
+        const events = this.events();
+        const c_events = this._commonEvents;
+        if(isNaN(this._eventIndex) || this._eventIndex >= events.length){
+            this._eventIndex = 0;
+        }
+        if(isNaN(this._commonEventIndex) || this._commonEventIndex >= events.length){
+            this._commonEventIndex = 0;
+        }
+        if(events[this._eventIndex])events[this._eventIndex].update();
+        if(this._commonEvents[this._commonEventIndex])this._commonEvents[this._commonEventIndex].update();
+        this._eventIndex++;
+        this._commonEventIndex++;
+    }else SynrecPL_GmMapUpdtEvnts.call(this);
 }
 
 function Sprite_PreloadGauge(){

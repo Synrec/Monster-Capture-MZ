@@ -1,6 +1,6 @@
 /*:
  * @author Synrec
- * @plugindesc v2.2 Preloads all image and audio for the game on start
+ * @plugindesc v2.3 Preloads all image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -71,6 +71,128 @@
  * @default true
  * @parent Image To Ignore
  * 
+ * @param Force Load Data
+ * @desc Preloads files selected
+ * 
+ * @param Force Load Images
+ * @parent Force Load Data
+ * @desc Preload graphics
+ * 
+ * @param Load Animations
+ * @parent Force Load Images
+ * @desc Load graphics (MV Type)
+ * @type file[]
+ * @dir img/animations/
+ * @default []
+ * 
+ * @param Load Battlebacks 1
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/battlebacks1/
+ * @default []
+ * 
+ * @param Load Battlebacks 2
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/battlebacks2/
+ * @default []
+ * 
+ * @param Load Enemies
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/enemies/
+ * 
+ * @param Load Characters
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/characters/
+ * 
+ * @param Load Faces
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/faces/
+ * 
+ * @param Load Parallaxes
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/parallaxes/
+ * 
+ * @param Load Pictures
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/pictures/
+ * 
+ * @param Load Side View Actors
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/sv_actors/
+ * 
+ * @param Load Side View Enemies
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/sv_enemies/
+ * 
+ * @param Load System
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/system/
+ * 
+ * @param Load Tilesets
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/tilesets/
+ * 
+ * @param Load Titles 1
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/titles1/
+ * 
+ * @param Load Titles 2
+ * @parent Force Load Images
+ * @desc Load graphics
+ * @type file[]
+ * @dir img/titles2/
+ * 
+ * @param Force Load Audio
+ * @parent Force Load Data
+ * @desc Preload audio
+ * 
+ * @param Load BGM
+ * @parent Force Load Audio
+ * @desc Load audio
+ * @type file[]
+ * @desc audio/bgm/
+ * 
+ * @param Load BGS
+ * @parent Force Load Audio
+ * @desc Load audio
+ * @type file[]
+ * @desc audio/bgs/
+ * 
+ * @param Load ME
+ * @parent Force Load Audio
+ * @desc Load audio
+ * @type file[]
+ * @desc audio/me/
+ * 
+ * @param Load SE
+ * @parent Force Load Audio
+ * @desc Load audio
+ * @type file[]
+ * @desc audio/se/
+ * 
  * @param Event Processing
  * @desc Process events frame by frame instead of all at once
  * @type boolean
@@ -103,6 +225,134 @@ try{
 }catch(e){
     console.error(e);
     SynrecPL.IgnoreImage = [];
+}
+
+SynrecPL.ForcePreload = {};
+
+try{
+    SynrecPL.ForcePreload['Load Animation'] = JSON.parse(SynrecPL.Plugin['Load Animations']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Animation'] = [];
+    console.error(`Unable to parse animation array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Battlebacks 1'] = JSON.parse(SynrecPL.Plugin['Load Battlebacks 1']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Battlebacks 1'] = [];
+    console.error(`Unable to parse battlebacks 1 array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Battlebacks 2'] = JSON.parse(SynrecPL.Plugin['Load Battlebacks 2']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Battlebacks 2'] = [];
+    console.error(`Unable to parse battlebacks 2 array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Enemies'] = JSON.parse(SynrecPL.Plugin['Load Enemies']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Enemies'] = [];
+    console.error(`Unable to parse enemies array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Characters'] = JSON.parse(SynrecPL.Plugin['Load Characters']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Characters'] = [];
+    console.error(`Unable to parse characters array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Faces'] = JSON.parse(SynrecPL.Plugin['Load Faces']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Faces'] = [];
+    console.error(`Unable to parse faces array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Parallaxes'] = JSON.parse(SynrecPL.Plugin['Load Parallaxes']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Parallaxes'] = [];
+    console.error(`Unable to parse parallaxes array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Pictures'] = JSON.parse(SynrecPL.Plugin['Load Pictures']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Pictures'] = [];
+    console.error(`Unable to parse pictures array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Side View Actors'] = JSON.parse(SynrecPL.Plugin['Load Side View Actors']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Side View Actors'] = [];
+    console.error(`Unable to parse side view actors array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Side View Enemies'] = JSON.parse(SynrecPL.Plugin['Load Side View Enemies']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Side View Enemies'] = [];
+    console.error(`Unable to parse side view enemies array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load System'] = JSON.parse(SynrecPL.Plugin['Load System']);
+}catch(e){
+    SynrecPL.ForcePreload['Load System'] = [];
+    console.error(`Unable to parse system array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Tilesets'] = JSON.parse(SynrecPL.Plugin['Load Tilesets']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Tilesets'] = [];
+    console.error(`Unable to parse tilesets array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Titles 1'] = JSON.parse(SynrecPL.Plugin['Load Titles 1']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Titles 1'] = [];
+    console.error(`Unable to parse titles 1 array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load Titles 2'] = JSON.parse(SynrecPL.Plugin['Load Titles 2']);
+}catch(e){
+    SynrecPL.ForcePreload['Load Titles 2'] = [];
+    console.error(`Unable to parse titles 2 array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load BGM'] = JSON.parse(SynrecPL.Plugin['Load BGM']);
+}catch(e){
+    SynrecPL.ForcePreload['Load BGM'] = [];
+    console.error(`Unable to parse BGM array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load BGS'] = JSON.parse(SynrecPL.Plugin['Load BGS']);
+}catch(e){
+    SynrecPL.ForcePreload['Load BGS'] = [];
+    console.error(`Unable to parse BGS array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load ME'] = JSON.parse(SynrecPL.Plugin['Load ME']);
+}catch(e){
+    SynrecPL.ForcePreload['Load ME'] = [];
+    console.error(`Unable to parse ME array, error: ${e}`);
+}
+
+try{
+    SynrecPL.ForcePreload['Load SE'] = JSON.parse(SynrecPL.Plugin['Load SE']);
+}catch(e){
+    SynrecPL.ForcePreload['Load SE'] = [];
+    console.error(`Unable to parse SE array, error: ${e}`);
 }
 
 ImageManager._preloadedImages = {};
@@ -345,7 +595,9 @@ Scene_Preload.prototype.updatePreload = function(){
     this._preloadCur = this._audioPreload + this._imagePreload;
     switch(this._preloadMode){
         case 'audio': return this.audioPreload();
+        case 'audioF': return this.audioPreloadF();
         case 'image': return this.imagePreload();
+        case 'imageF': return this.imagePreloadF();
         case 'complete': return this.completePreload();
     }
 }
@@ -359,10 +611,26 @@ Scene_Preload.prototype.audioPreload = function(){
         AudioManager.createBuffer(folder, name);
         this._audioPreload++;
         if(this._audioPreload >= this._audioMax){
-            this._preloadMode = 'image';
+            this._preloadMode = 'audioF';
             break;
         }
     }
+}
+
+Scene_Preload.prototype.audioPreloadF = function(){
+    SynrecPL.ForcePreload['Load BGM'].forEach((bgm_name)=>{
+        AudioManager.createBuffer("bgm/", bgm_name);
+    })
+    SynrecPL.ForcePreload['Load BGS'].forEach((bgs_name)=>{
+        AudioManager.createBuffer("bgs/", bgs_name);
+    })
+    SynrecPL.ForcePreload['Load ME'].forEach((me_name)=>{
+        AudioManager.createBuffer("me/", me_name);
+    })
+    SynrecPL.ForcePreload['Load SE'].forEach((se_name)=>{
+        AudioManager.createBuffer("se/", se_name);
+    })
+    this._preloadMode = 'image';
 }
 
 Scene_Preload.prototype.imagePreload = function(){
@@ -374,10 +642,56 @@ Scene_Preload.prototype.imagePreload = function(){
         ImageManager.loadBitmap(folder, name);
         this._imagePreload++;
         if(this._imagePreload >= this._imageMax){
-            this._preloadMode = 'complete';
+            this._preloadMode = 'imageF';
             break;
         }
     }
+}
+
+Scene_Preload.prototype.imagePreloadF = function(){
+    SynrecPL.ForcePreload['Load Animation'].forEach((img_name)=>{
+        ImageManager.loadAnimation(img_name)
+    })
+    SynrecPL.ForcePreload['Load Battlebacks 1'].forEach((img_name)=>{
+        ImageManager.loadBattleback1(img_name)
+    })
+    SynrecPL.ForcePreload['Load Battlebacks 2'].forEach((img_name)=>{
+        ImageManager.loadBattleback2(img_name)
+    })
+    SynrecPL.ForcePreload['Load Enemies'].forEach((img_name)=>{
+        ImageManager.loadEnemy(img_name)
+    })
+    SynrecPL.ForcePreload['Load Characters'].forEach((img_name)=>{
+        ImageManager.loadCharacter(img_name)
+    })
+    SynrecPL.ForcePreload['Load Faces'].forEach((img_name)=>{
+        ImageManager.loadFace(img_name)
+    })
+    SynrecPL.ForcePreload['Load Parallaxes'].forEach((img_name)=>{
+        ImageManager.loadParallax(img_name)
+    })
+    SynrecPL.ForcePreload['Load Pictures'].forEach((img_name)=>{
+        ImageManager.loadPicture(img_name)
+    })
+    SynrecPL.ForcePreload['Load Side View Actors'].forEach((img_name)=>{
+        ImageManager.loadSvActor(img_name)
+    })
+    SynrecPL.ForcePreload['Load Side View Enemies'].forEach((img_name)=>{
+        ImageManager.loadSvEnemy(img_name)
+    })
+    SynrecPL.ForcePreload['Load System'].forEach((img_name)=>{
+        ImageManager.loadSystem(img_name)
+    })
+    SynrecPL.ForcePreload['Load Tilesets'].forEach((img_name)=>{
+        ImageManager.loadTileset(img_name)
+    })
+    SynrecPL.ForcePreload['Load Titles 1'].forEach((img_name)=>{
+        ImageManager.loadTitle1(img_name)
+    })
+    SynrecPL.ForcePreload['Load Titles 2'].forEach((img_name)=>{
+        ImageManager.loadTitle2(img_name)
+    })
+    this._preloadMode = 'complete';
 }
 
 Scene_Preload.prototype.completePreload = function(){

@@ -1,6 +1,6 @@
 /*:
- * @author Synrec
- * @plugindesc v2.3 Preloads all image and audio for the game on start
+ * @author Synrec/Kylestclair
+ * @plugindesc v3.1 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -8,18 +8,60 @@
  * This plugin will load the audio and image data that usually appears
  * when loading a new project.
  * 
- * Plugin will NEVER preload animations (MZ). 
- * Don't ask because it never will either.
- * 
  * 
  * 
  * TERMS OF USE:
- * > You are REQUIRED to credit Synrec in your project.
+ * > You are REQUIRED to credit Synrec/Kylestclair in your project.
  * > Not to be re-sold or redistributed in non-game projects
  * > Do not redistribute, this includes edits.
  * > Can be used in commercial or free RPG Maker MZ games.
  * > Do not redistribute for educational purposes.
  * > Do not use for malicious intent.
+ * 
+ * @param Loading Video Name
+ * @desc Name of the video for preload
+ * @type text
+ * 
+ * @param Loading Bar Configuration
+ * @desc Setup the loading bar
+ * 
+ * @param Bypass Load Confirm
+ * @parent Loading Bar Configuration
+ * @desc Bypass needing to use a confirm button
+ * @type boolean
+ * @default false
+ * 
+ * @param Gauge Position
+ * @parent Loading Bar Configuration
+ * @desc Select where the gauge is positioned
+ * @type select
+ * @option top
+ * @option below
+ * @default top
+ * 
+ * @param Gauge Border Color
+ * @parent Loading Bar Configuration
+ * @desc Hex Color or RGBA
+ * @type text
+ * @default #000000
+ * 
+ * @param Gauge Background Color
+ * @parent Loading Bar Configuration
+ * @desc Hex Color or RGBA
+ * @type text
+ * @default #ffffff
+ * 
+ * @param Gauge Bar Color
+ * @parent Loading Bar Configuration
+ * @desc Hex Color or RGBA
+ * @type text
+ * @default #00ff00
+ * 
+ * @param Gauge Size Height Ratio
+ * @desc Height ratio to screen size
+ * @type number
+ * @decimals 3
+ * @default 0.100
  * 
  * @param General Settings
  * 
@@ -35,6 +77,11 @@
  * @dir img/pictures
  * @parent General Settings
  * 
+ * @param Preload Video
+ * @desc Video shown during preload.
+ * @type text
+ * @parent General Settings
+ * 
  * @param Preload Text
  * @desc Text to display when preload ends.
  * @type text
@@ -42,6 +89,11 @@
  * @parent General Settings
  * 
  * @param Audio Settings
+ * 
+ * @param Audio Resource To Ignore
+ * @desc Will not reserve audio data, will not preload
+ * @type struct<lockaud>[]
+ * @default []
  * 
  * @param Audio To Ignore
  * @desc List of audio files to ignore when loading data.
@@ -57,6 +109,11 @@
  * @parent Audio To Ignore
  * 
  * @param Image Settings
+ * 
+ * @param Image Resource To Ignore
+ * @desc Will not reserve image data, will not preload
+ * @type struct<lockimg>[]
+ * @default []
  * 
  * @param Image To Ignore
  * @desc Ignores listed images
@@ -199,31 +256,92 @@
  * @default false
  * 
  */
+/*~struct~lockaud:
+ *
+ * @param Main Directory
+ * @desc Path of the directory used
+ * @type text
+ * @default audio/se/
+ * 
+ * @param Name Used
+ * @desc Name used for finding the audio
+ * @type text
+ * @default Attack1
+ * 
+ */
+/*~struct~lockimg:
+ *
+ * @param Main Directory
+ * @desc Path of the directory used
+ * @type text
+ * @default img/pictures/
+ * 
+ * @param Name Used
+ * @desc Name used for finding the audio
+ * @type text
+ * @default Actor1_1
+ * 
+ */
 
+const is_MV_Preload = Utils.RPGMAKER_NAME == "MV";
 let SynrecPL = {};
 SynrecPL.fs = require('fs');
 SynrecPL.path = require('path');
 SynrecPL.Plugin = PluginManager.parameters('Synrec_Preloader')
 
+SynrecPL.Bypass_Confirm = eval(SynrecPL.Plugin['Bypass Load Confirm']);
+
 SynrecPL.Background = SynrecPL.Plugin['Preload Background'];
 SynrecPL.PreloadText = SynrecPL.Plugin['Preload Text'];
 SynrecPL.PreloadRate = eval(SynrecPL.Plugin['Load Rate']) || 1;
+
+SynrecPL.Preload_Video = SynrecPL.Plugin['Loading Video Name'];
 
 SynrecPL.IgnoreAudioAll = eval(SynrecPL.Plugin['Ignore All Audio']);
 SynrecPL.IgnoreImageAll = eval(SynrecPL.Plugin['Ignore All Image']);
 
 SynrecPL.EvntProc = eval(SynrecPL.Plugin['Event Processing']);
 
+SynrecPL.Audio_Ignored = [];
+SynrecPL.Image_Ignored = [];
+try{
+    SynrecPL.Audio_Ignored = JSON.parse(SynrecPL.Plugin['Audio Resource To Ignore']).map((path)=>{
+        try{
+            path = JSON.parse(path);
+        }catch(e){
+            path = {};
+            console.warn(`Failed to parse path information`);
+        }
+        return path
+    });
+}catch(e){
+    console.warn(`Failed to parse Ignored Audio paths.`);
+}
+
+try{
+    SynrecPL.Image_Ignored = JSON.parse(SynrecPL.Plugin['Image Resource To Ignore']).map((path)=>{
+        try{
+            path = JSON.parse(path);
+        }catch(e){
+            path = {};
+            console.warn(`Failed to parse path information`);
+        }
+        return path
+    });
+}catch(e){
+    console.warn(`Failed to parse Ignored Image paths.`);
+}
+
 try{
     SynrecPL.IgnoreAudio = JSON.parse(SynrecPL.Plugin['Audio To Ignore']);
 }catch(e){
-    console.error(e);
+    console.warn(e);
     SynrecPL.IgnoreAudio = [];
 }
 try{
     SynrecPL.IgnoreImage = JSON.parse(SynrecPL.Plugin['Image To Ignore']);
 }catch(e){
-    console.error(e);
+    console.warn(e);
     SynrecPL.IgnoreImage = [];
 }
 
@@ -233,133 +351,148 @@ try{
     SynrecPL.ForcePreload['Load Animation'] = JSON.parse(SynrecPL.Plugin['Load Animations']);
 }catch(e){
     SynrecPL.ForcePreload['Load Animation'] = [];
-    console.error(`Unable to parse animation array, error: ${e}`);
+    console.warn(`Unable to parse animation array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Battlebacks 1'] = JSON.parse(SynrecPL.Plugin['Load Battlebacks 1']);
 }catch(e){
     SynrecPL.ForcePreload['Load Battlebacks 1'] = [];
-    console.error(`Unable to parse battlebacks 1 array, error: ${e}`);
+    console.warn(`Unable to parse battlebacks 1 array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Battlebacks 2'] = JSON.parse(SynrecPL.Plugin['Load Battlebacks 2']);
 }catch(e){
     SynrecPL.ForcePreload['Load Battlebacks 2'] = [];
-    console.error(`Unable to parse battlebacks 2 array, error: ${e}`);
+    console.warn(`Unable to parse battlebacks 2 array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Enemies'] = JSON.parse(SynrecPL.Plugin['Load Enemies']);
 }catch(e){
     SynrecPL.ForcePreload['Load Enemies'] = [];
-    console.error(`Unable to parse enemies array, error: ${e}`);
+    console.warn(`Unable to parse enemies array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Characters'] = JSON.parse(SynrecPL.Plugin['Load Characters']);
 }catch(e){
     SynrecPL.ForcePreload['Load Characters'] = [];
-    console.error(`Unable to parse characters array, error: ${e}`);
+    console.warn(`Unable to parse characters array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Faces'] = JSON.parse(SynrecPL.Plugin['Load Faces']);
 }catch(e){
     SynrecPL.ForcePreload['Load Faces'] = [];
-    console.error(`Unable to parse faces array, error: ${e}`);
+    console.warn(`Unable to parse faces array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Parallaxes'] = JSON.parse(SynrecPL.Plugin['Load Parallaxes']);
 }catch(e){
     SynrecPL.ForcePreload['Load Parallaxes'] = [];
-    console.error(`Unable to parse parallaxes array, error: ${e}`);
+    console.warn(`Unable to parse parallaxes array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Pictures'] = JSON.parse(SynrecPL.Plugin['Load Pictures']);
 }catch(e){
     SynrecPL.ForcePreload['Load Pictures'] = [];
-    console.error(`Unable to parse pictures array, error: ${e}`);
+    console.warn(`Unable to parse pictures array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Side View Actors'] = JSON.parse(SynrecPL.Plugin['Load Side View Actors']);
 }catch(e){
     SynrecPL.ForcePreload['Load Side View Actors'] = [];
-    console.error(`Unable to parse side view actors array, error: ${e}`);
+    console.warn(`Unable to parse side view actors array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Side View Enemies'] = JSON.parse(SynrecPL.Plugin['Load Side View Enemies']);
 }catch(e){
     SynrecPL.ForcePreload['Load Side View Enemies'] = [];
-    console.error(`Unable to parse side view enemies array, error: ${e}`);
+    console.warn(`Unable to parse side view enemies array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load System'] = JSON.parse(SynrecPL.Plugin['Load System']);
 }catch(e){
     SynrecPL.ForcePreload['Load System'] = [];
-    console.error(`Unable to parse system array, error: ${e}`);
+    console.warn(`Unable to parse system array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Tilesets'] = JSON.parse(SynrecPL.Plugin['Load Tilesets']);
 }catch(e){
     SynrecPL.ForcePreload['Load Tilesets'] = [];
-    console.error(`Unable to parse tilesets array, error: ${e}`);
+    console.warn(`Unable to parse tilesets array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Titles 1'] = JSON.parse(SynrecPL.Plugin['Load Titles 1']);
 }catch(e){
     SynrecPL.ForcePreload['Load Titles 1'] = [];
-    console.error(`Unable to parse titles 1 array, error: ${e}`);
+    console.warn(`Unable to parse titles 1 array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load Titles 2'] = JSON.parse(SynrecPL.Plugin['Load Titles 2']);
 }catch(e){
     SynrecPL.ForcePreload['Load Titles 2'] = [];
-    console.error(`Unable to parse titles 2 array, error: ${e}`);
+    console.warn(`Unable to parse titles 2 array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load BGM'] = JSON.parse(SynrecPL.Plugin['Load BGM']);
 }catch(e){
     SynrecPL.ForcePreload['Load BGM'] = [];
-    console.error(`Unable to parse BGM array, error: ${e}`);
+    console.warn(`Unable to parse BGM array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load BGS'] = JSON.parse(SynrecPL.Plugin['Load BGS']);
 }catch(e){
     SynrecPL.ForcePreload['Load BGS'] = [];
-    console.error(`Unable to parse BGS array, error: ${e}`);
+    console.warn(`Unable to parse BGS array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load ME'] = JSON.parse(SynrecPL.Plugin['Load ME']);
 }catch(e){
     SynrecPL.ForcePreload['Load ME'] = [];
-    console.error(`Unable to parse ME array, error: ${e}`);
+    console.warn(`Unable to parse ME array, error: ${e}`);
 }
 
 try{
     SynrecPL.ForcePreload['Load SE'] = JSON.parse(SynrecPL.Plugin['Load SE']);
 }catch(e){
     SynrecPL.ForcePreload['Load SE'] = [];
-    console.error(`Unable to parse SE array, error: ${e}`);
+    console.warn(`Unable to parse SE array, error: ${e}`);
 }
+
+SynrecPL.Gauge_Position = SynrecPL.Plugin['Gauge Position'] || 'top';
+SynrecPL.Gauge_Color_Border = SynrecPL.Plugin['Gauge Border Color'] || '#000000';
+SynrecPL.Gauge_Color_Background = SynrecPL.Plugin['Gauge Background Color'] || '#ffffff';
+SynrecPL.Gauge_Color_Bar = SynrecPL.Plugin['Gauge Bar Color'] || '#00ff00';
+SynrecPL.Gauge_Height_Ratio = eval(SynrecPL.Plugin['Gauge Size Height Ratio']) || 0.1;
 
 ImageManager._preloadedImages = {};
 AudioManager._preloadedAudio = {};
 
 SynrecPLImgMngrLoadBitmap = ImageManager.loadBitmap;
-ImageManager.loadBitmap = function(folder, filename) {
+ImageManager.loadBitmap = function(folder, filename, hue, smooth) {
+    const permanent_ignores = SynrecPL.Image_Ignored;
+    if(permanent_ignores.some((path)=>{
+        if(
+            (path['Main Directory'] == folder &&
+            path['Name Used'] == filename) ||
+            (path['Main Directory'] == folder &&
+            !path['Name Used'])
+        )return true;
+    }))return SynrecPLImgMngrLoadBitmap.call(this,folder, filename, hue, smooth);
     const preloads = ImageManager._preloadedImages;
     const folderPreload = preloads[`${folder}`];
     if(folderPreload){
@@ -369,23 +502,32 @@ ImageManager.loadBitmap = function(folder, filename) {
             return savedBitmap;
         }
     }else ImageManager._preloadedImages[`${folder}`] = {};
-    const newBitmap = SynrecPLImgMngrLoadBitmap.call(this, folder, filename);
+    const newBitmap = SynrecPLImgMngrLoadBitmap.call(this,folder, filename, hue, smooth);
     newBitmap.destroy = function(){this._paintOpacity = 0}
     if(!this.isIgnored(folder, filename))ImageManager._preloadedImages[`${folder}`][`${filename}`] = newBitmap;
     return newBitmap;
 }
 
 ImageManager.isIgnored = function(path, name){
-    const folder = path.split('/')[2];
+    const length = path.split('/').length;
+    const folder = path.split('/')[length - 2];
     const folderFile = folder.concat('/',name);
     if(SynrecPL.IgnoreImage.includes(folderFile)){
-        console.log(folderFile);
         return true;
     }
 }
 
 SynrecPLAudMngrCrtBuffer = AudioManager.createBuffer;
 AudioManager.createBuffer = function(folder, name) {
+    const permanent_ignores = SynrecPL.Audio_Ignored;
+    if(permanent_ignores.some((path)=>{
+        if(
+            (path['Main Directory'] == folder &&
+            path['Name Used'] == name) ||
+            (path['Main Directory'] == folder &&
+            !path['Name Used'])
+        )return true;
+    }))return SynrecPLAudMngrCrtBuffer.call(this, folder, name);
     const preloads = AudioManager._preloadedAudio;
     const folderPreload = preloads[`${folder}`];
     if(folderPreload){
@@ -436,20 +578,23 @@ Sprite_PreloadGauge.prototype.initialize = function(bitmap){
     Sprite.prototype.initialize.call(this, bitmap);
     this.createBackSprite();
     this.createGaugeSprite();
+    const x = 0;
+    const y = SynrecPL.Gauge_Position == 'top' ? 0 : Graphics.height - (Graphics.height * SynrecPL.Gauge_Height_Ratio);
+    this.move(x,y)
 }
 
 Sprite_PreloadGauge.prototype.createBackSprite = function(){
     this._backSprite = new Sprite();
-    this._backSprite.bitmap = new Bitmap(Graphics.width, Graphics.height * 0.1);
+    this._backSprite.bitmap = new Bitmap(Graphics.width, Graphics.height * SynrecPL.Gauge_Height_Ratio);
     this.addChild(this._backSprite);
-    const bitmap = this._backSprite.bitmap
-    bitmap.fillRect(0, 0, bitmap.width, bitmap.height, '#000000');
-    bitmap.fillRect(2, 2, bitmap.width - 4, bitmap.height - 4, '#ffffff');
+    const bitmap = this._backSprite.bitmap;
+    bitmap.fillRect(0, 0, bitmap.width, bitmap.height, SynrecPL.Gauge_Color_Border);
+    bitmap.fillRect(2, 2, bitmap.width - 4, bitmap.height - 4, SynrecPL.Gauge_Color_Background);
 }
 
 Sprite_PreloadGauge.prototype.createGaugeSprite = function(){
     this._gaugeSprite = new Sprite();
-    this._gaugeSprite.bitmap = new Bitmap(Graphics.width, Graphics.height * 0.1);
+    this._gaugeSprite.bitmap = new Bitmap(Graphics.width, Graphics.height * SynrecPL.Gauge_Height_Ratio);
     this.addChild(this._gaugeSprite);
 }
 
@@ -465,15 +610,15 @@ Sprite_PreloadGauge.prototype.updatePreloadGauge = function(){
     const rate = currentLoad/maxLoad;
     const bitmap = this._gaugeSprite.bitmap;
     const x = 4;
-    const y = 4;
+    const y = 4
     const w = bitmap.width - 8;
     const h = bitmap.height - 8;
     bitmap.clear();
     if(rate < 1){
-        bitmap.fillRect(x, y, w * rate, h, '#00ff00');
+        bitmap.fillRect(x, y, w * rate, h, SynrecPL.Gauge_Color_Bar);
     }else{
         this._backSprite.bitmap.clear();
-        bitmap.drawText(SynrecPL.PreloadText, 0, 0, bitmap.width, bitmap.height, 'center');
+        bitmap.drawText(SynrecPL.PreloadText, x, y, bitmap.width, bitmap.height, 'center');
     }
 }
 
@@ -493,8 +638,10 @@ Scene_Preload.prototype.initialize = function(){
 Scene_Preload.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createBackground();
+    this.createVideoSprite();
     this.createSpriteGauge();
     this.createPreloadList();
+    console.log(this)
 }
 
 Scene_Preload.prototype.createBackground = function(){
@@ -502,6 +649,26 @@ Scene_Preload.prototype.createBackground = function(){
     if(SynrecPL.Background)this._background.bitmap = ImageManager.loadPicture(SynrecPL.Background);
     this._background.move(0, 0, Graphics.width, Graphics.height);
     this.addChild(this._background);
+}
+
+Scene_Preload.prototype.createVideoSprite = function(){
+    if(SynrecPL.Preload_Video){
+        const src = `videos/${SynrecPL.Preload_Video}.webm`;
+        const is_MZ = Utils.RPGMAKER_NAME == 'MZ';
+        this._videoSprite = new PIXI.Sprite();
+        const videoTexture = is_MZ ? new PIXI.Texture.from(src) : new PIXI.Texture.fromVideo(src);
+        const source = is_MZ ? videoTexture.baseTexture.resource.source : videoTexture.baseTexture.source;
+        source.loop = true;
+        source.preload = 'auto';
+        source.autoload = true;
+        source.autoplay = true;
+        this._videoSprite.texture = videoTexture;
+        this.addChild(this._videoSprite);
+        this._videoSprite.x = 0;
+        this._videoSprite.y = 0;
+        this._videoSprite.width = Graphics.width;
+        this._videoSprite.height = Graphics.height;
+    }
 }
 
 Scene_Preload.prototype.createSpriteGauge = function(){
@@ -523,15 +690,22 @@ Scene_Preload.prototype.createAudioPreload = function(){
     const path = SynrecPL.path;
     const audioList = [];
     try{
-        const folders = fs.readdirSync('./audio/');
+        const is_test = Utils.isOptionValid("test");
+        const dir = !is_test && is_MV_Preload ? `./www/audio/` : `./audio/`;
+        const folders = fs.readdirSync(dir);
         folders.forEach((folder)=>{
             try{
-                const files = fs.readdirSync(`./audio/${folder}/`);
+                const files = fs.readdirSync(`${dir}${folder}/`);
                 files.forEach((file)=>{
                     if(file.match(/.*.ogg/gi)){
                         const obj = {};
                         obj.dir = `${folder}/`;
                         obj.file = path.basename(file, '.ogg');
+                        audioList.push(obj);
+                    }else if(file.match(/.*.rpgmvo/gi)){
+                        const obj = {};
+                        obj.dir = `${folder}/`;
+                        obj.file = path.basename(file, '.rpgmvo');
                         audioList.push(obj);
                     }
                 })
@@ -550,20 +724,33 @@ Scene_Preload.prototype.createImagePreload = function(){
     const path = SynrecPL.path;
     const imageList = [];
     try{
-        const folders = fs.readdirSync('./img/');
+        const is_test = Utils.isOptionValid("test");
+        const dir = !is_test && is_MV_Preload ? `./www/img/` : `./img/`;
+        const folders = fs.readdirSync(dir);
         folders.forEach((folder)=>{
             try{
-                const files = fs.readdirSync(`./img/${folder}/`);
+                const files = fs.readdirSync(`${dir}${folder}/`);
                 files.forEach((file)=>{
-                    if(file.match(/.*.png/gi)){
+                    if(file.match(/.*.png_/gi)){
                         const obj = {};
-                        obj.dir = `./img/${folder}/`;
+                        obj.dir = `${dir}${folder}/`;
+                        obj.file = path.basename(file, '.png_');
+                        imageList.push(obj);
+                    }else if(file.match(/.*.png/gi)){
+                        const obj = {};
+                        obj.dir = `${dir}${folder}/`;
                         obj.file = path.basename(file, '.png');
+                        imageList.push(obj);
+                    }else if(file.match(/.*.rpgmvp/gi)){
+                        SoundManager.playOk;
+                        const obj = {};
+                        obj.dir = `${dir}${folder}/`;
+                        obj.file = path.basename(file, '.rpgmvp');
                         imageList.push(obj);
                     }
                 })
             }catch(e){
-                console.error(`Failed to image audio file.`)
+                console.error(`Failed to preload image file.`)
             }
         })
     }catch(e){
@@ -585,7 +772,12 @@ Scene_Preload.prototype.initPreload = function(){
 
 Scene_Preload.prototype.update = function(){
     Scene_Base.prototype.update.call(this);
+    this.updateVideo()
     this.updatePreload();
+}
+
+Scene_Preload.prototype.updateVideo = function(){
+    if(this._video_texture)this._video_texture.update();
 }
 
 Scene_Preload.prototype.updatePreload = function(){
@@ -606,11 +798,16 @@ Scene_Preload.prototype.audioPreload = function(){
     for(let i = 0; i < SynrecPL.PreloadRate; i++){
         const index = this._audioPreload;
         const audio_object = this._preloadList.audio[index];
-        const folder = audio_object.dir;
-        const name = audio_object.file;
-        AudioManager.createBuffer(folder, name);
-        this._audioPreload++;
-        if(this._audioPreload >= this._audioMax){
+        if(audio_object){
+            const folder = audio_object.dir;
+            const name = audio_object.file;
+            AudioManager.createBuffer(folder, name);
+            this._audioPreload++;
+            if(this._audioPreload >= this._audioMax){
+                this._preloadMode = 'audioF';
+                break;
+            }
+        }else{
             this._preloadMode = 'audioF';
             break;
         }
@@ -637,11 +834,22 @@ Scene_Preload.prototype.imagePreload = function(){
     for(let i = 0; i < SynrecPL.PreloadRate; i++){
         const index = this._imagePreload;
         const image_object = this._preloadList.image[index];
-        const folder = image_object.dir;
-        const name = image_object.file;
-        ImageManager.loadBitmap(folder, name);
-        this._imagePreload++;
-        if(this._imagePreload >= this._imageMax){
+        if(image_object){
+            const folder = image_object.dir;
+            const name = image_object.file;
+            // if(folder == `img/system/`){
+            //     if(name == "Loading"){
+            //         this._imagePreload++;
+            //         return;
+            //     }
+            // }
+            ImageManager.loadBitmap(folder, name);
+            this._imagePreload++;
+            if(this._imagePreload >= this._imageMax){
+                this._preloadMode = 'imageF';
+                break;
+            }
+        }else{
             this._preloadMode = 'imageF';
             break;
         }
@@ -695,7 +903,7 @@ Scene_Preload.prototype.imagePreloadF = function(){
 }
 
 Scene_Preload.prototype.completePreload = function(){
-    if(Input.isTriggered('ok') || Input.isTriggered('cancel')){
+    if(Input.isTriggered('ok') || Input.isTriggered('cancel') || SynrecPL.Bypass_Confirm){
         SceneManager.goto(Scene_Title);
     }
 }

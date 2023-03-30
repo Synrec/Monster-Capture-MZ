@@ -454,7 +454,7 @@ Sprite_Battler.prototype.getGendFilterData = function(gender){
 SynrecMCSprtBattUpdtSelcEffect = Sprite_Battler.prototype.updateSelectionEffect;
 Sprite_Battler.prototype.updateSelectionEffect = function() {
     SynrecMCSprtBattUpdtSelcEffect.call(this)
-    const target = this.mainSprite();
+    const target = this.mainSprite ? this.mainSprite() : this;
     if(this._blendColorGend){
         if (this._battler.isSelected()) {
             this._selectionEffectCount++;

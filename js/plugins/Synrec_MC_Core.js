@@ -559,8 +559,8 @@
  * @parent Sp Param Mod
  */
 
-
-let SynrecMC = {};
+const MONSTER_CAPTURE_MV = Utils.RPGMAKER_NAME == 'MV';
+const SynrecMC = {};
 
 SynrecMC.Plugins = PluginManager.parameters('Synrec_MC_Core');
 
@@ -694,20 +694,27 @@ ImageManager.loadBackground = function(filename){
     return this.loadBitmap("img/backgrounds/", filename);
 }
 
-ColorManager.customColor = function(hexStr){
-    if(isStr(hexStr))return hexStr;
+Game_Temp.prototype.reserveBootScene = function(data){
+    if(!Array.isArray(this._rsvpScenesMC))this._rsvpScenesMC = [];
+    this._rsvpScenesMC.push(data);
 }
 
-Game_Temp.prototype.bootRequiredScenesMC = function(scenes){
-    if(!Array.isArray(scenes)){
-        scenes = [scenes];
+Game_Temp.prototype.updateReserveScene = function(){
+    if(!Array.isArray(this._rsvpScenesMC))this._rsvpScenesMC = [];
+    if(SceneManager.isSceneChanging())return;
+    const data = this._rsvpScenesMC.pop();
+    if(data){
+        this.bootRequiredSceneMC(data)
     }
-    scenes.forEach((scene)=>{
+}
+
+Game_Temp.prototype.bootRequiredSceneMC = function(scene){
+    if(scene){
         const name = scene.scene;
         const prep = scene.prep;
         SceneManager.push(name);
         SceneManager.prepareNextScene(...prep);
-    })
+    }
 }
 
 synrecGamePlayerRefresh = Game_Player.prototype.refresh;
@@ -816,7 +823,11 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
     const hpSet = target._hp;
     const mpSet = target._mp;
     const gender = target._gender;
-    $gameTemp.requestAnimation([target], SynrecMC.successCaptureAnim);
+    if(MONSTER_CAPTURE_MV){
+        target.startAnimation(SynrecMC.successCaptureAnim);
+    }else{
+        $gameTemp.requestAnimation([target], SynrecMC.successCaptureAnim);
+    }
     target._isCaptured = true;
     target.die();
     target.refresh();
@@ -824,7 +835,11 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
 }
 
 Game_Action.prototype.playCaptureFail = function(target){
-    $gameTemp.requestAnimation([target], SynrecMC.failCaptureAnim);
+    if(MONSTER_CAPTURE_MV){
+        target.startAnimation(SynrecMC.failCaptureAnim);
+    }else{
+        $gameTemp.requestAnimation([target], SynrecMC.failCaptureAnim);
+    }
 }
 
 SynrecMCGmBattBseDie = Game_BattlerBase.prototype.die;
@@ -962,7 +977,7 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
     }
     $gamePlayer.refresh();
     $gameMap.requestRefresh();
-    $gameTemp.requestBattleRefresh();
+    if(!MONSTER_CAPTURE_MV)$gameTemp.requestBattleRefresh();
     if(actor)this.doAddActorExtra(actor);
 }
 
@@ -973,8 +988,8 @@ Game_Party.prototype.doAddActorExtra = function(actor){
 Game_Party.prototype.callRenameScene = function(actor){
     const scene = Scene_Rename;
     const max_name_chars = SynrecMC.MaxNameChars;
-    const scenesToBoot = [{scene,prep:[actor, max_name_chars]}];
-    $gameTemp.bootRequiredScenesMC(scenesToBoot);
+    const sceneToBoot = {scene,prep:[actor, max_name_chars]};
+    $gameTemp.reserveBootScene(sceneToBoot);
 }
 
 Game_Party.prototype.addToReserve = function(actor){
@@ -1047,7 +1062,7 @@ Game_Party.prototype.refresh = function(){
     if(SynrecMC.permaDeath)$gameParty.removeDeadMembers();
     $gamePlayer.refresh();
     $gameMap.refresh();
-    $gameTemp.requestBattleRefresh();
+    if(!MONSTER_CAPTURE_MV)$gameTemp.requestBattleRefresh();
 }
 
 SynrecWindowCreateClientArea = Window.prototype._createClientArea;
@@ -1058,49 +1073,51 @@ Window.prototype._createClientArea = function() {
 
 Window.prototype.createSprites = function(){};
 
-SynrecMCWinStsBseDrwActrName = Window_StatusBase.prototype.drawActorName;
-Window_StatusBase.prototype.drawActorName = function(actor, x, y, width) {
-    width = width || 168;
-    this.changeTextColor(ColorManager.hpColor(actor));
-    this.drawGenderIcon(actor, x, y);
-    this.drawText(actor.name(), x + ImageManager.iconWidth, y, width - ImageManager.iconWidth);
-}
+if(!MONSTER_CAPTURE_MV){
+    SynrecMCWinStsBseDrwActrName = Window_StatusBase.prototype.drawActorName;
+    Window_StatusBase.prototype.drawActorName = function(actor, x, y, width) {
+        width = width || 168;
+        this.changeTextColor(ColorManager.hpColor(actor));
+        this.drawGenderIcon(actor, x, y);
+        this.drawText(actor.name(), x + ImageManager.iconWidth, y, width - ImageManager.iconWidth);
+    }
 
-Window_StatusBase.prototype.drawGenderIcon = function(actor, x, y){
-    const gender = actor._gender;
-    if(!gender)return this.drawIcon(0, x, y);
-    const allGenders = SynrecMC.genders;
-    let data = undefined;
-    for(let i = 0; i < allGenders.length; i++){
-        const genderData = allGenders[i];
-        if(genderData['Gender Name'].toLowerCase() == gender){
-            return this.drawIcon(genderData['Gender Icon'], x, y);
+    Window_StatusBase.prototype.drawGenderIcon = function(actor, x, y){
+        const gender = actor._gender;
+        if(!gender)return this.drawIcon(0, x, y);
+        const allGenders = SynrecMC.genders;
+        let data = undefined;
+        for(let i = 0; i < allGenders.length; i++){
+            const genderData = allGenders[i];
+            if(genderData['Gender Name'].toLowerCase() == gender){
+                return this.drawIcon(genderData['Gender Icon'], x, y);
+            }
         }
     }
-}
 
-Window_StatusBase.prototype.placeActorName = function(actor, x, y) {
-    const key = ["actor%1-name".format(actor.actorId()), actor.index()];
-    const sprite = this.createInnerSprite(key, Sprite_Name);
-    sprite.setup(actor);
-    sprite.move(x, y);
-    sprite.show();
-}
+    Window_StatusBase.prototype.placeActorName = function(actor, x, y) {
+        const key = ["actor%1-name".format(actor.actorId()), actor.index()];
+        const sprite = this.createInnerSprite(key, Sprite_Name);
+        sprite.setup(actor);
+        sprite.move(x, y);
+        sprite.show();
+    }
 
-Window_StatusBase.prototype.placeStateIcon = function(actor, x, y) {
-    const key = ["actor%1-stateIcon".format(actor.actorId()), actor.index()];
-    const sprite = this.createInnerSprite(key, Sprite_StateIcon);
-    sprite.setup(actor);
-    sprite.move(x, y);
-    sprite.show();
-}
+    Window_StatusBase.prototype.placeStateIcon = function(actor, x, y) {
+        const key = ["actor%1-stateIcon".format(actor.actorId()), actor.index()];
+        const sprite = this.createInnerSprite(key, Sprite_StateIcon);
+        sprite.setup(actor);
+        sprite.move(x, y);
+        sprite.show();
+    }
 
-Window_StatusBase.prototype.placeGauge = function(actor, type, x, y) {
-    const key = ["actor%1-gauge-%2".format(actor.actorId(), type), actor.index()];
-    const sprite = this.createInnerSprite(key, Sprite_Gauge);
-    sprite.setup(actor, type);
-    sprite.move(x, y);
-    sprite.show();
+    Window_StatusBase.prototype.placeGauge = function(actor, type, x, y) {
+        const key = ["actor%1-gauge-%2".format(actor.actorId(), type), actor.index()];
+        const sprite = this.createInnerSprite(key, Sprite_Gauge);
+        sprite.setup(actor, type);
+        sprite.move(x, y);
+        sprite.show();
+    }
 }
 
 Window_MenuStatus.prototype.selectLast = function() {
@@ -1168,7 +1185,15 @@ Window_ReserveBox.prototype = Object.create(Window_Selectable.prototype);
 Window_ReserveBox.prototype.constructor = Window_ReserveBox;
 
 Window_ReserveBox.prototype.initialize = function(rect) {
-    Window_Selectable.prototype.initialize.call(this, rect);
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
     this._boxIdx = 0;
     this._swapMode = false;
     this._swapIdx1 = undefined;
@@ -1276,6 +1301,18 @@ function Window_ReserveBoxName (){
 Window_ReserveBoxName.prototype = Object.create(Window_Base.prototype);
 Window_ReserveBoxName.prototype.constructor = Window_ReserveBoxName;
 
+Window_ReserveBoxName.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
+}
+
 Window_ReserveBoxName.prototype.update = function() {
     Window_Base.prototype.update.call(this);
     this.updateBoxName();
@@ -1315,7 +1352,15 @@ Window_TeamBox.prototype = Object.create(Window_Selectable.prototype);
 Window_TeamBox.prototype.constructor = Window_TeamBox;
 
 Window_TeamBox.prototype.initialize = function(rect){
-    Window_Selectable.prototype.initialize.call(this, rect);
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
     this.loadCharImages();
     this.loadFaceImages();
     this.refresh();
@@ -1387,14 +1432,14 @@ Window_TeamBox.prototype.drawItem = function(index) {
         const y = rect.y;
         const width = rect.width;
         const height = rect.height;
-        this.changeTextColor(ColorManager.customColor('#bbff00'));
+        this.changeTextColor('#bbff00');
         this.drawText(name, x, y - 12, width, 'center');
-        this.changeTextColor(ColorManager.customColor('#aaaaff'));
+        this.changeTextColor('#aaaaff');
         this.drawText(TextManager.levelA, x + 3, y + 24);
         const levelWidth = this.textWidth(TextManager.levelA) + x + 3;
         this.resetTextColor();
         this.drawText(level, levelWidth, y + 24);
-        this.changeTextColor(ColorManager.customColor('#bb77bb'));
+        this.changeTextColor('#bb77bb');
         const genderIcon = () =>{
             let genders = SynrecMC.genders;
             for(genIdx = 0; genIdx < genders.length; genIdx++){
@@ -1418,6 +1463,18 @@ function Window_TeamBoxName (){
 
 Window_TeamBoxName.prototype = Object.create(Window_Base.prototype);
 Window_TeamBoxName.prototype.constructor = Window_TeamBoxName;
+
+Window_TeamBoxName.prototype.initialize = function(){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
+}
 
 Window_TeamBoxName.prototype.update = function() {
     Window_Base.prototype.update.call(this);
@@ -1453,6 +1510,18 @@ function Window_ActorData (){
 
 Window_ActorData.prototype = Object.create(Window_Base.prototype);
 Window_ActorData.prototype.constructor = Window_ActorData;
+
+Window_ActorData.prototype.initialize = function(){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
+}
 
 Window_ActorData.prototype.update = function(){
     Window_Base.prototype.update.call(this);
@@ -1498,8 +1567,8 @@ Window_ActorData.prototype.drawData = function(){
     const data = this._data;
     this.resetTextColor();
     if(data){
-        const iconSize = Math.max(ImageManager.iconWidth, ImageManager.iconHeight);
-        const faceSize = Math.max(ImageManager.faceWidth, ImageManager.faceHeight);
+        const iconSize = 32;
+        const faceSize = 144;
         const name = data._name;
         const level = data._level;
         const gender = data._gender;
@@ -1542,7 +1611,7 @@ Window_ActorData.prototype.drawData = function(){
         this.drawFace(data.faceName(), data.faceIndex(), 0, 0, 144, 36);
         this.drawText(name, iconSize + faceSize, 0, this.contentsWidth() / 2, 'left');
         const levelWidth = this.textWidth(level);
-        this.changeTextColor(ColorManager.customColor('#aaaaff'));
+        this.changeTextColor('#aaaaff');
         this.drawText(TextManager.levelA, -levelWidth, 0, this.contentsWidth(), 'right');
         this.resetTextColor();
         this.drawText(level, 0, 0, this.contentsWidth(), 'right');
@@ -1596,6 +1665,28 @@ function Window_RsvpCmd (){
 
 Window_RsvpCmd.prototype = Object.create(Window_Command.prototype);
 Window_RsvpCmd.prototype.constructor = Window_RsvpCmd;
+
+Window_RsvpCmd.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        this._width = w;
+        this._height = h;
+        Window_Command.prototype.initialize.call(this,x,y);
+    }else{
+        Window_Command.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_RsvpCmd.prototype.windowWidth = function() {
+    return this._width;
+}
+
+Window_RsvpCmd.prototype.windowHeight = function() {
+    return this._height;
+}
 
 Window_RsvpCmd.prototype.makeCommandList = function() {
     Window_Command.prototype.makeCommandList.call(this);
@@ -1897,7 +1988,17 @@ Scene_Rename.prototype.create = function() {
     Scene_Base.prototype.create.call(this);
     this.createBackground();
     this.createWindowLayer();
-    this.createButtons();
+    if(!MONSTER_CAPTURE_MV)this.createButtons();
     this.createEditWindow();
     this.createInputWindow();
+}
+
+SynrecMC_ScnMap_Updt = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    SynrecMC_ScnMap_Updt.call(this);
+    this.updateRsvpScenes();
+}
+
+Scene_Map.prototype.updateRsvpScenes = function(){
+    $gameTemp.updateReserveScene();
 }

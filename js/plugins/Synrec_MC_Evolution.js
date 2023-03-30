@@ -668,6 +668,22 @@ function Window_AutoEvolveInfo(){
 Window_AutoEvolveInfo.prototype = Object.create(Window_Selectable.prototype);
 Window_AutoEvolveInfo.prototype.constructor = Window_AutoEvolveInfo;
 
+Window_AutoEvolveInfo.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_AutoEvolveInfo.prototype.standardPadding = function(){
+    return 12;
+}
+
 Window_AutoEvolveInfo.prototype.maxItems = function() {
     return 1;
 }
@@ -687,6 +703,22 @@ function Window_AutoEvolveConfirm(){
 
 Window_AutoEvolveConfirm.prototype = Object.create(Window_Selectable.prototype);
 Window_AutoEvolveConfirm.prototype.constructor = Window_AutoEvolveConfirm;
+
+Window_AutoEvolveConfirm.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_AutoEvolveConfirm.prototype.standardPadding = function(){
+    return 12;
+}
 
 Window_AutoEvolveConfirm.prototype.maxItems = function() {
     return 1;
@@ -719,6 +751,22 @@ function Window_TeamBoxEvolve(){
 Window_TeamBoxEvolve.prototype = Object.create(Window_TeamBox.prototype);
 Window_TeamBoxEvolve.prototype.constructor = Window_TeamBoxEvolve;
 
+Window_TeamBoxEvolve.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_TeamBox.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_TeamBox.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_TeamBoxEvolve.prototype.standardPadding = function(){
+    return 12;
+}
+
 Window_TeamBoxEvolve.prototype.cursorPagedown = function() {}
 
 Window_TeamBoxEvolve.prototype.cursorPageup = function() {}
@@ -740,6 +788,22 @@ function Window_EvolveData (){
 
 Window_EvolveData.prototype = Object.create(Window_Base.prototype);
 Window_EvolveData.prototype.constructor = Window_EvolveData;
+
+Window_EvolveData.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_EvolveData.prototype.standardPadding = function(){
+    return 12;
+}
 
 Window_EvolveData.prototype.update = function(){
     Window_Base.prototype.update.call(this);

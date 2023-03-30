@@ -444,6 +444,22 @@ function Window_ViewBreed(){
 Window_ViewBreed.prototype = Object.create(Window_Selectable.prototype);
 Window_ViewBreed.prototype.constructor = Window_ViewBreed;
 
+Window_ViewBreed.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_ViewBreed.prototype.standardPadding = function(){
+    return 12;
+}
+
 Window_ViewBreed.prototype.maxItems = function(){
     return $gameParty._breederArray.length;
 }
@@ -484,9 +500,22 @@ Window_ParentBreed.prototype = Object.create(Window_Base.prototype);
 Window_ParentBreed.prototype.constructor = Window_ParentBreed;
 
 Window_ParentBreed.prototype.initialize = function(rect, type){
-    Window_Base.prototype.initialize.call(this, rect);
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
     this._type = type;
 }
+
+Window_ParentBreed.prototype.standardPadding = function(){
+    return 12;
+}
+
 Window_ParentBreed.prototype.drawCharacter = function(
     characterName, characterIndex
 ) {
@@ -535,6 +564,23 @@ function Window_PartyBreed(){
 Window_PartyBreed.prototype = Object.create(Window_Selectable.prototype);
 Window_PartyBreed.prototype.constructor = Window_PartyBreed;
 
+Window_PartyBreed.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
+    this._type = type;
+}
+
+Window_PartyBreed.prototype.standardPadding = function(){
+    return 12;
+}
+
 Window_PartyBreed.prototype.maxItems = function(){
     return $gameParty.maxBattleMembers();
 }
@@ -577,6 +623,33 @@ function Window_BreedCommand(){
 
 Window_BreedCommand.prototype = Object.create(Window_Command.prototype);
 Window_BreedCommand.prototype.constructor = Window_BreedCommand;
+
+Window_BreedCommand.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        this._width = w;
+        this._height = h;
+        Window_Command.prototype.initialize.call(this,x,y);
+    }else{
+        Window_Command.prototype.initialize.call(this, rect);
+    }
+    this._type = type;
+}
+
+Window_BreedCommand.prototype.standardPadding = function(){
+    return 12;
+}
+
+Window_BreedCommand.prototype.windowWidth = function(){
+    return this._width;
+}
+
+Window_BreedCommand.prototype.windowHeight = function(){
+    return this._height;
+}
 
 Window_BreedCommand.prototype.makeCommandList = function(){
     Window_Command.prototype.makeCommandList.call(this);

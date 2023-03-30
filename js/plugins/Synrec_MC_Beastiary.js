@@ -302,6 +302,7 @@ Window_MenuCommand.prototype.addOriginalCommands = function() {
 }
 
 Window_MenuCommand.prototype.addBeastiaryCommand = function(){
+    if(!this._handlers)this._handlers = {};
     this.addCommand('Beastiary', 'beastiary');
     let scene = SceneManager._scene;
     this.setHandler("beastiary", scene.openBeastiary.bind(scene));
@@ -313,6 +314,22 @@ function Window_BeastData(){
 
 Window_BeastData.prototype = Object.create(Window_Base.prototype);
 Window_BeastData.prototype.constructor = Window_BeastData;
+
+Window_BeastData.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_BeastData.prototype.standardPadding = function(){
+    return 12;
+}
 
 Window_BeastData.prototype.update = function(){
     Window_Base.prototype.update.call(this);
@@ -391,7 +408,7 @@ Window_BeastData.prototype.drawProfData = function(){
 }
 
 Window_BeastData.prototype.drawParamData = function(){
-    const iconSize = Math.max(ImageManager.iconWidth, ImageManager.iconHeight);
+    const iconSize = 32;
     const maxHp = this._data.param(0);
     const maxMp = this._data.param(1);
     const maxAtk = this._data.param(2);
@@ -447,7 +464,7 @@ Window_BeastData.prototype.drawParamData = function(){
 }
 
 Window_BeastData.prototype.drawExParamData = function(){
-    const iconSize = Math.max(ImageManager.iconWidth, ImageManager.iconHeight);
+    const iconSize = 32;
     const hitRate = (this._data.xparam(0) * 100).toString();
     const evaRate = (this._data.xparam(1) * 100).toString();
     const crtRate = (this._data.xparam(2) * 100).toString();
@@ -510,7 +527,7 @@ Window_BeastData.prototype.drawExParamData = function(){
 }
 
 Window_BeastData.prototype.drawSpParamData = function(){
-    const iconSize = Math.max(ImageManager.iconWidth, ImageManager.iconHeight);
+    const iconSize = 32;
     const tgr = (this._data.sparam(0) * 100).toString();
     const grd = (this._data.sparam(1) * 100).toString();
     const rec = (this._data.sparam(2) * 100).toString();
@@ -601,6 +618,22 @@ function Window_BeastSelc(){
 
 Window_BeastSelc.prototype = Object.create(Window_Selectable.prototype);
 Window_BeastSelc.prototype.constructor = Window_BeastSelc;
+
+Window_BeastSelc.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_BeastSelc.prototype.standardPadding = function(){
+    return 12;
+}
 
 Window_BeastSelc.prototype.update = function(){
     Window_Selectable.prototype.update.call(this);
@@ -695,9 +728,35 @@ function Window_BeastiaryCommand(){
 Window_BeastiaryCommand.prototype = Object.create(Window_HorzCommand.prototype);
 Window_BeastiaryCommand.prototype.constructor = Window_BeastiaryCommand;
 
+Window_BeastiaryCommand.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        this._width = w;
+        this._height = h;
+        Window_HorzCommand.prototype.initialize.call(this,x,y);
+    }else{
+        Window_HorzCommand.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_BeastiaryCommand.prototype.standardPadding = function(){
+    return 12;
+}
+
+Window_BeastiaryCommand.prototype.windowWidth = function(){
+    return this._width;
+}
+
+Window_BeastiaryCommand.prototype.windowHeight = function(){
+    return this._height;
+}
+
 Window_BeastiaryCommand.prototype.maxCols = function() {
-    return 5;
-};
+    return this._list ? this._list.length : 5;
+}
 
 Window_BeastiaryCommand.prototype.makeCommandList = function() {
     Window_HorzCommand.prototype.makeCommandList.call(this);

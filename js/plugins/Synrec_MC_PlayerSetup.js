@@ -731,6 +731,7 @@ Window_MenuCommand.prototype.addOriginalCommands = function() {
 }
 
 Window_MenuCommand.prototype.addPlayerCommand = function(){
+    if(!this._handlers)this._handlers = {};
     this.addCommand('Player', 'player');
     let scene = SceneManager._scene;
     this.setHandler("player", scene.openPlayer.bind(scene));
@@ -742,6 +743,22 @@ function Window_PlayerSceneTitle(){
 
 Window_PlayerSceneTitle.prototype = Object.create(Window_Base.prototype);
 Window_PlayerSceneTitle.prototype.constructor = Window_PlayerSceneTitle;
+
+Window_PlayerSceneTitle.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
+}
+
+Window_PlayerSceneTitle.prototype.standardPadding = function(){
+    return 12;
+}
 
 Window_PlayerSceneTitle.prototype.drawData = function(){
     this.drawText(`Player Information`, 0, 0, this.contentsWidth(), 'center');
@@ -762,8 +779,20 @@ Window_PlayerData.prototype = Object.create(Window_Base.prototype);
 Window_PlayerData.prototype.constructor = Window_PlayerData;
 
 Window_PlayerData.prototype.initialize = function(rect){
-    Window_Base.prototype.initialize.call(this, rect);
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Base.prototype.initialize.call(this, rect);
+    }
     this.loadImages();
+}
+
+Window_PlayerData.prototype.standardPadding = function(){
+    return 12;
 }
 
 Window_PlayerData.prototype.loadImages = function(){
@@ -1077,10 +1106,22 @@ function Window_PlayerEquip(){
 Window_PlayerEquip.prototype = Object.create(Window_Selectable.prototype);
 Window_PlayerEquip.prototype.constructor = Window_PlayerEquip;
 
-Window_PlayerEquip.prototype.initialize = function(rect) {
-    Window_Selectable.prototype.initialize.call(this, rect);
+Window_PlayerEquip.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
     this._actor = $gamePlayer;
     this.refresh();
+}
+
+Window_PlayerEquip.prototype.standardPadding = function(){
+    return 12;
 }
 
 Window_PlayerEquip.prototype.update = function() {
@@ -1128,9 +1169,21 @@ function Window_PlayerEqItem(){
 Window_PlayerEqItem.prototype = Object.create(Window_Selectable.prototype);
 Window_PlayerEqItem.prototype.constructor = Window_PlayerEqItem;
 
-Window_PlayerEqItem.prototype.initialize = function(rect) {
-    Window_Selectable.prototype.initialize.call(this, rect);
+Window_PlayerEqItem.prototype.initialize = function(rect){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
     this._actor = $gamePlayer;
+}
+
+Window_PlayerEqItem.prototype.standardPadding = function(){
+    return 12;
 }
 
 Window_PlayerEqItem.prototype.maxItems = function(){
@@ -1249,8 +1302,8 @@ Scene_PlayerData.prototype.createButtons = function(){
 Scene_PlayerData.prototype.createSceneTitle = function(){
     const x = 0;
     const y = 0;
-    const w = Graphics.width;
-    const h = Graphics.height / 10;
+    const w = Graphics.boxWidth;
+    const h = Graphics.boxHeight / 10;
     const rect = new Rectangle(x, y, w, h);
     this._titleWindow = new Window_PlayerSceneTitle(rect);
     this._titleWindow.refresh();
@@ -1259,9 +1312,9 @@ Scene_PlayerData.prototype.createSceneTitle = function(){
 
 Scene_PlayerData.prototype.createPlayerWindow = function(){
     const x = 0;
-    const y = Graphics.height / 10;
-    const w = Graphics.width * 0.66;
-    const h = Graphics.height - (Graphics.height / 10);
+    const y = Graphics.boxHeight / 10;
+    const w = Graphics.boxWidth * 0.66;
+    const h = Graphics.boxHeight - (Graphics.boxHeight / 10);
     const rect = new Rectangle(x, y, w, h);
     this._playerDataWindow = new Window_PlayerData(rect);
     this._playerDataWindow.refresh();
@@ -1269,10 +1322,10 @@ Scene_PlayerData.prototype.createPlayerWindow = function(){
 }
 
 Scene_PlayerData.prototype.createPlayerEquip = function(){
-    const x = Graphics.width * 0.66;
-    const y = Graphics.height / 10;
-    const w = Graphics.width - (Graphics.width * 0.66);
-    const h = Graphics.height - (Graphics.height / 10);
+    const x = Graphics.boxWidth * 0.66;
+    const y = Graphics.boxHeight / 10;
+    const w = Graphics.boxWidth - x
+    const h = Graphics.boxHeight - y;
     const rect = new Rectangle(x, y, w, h);
     this._playerEqWindow = new Window_PlayerEquip(rect);
     this._playerEqWindow.setHandler('ok', this.onEqOk.bind(this));
@@ -1284,10 +1337,10 @@ Scene_PlayerData.prototype.createPlayerEquip = function(){
 }
 
 Scene_PlayerData.prototype.createPlayerItem = function(){
-    const x = Graphics.width * 0.66;
-    const y = Graphics.height / 10;
-    const w = Graphics.width - (Graphics.width * 0.66);
-    const h = Graphics.height - (Graphics.height / 10);
+    const x = Graphics.boxWidth * 0.66;
+    const y = Graphics.boxHeight / 10;
+    const w = Graphics.boxWidth - x;
+    const h = Graphics.boxHeight - y;
     const rect = new Rectangle(x, y, w, h);
     this._playerItemWindow = new Window_PlayerEqItem(rect);
     this._playerItemWindow.setHandler('ok', this.onItmOk.bind(this));

@@ -299,7 +299,11 @@ Game_Actor.prototype.performSwap = function(){
     $gameParty.allMembers()[this._swapId].appear();
     const animTarget = $gameParty.allMembers()[this._swapId];
     const anim = !isNaN(SynrecMC.Battle.SwapAnim) ? SynrecMC.Battle.SwapAnim : 4;
-    $gameTemp.requestAnimation([animTarget], anim)
+    if(MONSTER_CAPTURE_MV){
+        this.startAnimation(anim);
+    }else{
+        $gameTemp.requestAnimation([animTarget], anim);
+    }
 }
 
 SynrecMCGmActIsSprtVis = Game_Actor.prototype.isSpriteVisible;
@@ -404,7 +408,11 @@ Game_Enemy.prototype.performSwap = function(){
     $gameTroop.members()[this._swapId].appear();
     const animTarget = $gameTroop.members()[this._swapId];
     const anim = !isNaN(SynrecMC.Battle.SwapAnim) ? SynrecMC.Battle.SwapAnim : 4;
-    $gameTemp.requestAnimation([animTarget], anim)
+    if(MONSTER_CAPTURE_MV){
+        this.startAnimation(anim);
+    }else{
+        $gameTemp.requestAnimation([animTarget], anim);
+    }
 }
 
 synrecGmEnemMkActions = Game_Enemy.prototype.makeActions;
@@ -875,6 +883,18 @@ function Window_BattleSwap(){
 Window_BattleSwap.prototype = Object.create(Window_Selectable.prototype);
 Window_BattleSwap.prototype.constructor = Window_BattleSwap;
 
+Window_BattleSwap.prototype.initialize = function(rect, type){
+    if(MONSTER_CAPTURE_MV){
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }else{
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }
+}
+
 Window_BattleSwap.prototype.maxCols = function() {
     return $gameParty.maxBattleMembers() ? $gameParty.maxBattleMembers() : 4;
 }
@@ -885,6 +905,7 @@ Window_BattleSwap.prototype.maxItems = function() {
 
 Window_BattleSwap.prototype.update = function(){
     Window_Selectable.prototype.update.call(this);
+    console.log(this)
     this.updateData();
 }
 
@@ -895,15 +916,14 @@ Window_BattleSwap.prototype.updateData = function(){
 
 Window_BattleSwap.prototype.drawItem = function(index){
     if(!this._data)return;
-    const iconSize = Math.max(ImageManager.iconWidth, ImageManager.iconHeight);
-    const faceSize = Math.max(ImageManager.faceWidth, ImageManager.faceHeight);
+    const iconSize = 32;
     const actor = this._data[index];
     const rect = this.itemRect(index);
     if(actor){
         if(actor.isDead()){
-            this.changeTextColor(ColorManager.customColor('#ffbbbb'));
+            this.changeTextColor('#ffbbbb');
         }else if(actor.isDying()){
-            this.changeTextColor(ColorManager.customColor('#ffffbb'));
+            this.changeTextColor('#ffffbb');
         }else{
             this.resetTextColor();
         }
@@ -954,7 +974,7 @@ Window_BattleSwap.prototype.drawHpGuage = function(current, max, rect){
     const x = rect.x + 3;
     const y = rect.y + 76;
     this.contents.fillRect(x, y, width, 12, '#000000');
-    this.contents.gradientFillRect(x + 2, y + 2, fillW, 10, ColorManager.hpGaugeColor1(), ColorManager.hpGaugeColor2());
+    this.contents.gradientFillRect(x + 2, y + 2, fillW, 10, '#ffaaaa', '#ff0000', true);
 }
 
 Window_BattleSwap.prototype.drawMpGuage = function(current, max, rect){
@@ -964,7 +984,7 @@ Window_BattleSwap.prototype.drawMpGuage = function(current, max, rect){
     const x = rect.x + 3;
     const y = rect.y + 90;
     this.contents.fillRect(x, y, width, 12, '#000000');
-    this.contents.gradientFillRect(x + 2, y + 2, fillW, 10, ColorManager.mpGaugeColor1(), ColorManager.mpGaugeColor2());
+    this.contents.gradientFillRect(x + 2, y + 2, fillW, 10, '#aaaaff', '#0000ff', true);
 }
 
 Window_BattleSwap.prototype.drawTpGuage = function(current, max, rect){
@@ -974,5 +994,5 @@ Window_BattleSwap.prototype.drawTpGuage = function(current, max, rect){
     const x = rect.x + 3;
     const y = rect.y + 104;
     this.contents.fillRect(x, y, width, 12, '#000000');
-    this.contents.gradientFillRect(x + 2, y + 2, fillW, 10, ColorManager.tpGaugeColor1(), ColorManager.tpGaugeColor2());
+    this.contents.gradientFillRect(x + 2, y + 2, fillW, 10, '#aaffaa', '#00ff00', true);
 }

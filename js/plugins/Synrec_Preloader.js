@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v3.1 Preloads image and audio for the game on start
+ * @plugindesc v3.2 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -641,7 +641,6 @@ Scene_Preload.prototype.create = function(){
     this.createVideoSprite();
     this.createSpriteGauge();
     this.createPreloadList();
-    console.log(this)
 }
 
 Scene_Preload.prototype.createBackground = function(){
@@ -697,10 +696,26 @@ Scene_Preload.prototype.createAudioPreload = function(){
             try{
                 const files = fs.readdirSync(`${dir}${folder}/`);
                 files.forEach((file)=>{
-                    if(file.match(/.*.ogg/gi)){
+                    if(file.match(/.*.ogg_/gi)){
+                        const obj = {};
+                        obj.dir = `${folder}/`;
+                        obj.file = path.basename(file, '.ogg_');
+                        audioList.push(obj);
+                    }else if(file.match(/.*.ogg/gi)){
                         const obj = {};
                         obj.dir = `${folder}/`;
                         obj.file = path.basename(file, '.ogg');
+                        audioList.push(obj);
+                    }
+                    if(file.match(/.*.m4a_/gi)){
+                        const obj = {};
+                        obj.dir = `${folder}/`;
+                        obj.file = path.basename(file, '.m4a_');
+                        audioList.push(obj);
+                    }else if(file.match(/.*.m4a/gi)){
+                        const obj = {};
+                        obj.dir = `${folder}/`;
+                        obj.file = path.basename(file, '.m4a');
                         audioList.push(obj);
                     }else if(file.match(/.*.rpgmvo/gi)){
                         const obj = {};
@@ -742,7 +757,6 @@ Scene_Preload.prototype.createImagePreload = function(){
                         obj.file = path.basename(file, '.png');
                         imageList.push(obj);
                     }else if(file.match(/.*.rpgmvp/gi)){
-                        SoundManager.playOk;
                         const obj = {};
                         obj.dir = `${dir}${folder}/`;
                         obj.file = path.basename(file, '.rpgmvp');
@@ -837,12 +851,12 @@ Scene_Preload.prototype.imagePreload = function(){
         if(image_object){
             const folder = image_object.dir;
             const name = image_object.file;
-            // if(folder == `img/system/`){
-            //     if(name == "Loading"){
-            //         this._imagePreload++;
-            //         return;
-            //     }
-            // }
+            if(folder == `img/system/`){
+                if(name == "Loading"){
+                    this._imagePreload++;
+                    return;
+                }
+            }
             ImageManager.loadBitmap(folder, name);
             this._imagePreload++;
             if(this._imagePreload >= this._imageMax){

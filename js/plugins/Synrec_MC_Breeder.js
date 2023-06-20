@@ -1,7 +1,7 @@
 /*:
  * @author Synrec/kylestclr
  * @target MZ
- * @plugindesc v1.2 Breeding System for Monster Capture Plugins
+ * @plugindesc v1.3 Breeding System for Monster Capture Plugins
  * 
  * @help
  * 
@@ -496,7 +496,7 @@ function Window_ParentBreed(){
     this.initialize(...arguments);
 }
 
-Window_ParentBreed.prototype = Object.create(Window_Base.prototype);
+Window_ParentBreed.prototype = Object.create(Window_Selectable.prototype);
 Window_ParentBreed.prototype.constructor = Window_ParentBreed;
 
 Window_ParentBreed.prototype.initialize = function(rect, type){
@@ -722,8 +722,8 @@ Scene_Breeding.prototype.createAllWindows = function(){
 Scene_Breeding.prototype.createBreedWinLeft = function(){
     const x = 0;
     const y = 0;
-    const w = Graphics.width / 3;
-    const h = (Graphics.height / 2) - 72;
+    const w = Graphics.boxWidth / 3;
+    const h = (Graphics.boxHeight / 2) - 48;
     const rect = new Rectangle(x, y, w, h);
     this._parentWinLeft = new Window_ParentBreed(rect, 1);
     this._parentWinLeft.refresh();
@@ -731,9 +731,9 @@ Scene_Breeding.prototype.createBreedWinLeft = function(){
 }
 
 Scene_Breeding.prototype.createBreedWinRight = function(){
-    const w = Graphics.width / 3;
-    const h = (Graphics.height / 2) - 72;
-    const x = Graphics.width - w - 8;
+    const w = Graphics.boxWidth / 3;
+    const h = (Graphics.boxHeight / 2) - 48;
+    const x = Graphics.boxWidth - w;
     const y = 0;
     const rect = new Rectangle(x, y, w, h);
     this._parentWinRight = new Window_ParentBreed(rect, 2);
@@ -743,9 +743,9 @@ Scene_Breeding.prototype.createBreedWinRight = function(){
 
 Scene_Breeding.prototype.createBreedWinParty = function(){
     const w = Graphics.width;
-    const h = Graphics.height / 4;
+    const h = Graphics.boxHeight / 4;
     const x = 0;
-    const y = Graphics.height - h;
+    const y = Graphics.boxHeight - h;
     const rect = new Rectangle(x, y, w, h);
     this._partyWindow = new Window_PartyBreed(rect);
     this._partyWindow.setHandler('ok', this.selectPartySlot.bind(this));
@@ -757,9 +757,9 @@ Scene_Breeding.prototype.createBreedWinParty = function(){
 
 Scene_Breeding.prototype.createBreedWinCmd = function(){
     const w = Graphics.width / 3;
-    const h = Graphics.height / 3
+    const h = Graphics.boxHeight / 3
     const x = (Graphics.width / 2) - (w / 2);
-    const y = (Graphics.height / 2) - (h / 2);
+    const y = (Graphics.boxHeight / 2) - (h / 2);
     const rect = new Rectangle(x, y, w, h);
     this._breedCommand = new Window_BreedCommand(rect);
     this._breedCommand.setHandler('swap1', this.swapWith1.bind(this));
@@ -782,7 +782,7 @@ Scene_Breeding.prototype.createBreedChild = function(){
     breedChar.screenX = function(){return this._screenX};
     breedChar.screenY = function(){return this._screenY};
     breedChar._screenX = Graphics.width / 2;
-    breedChar._screenY = Graphics.height / 2;
+    breedChar._screenY = Graphics.boxHeight / 2;
     breedChar.setOpacity(0);
     breedChar.setDirection(2);
     breedChar.setStepAnime(true);
@@ -893,7 +893,7 @@ Scene_Hatch.prototype.createSprite = function(){
     this._hatchChar.screenX = function(){return this._screenX};
     this._hatchChar.screenY = function(){return this._screenY};
     this._hatchChar._screenX = (Graphics.width / 2);
-    this._hatchChar._screenY = (Graphics.height / 2);
+    this._hatchChar._screenY = (Graphics.boxHeight / 2);
     this._hatchChar.setDirection(2);
     this._hatchChar.setStepAnime(true);
     this._hatchChar.setImage(SynrecMC.Breeder.CharImg, SynrecMC.Breeder.CharIdx);
@@ -1029,8 +1029,8 @@ Scene_BreederSteps.prototype.setBackgroundOpacity = function(opacity) {
 Scene_BreederSteps.prototype.createBreedingWindow = function(){
     const x = 0;
     const y = 0;
-    const w = Graphics.width - 8;
-    const h = Graphics.height - 8;
+    const w = Graphics.boxWidth - 8;
+    const h = Graphics.boxHeight - 8;
     const rect = new Rectangle(x, y, w, h);
     this._viewBreeds = new Window_ViewBreed(rect);
     this._viewBreeds.setHandler('cancel', this.popScene.bind(this));

@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.7 Creates a simple scene which allows actor evolution
+ * @plugindesc v1.8 Creates a simple scene which allows actor evolution
  * 
  * @help
  * This plugin follows the permissions outlined in Synrec_MC_Core.js
@@ -477,7 +477,10 @@ Scene_Evolution.prototype.createExBox = function(){
 Scene_Evolution.prototype.evolve = function(){
     const index = this._teamWindow.index();
     const actor = $gameParty._actors[index];
+    console.log(actor)
     if(!actor){
+        this._teamWindow.activate();
+        this._teamWindow.refresh();
         SoundManager.playBuzzer();
         return;
     }
@@ -832,11 +835,11 @@ Window_EvolveData.prototype.drawData = function(){
         this.drawText(`Target ${TextManager.level} is ${requiredLevel}`, 0, this.contentsHeight() - this.lineHeight(), this.contentsWidth(), 'center');
         if(currentLevel >= requiredLevel && this.hasEvolveItems(requiredItemIds)){
             const targetName = targetData.name;
-            this.changeTextColor(ColorManager.customColor('#aaaaff'));
+            this.changeTextColor('#aaaaff');
             this.drawText(`${SynrecMC.EvolutionCore.evolveYes}`, 0, halfHeight, this.contentsWidth(), 'center');
             this.drawText(`${SynrecMC.EvolutionCore.evolveTarget} ${targetName}`, 0, halfHeight + this.lineHeight(), this.contentsWidth(), 'center');
         }else{
-            this.changeTextColor(ColorManager.customColor('#ffaaaa'));
+            this.changeTextColor('#ffaaaa');
             this.drawText(`${SynrecMC.EvolutionCore.evolveNo}`, 0, halfHeight, this.contentsWidth(), 'center');
         }
     }else{

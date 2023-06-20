@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.0 An enemy capture system
+ * @plugindesc v4.1 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor
@@ -1464,7 +1464,7 @@ function Window_TeamBoxName (){
 Window_TeamBoxName.prototype = Object.create(Window_Base.prototype);
 Window_TeamBoxName.prototype.constructor = Window_TeamBoxName;
 
-Window_TeamBoxName.prototype.initialize = function(){
+Window_TeamBoxName.prototype.initialize = function(rect){
     if(MONSTER_CAPTURE_MV){
         const x = rect.x;
         const y = rect.y;
@@ -1511,7 +1511,7 @@ function Window_ActorData (){
 Window_ActorData.prototype = Object.create(Window_Base.prototype);
 Window_ActorData.prototype.constructor = Window_ActorData;
 
-Window_ActorData.prototype.initialize = function(){
+Window_ActorData.prototype.initialize = function(rect){
     if(MONSTER_CAPTURE_MV){
         const x = rect.x;
         const y = rect.y;

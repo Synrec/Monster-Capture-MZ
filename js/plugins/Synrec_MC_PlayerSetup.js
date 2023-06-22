@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.5 Enables advanced non-battler player setup
+ * @plugindesc v1.6 Enables advanced non-battler player setup
  *
  * @help
  * This plugin follows the permissions outlined in Synrec_MC_Core.js
@@ -1483,7 +1483,7 @@ Game_Actor.prototype.executeRegionDamage = function(){
     const regionId = $gameMap.regionId($gamePlayer._x, $gamePlayer._y);
     const damage = eval(regionDamage(regionId));
     this.gainHp(-damage);
-    $gameTemp.requestAnimation([$gamePlayer], this._regionAnim);
+    MONSTER_CAPTURE_MV ? $gamePlayer.requestAnimation(this._regionAnim) : $gameTemp.requestAnimation([$gamePlayer], this._regionAnim);
     if(this._regionState > 0){
         if(Math.random() < this._regionStateChnce){
             this.addState(this._regionState);
@@ -1673,12 +1673,49 @@ Game_Player.prototype.onDamageRegion = function(){
     return false;
 }
 
+synrecGameFollowersInitPS = Game_Followers.prototype.initialize;
+Game_Followers.prototype.initialize = function() {
+    synrecGameFollowersInitPS.call(this);
+    if(
+        SynrecMC.nonBattlePlayer &&
+        MONSTER_CAPTURE_MV
+    ){
+        const scene = SceneManager._scene;
+        const spriteset = scene._spriteset;
+        const follNum = isNaN(SynrecMC.PlayerSetup.maxFollowers) ? $gameParty.maxBattleMembers() : SynrecMC.PlayerSetup.maxFollowers;
+        for(let i = 0; i < this._data.length; i++){
+            if(i >= follNum){
+                const member = this._data[i];
+                if(spriteset){
+                    const charSprites = spriteset._characterSprites;
+                    const tilemap = spriteset._tilemap;
+                    const sprite = charSprites.find((char_sprite)=>{
+                        const character = charSprite._character;
+                        if(character == member){
+                            return true;
+                        }
+                    })
+                    if(sprite){
+                        tilemap.removeChild(sprite);
+                        const index = charSprites.indexOf(sprite);
+                        charSprites.splice(index, 1);
+                    }
+                }
+            }
+        }
+        while(this._data.length < follNum){
+            const index = JsonEx.makeDeepCopy(this._data.length);
+			this._data.push(new Game_Follower(index));
+        }
+    }
+}
+
 synrecGameFollowersSetupPS = Game_Followers.prototype.setup;
 Game_Followers.prototype.setup = function() {
 	if(SynrecMC.nonBattlePlayer){
         const follNum = isNaN(SynrecMC.PlayerSetup.maxFollowers) ? $gameParty.maxBattleMembers() : SynrecMC.PlayerSetup.maxFollowers;
 		this._data = [];
-		for (var i = 0; i < follNum; i++) {
+		for (let i = 0; i < follNum; i++) {
 			this._data.push(new Game_Follower(i));
 		}
 	}else{

@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.8 Creates a simple scene which allows actor evolution
+ * @plugindesc v1.9 Creates a simple scene which allows actor evolution
  * 
  * @help
  * This plugin follows the permissions outlined in Synrec_MC_Core.js
@@ -10,6 +10,9 @@
  * SceneManager.push(Scene_Evolution)
  * 
  * This plugin acts as the core for evolution for monster capture.
+ * 
+ * Set evolution target with actor notetag <evolveTarget:x> Where x is the
+ * database actor ID.
  * 
  * Set evolution level with actor notetag <evolveLevel:x> where x is an integer.
  * 
@@ -285,9 +288,9 @@ Game_Evolver.prototype.screenY = function(){
 Game_Actor.prototype.meetEvolutionRequirement = function(){
     const evolveLevel = eval(this.actor().meta.evolveLevel);
     const evolveItems = eval(this.actor().meta.evolveItems);
-    const evolveWeapon = eval(this.actor().meta.evolveWeapon);
-    const evolveArmor = eval(this.actor().meta.evolveArmor);
-    const evolveSwitchId = eval(this.actor().meta.evolveSwitch);
+    const evolveWeapon = eval(this.actor().meta.evolveWeapon) || 0;
+    const evolveArmor = eval(this.actor().meta.evolveArmor) || 0;
+    const evolveSwitchId = eval(this.actor().meta.evolveSwitch) || 0;
     if(evolveSwitchId){
         if(!$gameSwitches.value(evolveSwitchId))return false
     }
@@ -300,10 +303,12 @@ Game_Actor.prototype.meetEvolutionRequirement = function(){
     if(!isNaN(evolveWeapon) && evolveWeapon > 0){
         if(!this.hasWeapon(evolveWeapon))return false;
     }
+    if(!$gameSwitches.value(evolveSwitchId) && evolveSwitchId)return false;
     return true;
 }
 
 Game_Actor.prototype.hasEvolveItems = function(arr){
+    if(!Array.isArray(arr))return true;
     if(!arr)return true;
     for(itm = 0; itm < arr.length; itm++){
         let itemId = arr[itm];
@@ -477,7 +482,6 @@ Scene_Evolution.prototype.createExBox = function(){
 Scene_Evolution.prototype.evolve = function(){
     const index = this._teamWindow.index();
     const actor = $gameParty._actors[index];
-    console.log(actor)
     if(!actor){
         this._teamWindow.activate();
         this._teamWindow.refresh();
@@ -568,13 +572,13 @@ Scene_AutoEvolve.prototype.startEvolution = function(){
     if(this._evolutionChar._actor.meetEvolutionRequirement()){
         const evolveAnim = SynrecMC.EvolutionCore.EvolveAnim;
         if(evolveAnim > 0 && !isNaN(evolveAnim)){
-            $gameTemp.requestAnimation([this._evolutionChar], evolveAnim);
+            MONSTER_CAPTURE_MV ? this._evolutionChar.requestAnimation(evolveAnim) : $gameTemp.requestAnimation([this._evolutionChar], evolveAnim);
         }
         this._isEvolving = true;
     }else{
         const evolveAnim = SynrecMC.EvolutionCore.EvolveAnimCancel;
         if(evolveAnim > 0 && !isNaN(evolveAnim)){
-            $gameTemp.requestAnimation([this._evolutionChar], evolveAnim);
+            MONSTER_CAPTURE_MV ? this._evolutionChar.requestAnimation(evolveAnim) : $gameTemp.requestAnimation([this._evolutionChar], evolveAnim);
         }
         this._cancelledEvolve = true;
     }
@@ -614,7 +618,7 @@ Scene_AutoEvolve.prototype.processEvolution = function(){
         }else if(this._cancelledEvolve){
             const animCancel = SynrecMC.EvolutionCore.EvolveAnimCancel;
             if(!isNaN(animCancel) && animCancel > 0){
-                $gameTemp.requestAnimation([this._evolutionChar], animCancel);
+                MONSTER_CAPTURE_MV ? this._evolutionChar.requestAnimation(animCancel) : $gameTemp.requestAnimation([this._evolutionChar], animCancel);
             }
             confirmWindow._evolveStatus = "failed";
         }
@@ -753,18 +757,6 @@ function Window_TeamBoxEvolve(){
 
 Window_TeamBoxEvolve.prototype = Object.create(Window_TeamBox.prototype);
 Window_TeamBoxEvolve.prototype.constructor = Window_TeamBoxEvolve;
-
-Window_TeamBoxEvolve.prototype.initialize = function(rect, type){
-    if(MONSTER_CAPTURE_MV){
-        const x = rect.x;
-        const y = rect.y;
-        const w = rect.width;
-        const h = rect.height;
-        Window_TeamBox.prototype.initialize.call(this,x,y,w,h);
-    }else{
-        Window_TeamBox.prototype.initialize.call(this, rect);
-    }
-}
 
 Window_TeamBoxEvolve.prototype.standardPadding = function(){
     return 12;

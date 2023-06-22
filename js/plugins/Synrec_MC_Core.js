@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.1 An enemy capture system
+ * @plugindesc v4.3 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor
@@ -11,19 +11,7 @@
  * actor.
  * 
  * TERMS OF USE:
- * - You may not use this plugin as a means to steal assets or resources.
- * This includes making fan games with the intent of monetary profit.
- * - You may use this plugin in games intended for release (free or commercial)
- * provided credit is given to Synrec/Kylestclr
- * - You may NOT use this plugin for educational purposes nor as a means to
- * provide public tutoring or any other use case which is not solely for
- * releasing a game.
- * - Do not use this plugin as a means of harassment in any way.
- *
- * Use $gameParty._actors[x]._teamLock = true to lock an actor at index x
- * in the party.
- * 
- * The first actor in the party begins at 0.
+ * Please visit https://synrec.itch.io for terms of use.
  * 
  * 
  * 
@@ -84,7 +72,7 @@
  * })
  * >> actorId refers to the ID of the actor you are trying to find.
  * >> This will return the first instance of the actor
- * >> Use findAll to return an array of all matching actors.
+ * >> Use filter to return an array of all matching actors.
  * >>> You need javascript knowledge to learn how to handle arrays.
  * 
  * @param Gameplay
@@ -694,6 +682,267 @@ ImageManager.loadBackground = function(filename){
     return this.loadBitmap("img/backgrounds/", filename);
 }
 
+function Sprite_GaugeCapture(){ //~ Basically a near replica of MZ version.
+    this.initialize(...arguments);
+}
+
+Sprite_GaugeCapture.prototype = Object.create(Sprite.prototype);
+Sprite_GaugeCapture.prototype.constructor = Sprite_GaugeCapture;
+
+Sprite_GaugeCapture.prototype.initialize = function(){
+    Sprite.prototype.initialize.call(this);
+    this.setupData();
+    this.createBitmap();
+}
+
+Sprite_GaugeCapture.prototype.show = function(){
+    this.visible = true;
+}
+
+Sprite_GaugeCapture.prototype.hide = function(){
+    this.visible = false;
+}
+
+Sprite_GaugeCapture.prototype.setupData = function(){
+    this._battler = null;
+    this._statusType = "";
+    this._value = NaN;
+    this._maxValue = NaN;
+    this._targetValue = NaN;
+    this._targetMaxValue = NaN;
+    this._duration = 0;
+    this._flashingCount = 0;
+}
+
+Sprite_GaugeCapture.prototype.createBitmap = function() {
+    this.bitmap = new Bitmap(128, 32);
+}
+
+Sprite_GaugeCapture.prototype.setup = function(battler, statusType) {
+    this._battler = battler;
+    this._statusType = statusType;
+    this._value = this.currentValue();
+    this._maxValue = this.currentMaxValue();
+    this.updateBitmap();
+}
+
+Sprite_GaugeCapture.prototype.currentValue = function() {
+    if (this._battler) {
+        switch (this._statusType) {
+            case "hp":
+                return this._battler.hp;
+            case "mp":
+                return this._battler.mp;
+            case "tp":
+                return this._battler.tp;
+            case "time":
+                return this._battler.tpbChargeTime();
+        }
+    }
+    return NaN;
+}
+
+Sprite_GaugeCapture.prototype.currentMaxValue = function() {
+    if (this._battler) {
+        switch (this._statusType) {
+            case "hp":
+                return this._battler.mhp;
+            case "mp":
+                return this._battler.mmp;
+            case "tp":
+                return this._battler.maxTp();
+            case "time":
+                return 1;
+        }
+    }
+    return NaN;
+}
+
+Sprite_GaugeCapture.prototype.label = function() {
+    switch (this._statusType) {
+        case "hp":
+            return TextManager.hpA;
+        case "mp":
+            return TextManager.mpA;
+        case "tp":
+            return TextManager.tpA;
+        default:
+            return "";
+    }
+}
+
+Sprite_GaugeCapture.prototype.gaugeBackColor = function() {
+    return '#000000';
+}
+
+Sprite_GaugeCapture.prototype.gaugeColor1 = function() {
+    switch (this._statusType) {
+        case "hp":
+            return '#ff0000';
+        case "mp":
+            return '#0000ff';
+        case "tp":
+            return '#00ff00';
+        default:
+            return '#000000';
+    }
+}
+
+Sprite_GaugeCapture.prototype.gaugeColor2 = function() {
+    switch (this._statusType) {
+        case "hp":
+            return '#ffaaaa';
+        case "mp":
+            return '#aaaaff';
+        case "tp":
+            return '#aaffaa';
+        default:
+            return '#ffffff';
+    }
+}
+
+Sprite_GaugeCapture.prototype.labelColor = function() {
+    return '#aaccff';
+}
+
+Sprite_GaugeCapture.prototype.labelOutlineColor = function() {
+    return '#555555'
+}
+
+Sprite_GaugeCapture.prototype.labelOutlineWidth = function() {
+    return 3;
+}
+
+Sprite_GaugeCapture.prototype.valueOutlineColor = function() {
+    return "rgba(0, 0, 0, 1)";
+}
+
+Sprite_GaugeCapture.prototype.valueOutlineWidth = function() {
+    return 2;
+}
+
+Sprite_GaugeCapture.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+    this.updateBitmap();
+}
+
+Sprite_GaugeCapture.prototype.updateBitmap = function() {
+    const value = this.currentValue();
+    const maxValue = this.currentMaxValue();
+    if (value !== this._targetValue || maxValue !== this._targetMaxValue) {
+        this.updateTargetValue(value, maxValue);
+    }
+    this.updateGaugeAnimation();
+}
+
+Sprite_GaugeCapture.prototype.updateTargetValue = function(value, maxValue) {
+    this._targetValue = value;
+    this._targetMaxValue = maxValue;
+    if (isNaN(this._value)) {
+        this._value = value;
+        this._maxValue = maxValue;
+        this.redraw();
+    } else {
+        this._duration = 20;
+    }
+}
+
+Sprite_GaugeCapture.prototype.updateGaugeAnimation = function() {
+    if (this._duration > 0) {
+        const d = this._duration;
+        this._value = (this._value * (d - 1) + this._targetValue) / d;
+        this._maxValue = (this._maxValue * (d - 1) + this._targetMaxValue) / d;
+        this._duration--;
+        this.redraw();
+    }
+}
+
+Sprite_GaugeCapture.prototype.redraw = function() {
+    this.bitmap.clear();
+    const currentValue = this.currentValue();
+    if (!isNaN(currentValue)) {
+        this.drawGauge();
+        if (this._statusType !== "time") {
+            this.drawLabel();
+            if (this.isValid()) {
+                this.drawValue();
+            }
+        }
+    }
+}
+
+Sprite_GaugeCapture.prototype.drawGauge = function() {
+    const gaugeX = 6;
+    const gaugeY = 18;
+    const gaugewidth = 128 - gaugeX;
+    const gaugeHeight = 12;
+    this.drawGaugeRect(gaugeX, gaugeY, gaugewidth, gaugeHeight);
+}
+
+Sprite_GaugeCapture.prototype.drawGaugeRect = function(x, y, width, height) {
+    const rate = this.gaugeRate();
+    const fillW = Math.floor((width - 2) * rate);
+    const fillH = height - 2;
+    const color0 = this.gaugeBackColor();
+    const color1 = this.gaugeColor1();
+    const color2 = this.gaugeColor2();
+    this.bitmap.fillRect(x, y, width, height, color0);
+    this.bitmap.gradientFillRect(x + 1, y + 1, fillW, fillH, color1, color2);
+}
+
+Sprite_GaugeCapture.prototype.gaugeRate = function() {
+    if (this.isValid()) {
+        const value = this._value;
+        const maxValue = this._maxValue;
+        return maxValue > 0 ? value / maxValue : 0;
+    } else {
+        return 0;
+    }
+}
+
+Sprite_GaugeCapture.prototype.isValid = function() {
+    if (this._battler) {
+        if (this._statusType === "tp" && !this._battler.isPreserveTp()) {
+            return $gameParty.inBattle();
+        } else {
+            return true;
+        }
+    }
+    return false;
+}
+
+Sprite_GaugeCapture.prototype.drawLabel = function() {
+    const label = this.label();
+    const x = this.labelOutlineWidth() / 2;
+    const y = 3;
+    const width = 128;
+    const height = 24;
+    this.setupLabelFont();
+    this.bitmap.paintOpacity = 255;
+    this.bitmap.drawText(label, x, y, width, height, "left");
+    this.bitmap.paintOpacity = 255;
+}
+
+Sprite_GaugeCapture.prototype.setupLabelFont = function() {
+    this.bitmap.textColor = this.labelColor();
+    this.bitmap.outlineColor = this.labelOutlineColor();
+    this.bitmap.outlineWidth = this.labelOutlineWidth();
+}
+
+Sprite_GaugeCapture.prototype.drawValue = function() {
+    const currentValue = this.currentValue();
+    const width = 128;
+    const height = 24;
+    this.setupValueFont();
+    this.bitmap.drawText(currentValue, 0, 0, width, height, "right");
+}
+
+Sprite_GaugeCapture.prototype.setupValueFont = function() {
+    this.bitmap.textColor = '#ffffff';
+    this.bitmap.outlineColor = this.valueOutlineColor();
+    this.bitmap.outlineWidth = this.valueOutlineWidth();
+}
+
 Game_Temp.prototype.reserveBootScene = function(data){
     if(!Array.isArray(this._rsvpScenesMC))this._rsvpScenesMC = [];
     this._rsvpScenesMC.push(data);
@@ -729,11 +978,26 @@ Game_Player.prototype.refresh = function() {
 	}
 }
 
+synrecGameFollowersInit = Game_Followers.prototype.initialize;
+Game_Followers.prototype.initialize = function() {
+    synrecGameFollowersInit.call(this);
+    if(
+        SynrecMC.nonBattlePlayer &&
+        MONSTER_CAPTURE_MV
+    ){
+        const array = this._data;
+        array.forEach((member)=>{
+            const index = array.indexOf(member);
+            member._memberIndex = index;
+        })
+    }
+}
+
 synrecGameFollowersSetup = Game_Followers.prototype.setup;
 Game_Followers.prototype.setup = function() {
 	if(SynrecMC.nonBattlePlayer){
 		this._data = [];
-		for (var i = 0; i < $gameParty.maxBattleMembers(); i++) {
+		for (let i = 0; i < $gameParty.maxBattleMembers(); i++) {
 			this._data.push(new Game_Follower(i));
 		}
 	}else{
@@ -1120,8 +1384,11 @@ if(!MONSTER_CAPTURE_MV){
     }
 }
 
-Window_MenuStatus.prototype.selectLast = function() {
-    this.smoothSelect(0);
+SynrecMCWinMnuStsSelcLast = Window_MenuStatus.prototype.selectLast;
+Window_MenuStatus.prototype.selectLast = function() { /**Overwrite Func */
+    if(!MONSTER_CAPTURE_MV){
+        this.smoothSelect(0);
+    }else this.select(0);
 }
 
 SynrecMCWnBattLogDispAddState = Window_BattleLog.prototype.displayAddedStates
@@ -1231,17 +1498,21 @@ Window_ReserveBox.prototype.rowSpacing = function() {
 Window_ReserveBox.prototype.cursorPagedown = function() {
     if(this._boxIdx + 1 < SynrecMC.numberReserveBoxes){
         this._boxIdx++
-        SoundManager.playCursor();
-        this.refresh();
-    }else this._boxIdx = 0;
+    }else{
+        this._boxIdx = 0;
+    }
+    SoundManager.playCursor();
+    this.refresh();
 }
 
 Window_ReserveBox.prototype.cursorPageup = function() {
     if(this._boxIdx - 1 >= 0){
         this._boxIdx--
-        SoundManager.playCursor();
-        this.refresh();
-    }else this._boxIdx = SynrecMC.numberReserveBoxes - 1;
+    }else{
+        this._boxIdx = SynrecMC.numberReserveBoxes - 1;
+    }
+    SoundManager.playCursor();
+    this.refresh();
 }
 
 Window_ReserveBox.prototype.processPageup = function() {
@@ -1266,8 +1537,8 @@ Window_ReserveBox.prototype.itemRect = function(index) {
     const rowSpacing = this.rowSpacing();
     const col = index % maxCols;
     const row = Math.floor(index / maxCols);
-    const x = col * itemWidth + colSpacing / 2 - this.scrollBaseX();
-    const y = row * itemHeight + rowSpacing / 2 - this.scrollBaseY();
+    const x = col * itemWidth + colSpacing / 2 - this._scrollX;
+    const y = row * itemHeight + rowSpacing / 2 - this._scrollY;
     const width = itemWidth - 12;
     const height = itemHeight - 12;
     return new Rectangle(x, y, width, height);
@@ -1373,19 +1644,23 @@ Window_TeamBox.prototype.maxCols = function() {
 Window_TeamBox.prototype.cursorPagedown = function() {
     if(this._reserveBox._boxIdx + 1 < SynrecMC.numberReserveBoxes){
         this._reserveBox._boxIdx++
-        SoundManager.playCursor();
-        this._reserveBox.refresh();
-        this.refresh();
-    }else this._reserveBox._boxIdx = 0;
+    }else{
+        this._reserveBox._boxIdx = 0;
+    }
+    SoundManager.playCursor();
+    this._reserveBox.refresh();
+    this.refresh();
 }
 
 Window_TeamBox.prototype.cursorPageup = function() {
     if(this._reserveBox._boxIdx - 1 >= 0){
-        this._reserveBox._boxIdx--
-        SoundManager.playCursor();
-        this._reserveBox.refresh();
-        this.refresh();
-    }else this._reserveBox._boxIdx = SynrecMC.numberReserveBoxes - 1;
+        this._reserveBox._boxIdx--;
+    }else{
+        this._reserveBox._boxIdx = SynrecMC.numberReserveBoxes - 1;
+    }
+    SoundManager.playCursor();
+    this._reserveBox.refresh();
+    this.refresh();
 }
 
 Window_TeamBox.prototype.update = function(){
@@ -1548,9 +1823,11 @@ Window_ActorData.prototype.updateGaugeSprites = function(){
 
 Window_ActorData.prototype.placeGauge = function(actor, type, x, y) {
     const key = "actor%1-gauge-%2".format(actor.actorId(), type);
-    const sprite = this.createInnerSprite(key, Sprite_Gauge);
+    const sprite = this.createInnerSprite(key, MONSTER_CAPTURE_MV ? Sprite_GaugeCapture : Sprite_Gauge);
     sprite.setup(actor, type);
-    sprite.move(x + 4, y);
+    const cor_x = MONSTER_CAPTURE_MV ? 18 : 4;
+    const cor_y = MONSTER_CAPTURE_MV ? 18 : 0;
+    sprite.move(x + cor_x, y + cor_y);
     sprite.show();
 }
 
@@ -1559,7 +1836,7 @@ Window_ActorData.prototype.createInnerSprite = function(key, spriteClass) {
     const dict = this._additionalSprites;
     const sprite = new spriteClass();
     dict[key] = sprite;
-    this.addInnerChild(sprite);
+    MONSTER_CAPTURE_MV ? this.addChild(sprite) : this.addInnerChild(sprite);
     return sprite;
 }
 
@@ -1654,7 +1931,7 @@ Window_ActorData.prototype.hideSprites = function(){
 Window_ActorData.prototype.refresh = function(){
     if(this.contents){
         this.contents.clear();
-        this.contentsBack.clear();
+        if(this.contentsBack)this.contentsBack.clear();
         this.drawData();
     }
 }
@@ -1787,20 +2064,20 @@ Scene_RsvpBox.prototype.createExBox = function(){
 }
 
 Scene_RsvpBox.prototype.createActorDataWindow = function(){
-    const y = Graphics.height / 10 + Graphics.height / 3;
-    const w = (Graphics.width / 3) * 2;
-    const h = Graphics.height - y;
-    const x = Graphics.width - w;
+    const y = Graphics.boxHeight / 10 + Graphics.boxHeight / 3;
+    const w = (Graphics.boxWidth / 3) * 2;
+    const h = Graphics.boxHeight - y;
+    const x = Graphics.boxWidth - w;
     const rect = new Rectangle(x, y, w, h);
     this._actorDataWindow = new Window_ActorData(rect);
     this.addWindow(this._actorDataWindow);
 }
 
 Scene_RsvpBox.prototype.createTeamWindow = function(){
-    const w = Graphics.width;
-    const h = Graphics.height / 3;
+    const w = Graphics.boxWidth;
+    const h = Graphics.boxHeight / 3;
     const x = 0;
-    const y = Graphics.height / 10;
+    const y = Graphics.boxHeight / 10;
     const rect = new Rectangle(x, y, w, h);
     this._teamWindow = new Window_TeamBox(rect);
     this._teamWindow._reserveBox = this._reserveWindow;

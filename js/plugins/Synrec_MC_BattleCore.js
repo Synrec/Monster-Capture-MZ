@@ -905,7 +905,6 @@ Window_BattleSwap.prototype.maxItems = function() {
 
 Window_BattleSwap.prototype.update = function(){
     Window_Selectable.prototype.update.call(this);
-    console.log(this)
     this.updateData();
 }
 

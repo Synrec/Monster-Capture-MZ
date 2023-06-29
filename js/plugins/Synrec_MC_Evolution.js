@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.9 Creates a simple scene which allows actor evolution
+ * @plugindesc v2.0 Creates a simple scene which allows actor evolution
  * 
  * @help
  * This plugin follows the permissions outlined in Synrec_MC_Core.js
@@ -613,12 +613,16 @@ Scene_AutoEvolve.prototype.processEvolution = function(){
     if(!this._evolutionChar.isAnimationPlaying()){
         let confirmWindow = this._confirmWindow;
         if(this._isEvolving){
+            this._isEvolving = false;
             this._evolutionChar._actor.evolve();
             confirmWindow._evolveStatus = "success";
         }else if(this._cancelledEvolve){
-            const animCancel = SynrecMC.EvolutionCore.EvolveAnimCancel;
-            if(!isNaN(animCancel) && animCancel > 0){
-                MONSTER_CAPTURE_MV ? this._evolutionChar.requestAnimation(animCancel) : $gameTemp.requestAnimation([this._evolutionChar], animCancel);
+            if(!this._playCancelAnim){
+                this._playCancelAnim = true;
+                const animCancel = SynrecMC.EvolutionCore.EvolveAnimCancel;
+                if(!isNaN(animCancel) && animCancel > 0){
+                    MONSTER_CAPTURE_MV ? this._evolutionChar.requestAnimation(animCancel) : $gameTemp.requestAnimation([this._evolutionChar], animCancel);
+                }
             }
             confirmWindow._evolveStatus = "failed";
         }

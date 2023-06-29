@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.8 Battle Core for the Monster Capture System.[EXPERIMENTAL RELEASE!!!]
+ * @plugindesc v1.9 Battle Core for the Monster Capture System.[EXPERIMENTAL RELEASE!!!]
  *
  *@help
  * This plugin inherits the permissions outlined in Synrec_MC_Core.js
@@ -421,6 +421,7 @@ Game_Enemy.prototype.makeActions = function() {
         Game_Battler.prototype.makeActions.call(this);
         if(this.numActions() > 0){
             const skillList = this._skills;
+            console.log(skillList)
             this.selectSkill(skillList);
         }
         this.setActionState("waiting");
@@ -633,10 +634,16 @@ Spriteset_Battle.prototype.update = function() {
 
 Spriteset_Battle.prototype.updateEnemySort = function(){
     this._enemySprites.sort(this.compareSprites.bind(this, true))
+    this._enemySprites.forEach((enemy)=>{
+        if(!enemy._battler)enemy._movementDuration = 0;
+    })
 }
 
 Spriteset_Battle.prototype.updateActorSort = function(){
     this._actorSprites.sort(this.compareSprites.bind(this, false))
+    this._actorSprites.forEach((actor)=>{
+        if(!actor._battler)actor._movementDuration = 0;
+    })
 }
 
 Spriteset_Battle.prototype.compareSprites = function(a, b, reverse){

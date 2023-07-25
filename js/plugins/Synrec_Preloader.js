@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v3.2 Preloads image and audio for the game on start
+ * @plugindesc v3.3 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -917,7 +917,12 @@ Scene_Preload.prototype.imagePreloadF = function(){
 }
 
 Scene_Preload.prototype.completePreload = function(){
-    if(Input.isTriggered('ok') || Input.isTriggered('cancel') || SynrecPL.Bypass_Confirm){
+    if(
+        Input.isTriggered('ok') || 
+        Input.isTriggered('cancel') || 
+        SynrecPL.Bypass_Confirm || 
+        TouchInput.isTriggered()
+    ){
         SceneManager.goto(Scene_Title);
     }
 }

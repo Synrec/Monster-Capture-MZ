@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v3.3 Preloads image and audio for the game on start
+ * @plugindesc v3.4 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -691,6 +691,7 @@ Scene_Preload.prototype.createAudioPreload = function(){
     try{
         const is_test = Utils.isOptionValid("test");
         const dir = !is_test && is_MV_Preload ? `./www/audio/` : `./audio/`;
+        const dir_load = !is_test && is_MV_Preload ? `www/audio/` : `audio/`;
         const folders = fs.readdirSync(dir);
         folders.forEach((folder)=>{
             try{
@@ -741,6 +742,7 @@ Scene_Preload.prototype.createImagePreload = function(){
     try{
         const is_test = Utils.isOptionValid("test");
         const dir = !is_test && is_MV_Preload ? `./www/img/` : `./img/`;
+        const dir_load = !is_test && is_MV_Preload ? `www/img/` : `img/`;
         const folders = fs.readdirSync(dir);
         folders.forEach((folder)=>{
             try{
@@ -748,17 +750,17 @@ Scene_Preload.prototype.createImagePreload = function(){
                 files.forEach((file)=>{
                     if(file.match(/.*.png_/gi)){
                         const obj = {};
-                        obj.dir = `${dir}${folder}/`;
+                        obj.dir = `${dir_load}${folder}/`;
                         obj.file = path.basename(file, '.png_');
                         imageList.push(obj);
                     }else if(file.match(/.*.png/gi)){
                         const obj = {};
-                        obj.dir = `${dir}${folder}/`;
+                        obj.dir = `${dir_load}${folder}/`;
                         obj.file = path.basename(file, '.png');
                         imageList.push(obj);
                     }else if(file.match(/.*.rpgmvp/gi)){
                         const obj = {};
-                        obj.dir = `${dir}${folder}/`;
+                        obj.dir = `${dir_load}${folder}/`;
                         obj.file = path.basename(file, '.rpgmvp');
                         imageList.push(obj);
                     }

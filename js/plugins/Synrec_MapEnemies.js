@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.6 Enemies spawn on the map based on notetags
+ * @plugindesc v1.7 Enemies spawn on the map based on notetags
  *
  * @help
  * You are not permitted to:
@@ -79,6 +79,11 @@
  * @option random
  * @option flee
  * 
+ * @param Spawn Regions
+ * @desc Region IDs where the enemy will spawn.
+ * @type number[]
+ * @default []
+ * 
  * @param No Spawn Regions
  * @desc Region IDs where the enemy won't spawn
  * @type number[]
@@ -122,9 +127,16 @@ SynrecME.DefaultEnemyIndex = eval(SynrecME.Plugins['Default Character Index']) |
 SynrecME.DefaultEnemyRange = eval(SynrecME.Plugins['Enemy Detection Range']) || 5;
 SynrecME.DefaultEnemyMove = SynrecME.Plugins['Enemy Move Type'].toLowerCase();
 
+if(SynrecME.Plugins['Spawn Regions']){
+    SynrecME.SpwnRgn = JSON.parse(SynrecME.Plugins['Spawn Regions']);
+    for(let ns = 0; ns < SynrecME.SpwnRgn.length; ns++){
+        SynrecME.SpwnRgn[ns] = eval(SynrecME.SpwnRgn[ns]);
+    }
+}else SynrecME.SpwnRgn = [];
+
 if(SynrecME.Plugins['No Spawn Regions']){
     SynrecME.NoSpwnRgn = JSON.parse(SynrecME.Plugins['No Spawn Regions']);
-    for(ns = 0; ns < SynrecME.NoSpwnRgn.length; ns++){
+    for(let ns = 0; ns < SynrecME.NoSpwnRgn.length; ns++){
         SynrecME.NoSpwnRgn[ns] = eval(SynrecME.NoSpwnRgn[ns]);
     }
 }else SynrecME.NoSpwnRgn = [];
@@ -398,6 +410,7 @@ Scene_Map.prototype.createDisplayObjects = function() {
 
 Scene_Map.prototype.createEnemies = function(){
     $gameTroop.clear();
+    const allowedRegions = SynrecME.SpwnRgn;
     const bannedRegions = SynrecME.NoSpwnRgn;
     const retainEnemy = SynrecME.RetainEnemy;
     if(!$dataMap.meta.enemies)return;
@@ -431,16 +444,32 @@ Scene_Map.prototype.createEnemies = function(){
     }
     if(enemyArr){
         if(!chckArr(enemyArr))throw new Error("Incorrect form of enemies note tag. Please visit https://synrec.dev and check documentation.")
-        while(this._mapEnemies.length < enemyCnt){
+        let coords = [];
+        for(let y = 0; y < $gameMap.height(); y++){
+            for(let x = 0; x < $gameMap.width(); x++){
+                const region = $gameMap.regionId(x, y);
+                if(
+                    !bannedRegions.includes(region) &&
+                    (
+                        allowedRegions.includes(region) ||
+                        allowedRegions.length <= 0
+                    )
+                ){
+                    coords.push([x,y]);
+                }
+            }
+        }
+        console.log(allowedRegions)
+        while(this._mapEnemies.length < enemyCnt && coords.length > 0){
             const rndmEnemyIdx = Math.floor(Math.random() * enemyArr.length);
             const rndmEnemy = enemyArr[rndmEnemyIdx];
             const enemData = new Game_MapEnemy(rndmEnemy);
-
-            if(!enemData._noEnemy){
-                var rndmX = Math.floor(Math.random() * $gameMap.width());
-                var rndmY = Math.floor(Math.random() * $gameMap.height());
-                var regionId = $gameMap.regionId(rndmX, rndmY);
-                if(!bannedRegions.includes(regionId)){
+            const ci = Math.randomInt(coords.length);
+            const coord = coords.splice(ci, 1)[0];
+            if(coord){
+                if(!enemData._noEnemy){
+                    const rndmX = coord[0];
+                    const rndmY = coord[1];
                     enemData.locate(rndmX, rndmY);
                     var sprite = new Sprite_Character(enemData);
                     this._spriteset._characterSprites.push(sprite);
@@ -449,7 +478,7 @@ Scene_Map.prototype.createEnemies = function(){
                     SceneManager._mapEnemies = this._mapEnemies;
                     SceneManager._mapId = $gameMap._mapId;
                 }
-            }
+            }else break;
         }
     }
     if(!isNaN($dataMap.meta.eliteEnemy)){

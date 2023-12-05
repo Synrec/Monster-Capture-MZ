@@ -459,7 +459,6 @@ Scene_Map.prototype.createEnemies = function(){
                 }
             }
         }
-        console.log(allowedRegions)
         while(this._mapEnemies.length < enemyCnt && coords.length > 0){
             const rndmEnemyIdx = Math.floor(Math.random() * enemyArr.length);
             const rndmEnemy = enemyArr[rndmEnemyIdx];

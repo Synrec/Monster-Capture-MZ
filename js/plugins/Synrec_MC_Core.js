@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.3 An enemy capture system
+ * @plugindesc v4.4 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor
@@ -94,6 +94,11 @@
  * @desc Maximum number of characters for rename
  * @type number
  * @default 8
+ * 
+ * @param No Rename Actors
+ * @desc List of actors exempt from rename scene
+ * @type actor[]
+ * @default []
  * 
  * @param Base Item Capture
  * @parent Gameplay
@@ -557,6 +562,14 @@ SynrecMC.lockActors = eval(SynrecMC.Plugins['Lock Initial Actor']);
 SynrecMC.followerLimit = eval(SynrecMC.Plugins['Follower Limit']);
 SynrecMC.baseCapture = eval(SynrecMC.Plugins['Base Item Capture']);
 SynrecMC.MaxNameChars = eval(SynrecMC.Plugins['Max Rename Characters']);
+
+try{
+    const no_renames = JSON.parse(SynrecMC.Plugins['No Rename Actors']).map(id => eval(id));
+    SynrecMC.NO_RENAMES = no_renames;
+}catch(e){
+    console.warn(`Unable to parse rename array. ${e}`)
+    SynrecMC.NO_RENAMES = [];
+}
 
 SynrecMC.successCaptureAnim = eval(SynrecMC.Plugins['Capture Success Animation']);
 SynrecMC.failCaptureAnim = eval(SynrecMC.Plugins['Capture Failure Animation']);
@@ -1246,7 +1259,8 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
 }
 
 Game_Party.prototype.doAddActorExtra = function(actor){
-    this.callRenameScene(actor);
+    const id = actor._actorId;
+    if(!SynrecMC.NO_RENAMES.includes(id))this.callRenameScene(actor);
 }
 
 Game_Party.prototype.callRenameScene = function(actor){

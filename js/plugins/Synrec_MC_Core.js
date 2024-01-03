@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.4 An enemy capture system
+ * @plugindesc v4.5 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor
@@ -13,7 +13,10 @@
  * TERMS OF USE:
  * Please visit https://synrec.itch.io for terms of use.
  * 
- * 
+ * You can change player graphic during gameplay with script call:
+ * $gamePlayer.setBattlePlayerGraphic("filename", index)
+ * - Remember to put the character file name in quotation
+ * - Name matching is exact (including upper and lower case)
  * 
  * [Actor Note Tags]
  * -- <genderArray:[gender, gender, gender...]>
@@ -979,11 +982,24 @@ Game_Temp.prototype.bootRequiredSceneMC = function(scene){
     }
 }
 
+Game_Player.prototype.setBattlePlayerGraphic = function(file, index){
+    this._non_battle_file = file;
+    this._non_battle_index = index;
+}
+
+Game_Player.prototype.nonBattleFile = function(){
+    return this._non_battle_file || SynrecMC.nonBattlePlayerFile;
+}
+
+Game_Player.prototype.nonBattleFile = function(){
+    return isNaN(this._non_battle_index) ? SynrecMC.nonBattlePlayerIndex : this._non_battle_index;
+}
+
 synrecGamePlayerRefresh = Game_Player.prototype.refresh;
 Game_Player.prototype.refresh = function() {
 	if(SynrecMC.nonBattlePlayer){
-        const charName = SynrecMC.nonBattlePlayerFile;
-        const charIndex = SynrecMC.nonBattlePlayerIndex;
+        const charName = this.nonBattleFile();
+        const charIndex = this.nonBattleIndex();
 		this.setImage(charName, charIndex);
 		this._followers.refresh();
 	}else{

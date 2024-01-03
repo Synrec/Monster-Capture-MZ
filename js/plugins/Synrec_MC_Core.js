@@ -991,7 +991,7 @@ Game_Player.prototype.nonBattleFile = function(){
     return this._non_battle_file || SynrecMC.nonBattlePlayerFile;
 }
 
-Game_Player.prototype.nonBattleFile = function(){
+Game_Player.prototype.nonBattleIndex = function(){
     return isNaN(this._non_battle_index) ? SynrecMC.nonBattlePlayerIndex : this._non_battle_index;
 }
 

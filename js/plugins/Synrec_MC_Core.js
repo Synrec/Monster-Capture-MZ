@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.5 An enemy capture system
+ * @plugindesc v4.6 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor

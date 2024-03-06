@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.3 Create Text Sounds
+ * @plugindesc v1.4 Create Text Sounds
  *
  * @help Create text sounds which play by default or based on
  * face graphic set.
@@ -192,7 +192,7 @@ Window_Message.prototype.updateMessage = function() {
 }
 
 Window_Message.prototype.playSound = function(textState){
-    var matchChar = /([A-Za-z])/g;
+    const matchChar = /([A-Za-z\u3040-\u30FF\u4E00-\u9FAF])/g;
     const text = textState.text;
     const index = textState.index;
     const chara = text[index];

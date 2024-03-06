@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.6 An enemy capture system
+ * @plugindesc v4.7 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor
@@ -1032,6 +1032,29 @@ Game_Followers.prototype.setup = function() {
 	}else{
 		synrecGameFollowersSetup.call(this);
 	}
+}
+
+synrecGameFollowersUpdate = Game_Followers.prototype.update;
+Game_Followers.prototype.update = function() {
+    synrecGameFollowersUpdate.call(this);
+    this.updateStepping();
+}
+
+Game_Followers.prototype.updateStepping = function(){
+    const battleMembers = $gameParty.battleMembers();
+    const step_anime_arr = battleMembers.map((actor)=>{
+        const data = actor.actor();
+        const is_step = !!(eval(data.meta['Step Anime']));
+        return is_step;
+    })
+    if(!SynrecMC.nonBattlePlayer){
+        step_anime_arr.shift();
+    }
+    const followers = this._data;
+    for(let i = 0; i < followers.length; i++){
+        const follower = followers[i];
+        follower.setStepAnime(!!step_anime_arr[i]);
+    }
 }
 
 SynrecMCGmActSetSub = Game_Action.prototype.setSubject;

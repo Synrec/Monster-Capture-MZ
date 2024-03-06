@@ -1,7 +1,7 @@
 /*:@author Synrec 
  * @target MZ
  *
- * @plugindesc v1.7 Enemies spawn on the map based on notetags
+ * @plugindesc v1.8 Enemies spawn on the map based on notetags
  *
  * @help
  * You are not permitted to:
@@ -158,14 +158,6 @@ try{
     }
 }catch(e){
     console.error(e);
-}
-
-function chckArr(arr){
-    const arrChk = JSON.stringify(arr);
-    const arrNull = arrChk[0];
-    const arrMax = arrChk[arrChk.length - 1];
-    if(arrNull == "[" && arrMax == "]")return true;
-    return false;
 }
 
 function Game_MapEnemy(){
@@ -414,7 +406,7 @@ Scene_Map.prototype.createEnemies = function(){
     const bannedRegions = SynrecME.NoSpwnRgn;
     const retainEnemy = SynrecME.RetainEnemy;
     if(!$dataMap.meta.enemies)return;
-    const enemyArr = JSON.parse($dataMap.meta.enemies);
+    const enemyArr = JSON.parse($dataMap.meta.enemies || []);
     const enemyCnt = $dataMap.meta.enemyCount ? eval($dataMap.meta.enemyCount) : SynrecME.DefaultCount;
     this._mapEnemies = [];
     if(retainEnemy){
@@ -428,7 +420,7 @@ Scene_Map.prototype.createEnemies = function(){
                     chkr--;
                 }
             }
-            this._mapEnemies.forEach(function(enemy){
+            this._mapEnemies.forEach((enemy)=>{
                 const scene = SceneManager._scene;
                 const gameEnem = enemy._gameEnemy;
                 if(gameEnem.isAlive()){
@@ -443,7 +435,7 @@ Scene_Map.prototype.createEnemies = function(){
         }
     }
     if(enemyArr){
-        if(!chckArr(enemyArr))throw new Error("Incorrect form of enemies note tag. Please visit https://synrec.dev and check documentation.")
+        if(!Array.isArray(enemyArr))throw new Error("Incorrect form of enemies note tag. Please visit https://synrec.dev and check documentation.")
         let coords = [];
         for(let y = 0; y < $gameMap.height(); y++){
             for(let x = 0; x < $gameMap.width(); x++){

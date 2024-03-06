@@ -1,7 +1,7 @@
 /*:@author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io
- * @plugindesc v4.7 An enemy capture system
+ * @plugindesc v4.8 An enemy capture system
  *
  * @help
  * This plugin allows you to set capturable enemies by designating an actor
@@ -19,6 +19,9 @@
  * - Name matching is exact (including upper and lower case)
  * 
  * [Actor Note Tags]
+ * -- <Step Anime>
+ * >> Allows actor (as a follower) to permanently have step animation
+ * 
  * -- <genderArray:[gender, gender, gender...]>
  * >> A list of genders the actor is capable of having.
  * >>> Please use the name of the gender set in the plugin parameters
@@ -1183,29 +1186,45 @@ Game_BattlerBase.prototype.setGender = function(gender){
 		if(this.isEnemy()){
             const actorId = this.enemy().meta.captureActor;
             const actorData = $dataActors[actorId];
-            let genderArr = actorData.meta.genderArray;
+            let genderArr = null;
+            try{
+                genderArr = JSON.parse(actorData.meta.genderArray);
+            }catch(e){
+                genderArr = null;
+            }
             if(!genderArr){
                 genderArr = [];
-                for(ga = 0; ga < SynrecMC.genders.length; ga++){
+                for(let ga = 0; ga < SynrecMC.genders.length; ga++){
                     genderArr.push(SynrecMC.genders[ga]['Gender Name']);
                 }
             }else{
-                for(ga = 0; ga < genderArr.length; ga++){
+                for(let ga = 0; ga < genderArr.length; ga++){
                     genderArr[ga] = genderArr[ga].toLowerCase().replace(/\s/g, '');
                 }
             }
             const genderIdx = Math.floor(Math.random() * genderArr.length);
             this._gender = genderArr[genderIdx];
         }else if(this.isActor()){
-            let genderArr = this.actor().meta.genderArray;
+            let genderArr = null;
+            try{
+                genderArr = JSON.parse(this.actor().meta.genderArray);
+            }catch(e){
+                genderArr = null;
+            }
             if(!genderArr){
                 genderArr = [];
-                for(ga = 0; ga < SynrecMC.genders.length; ga++){
-                    genderArr.push(SynrecMC.genders[ga]['Gender Name']);
+                for(let ga = 0; ga < SynrecMC.genders.length; ga++){
+                    const data = SynrecMC.genders[ga];
+                    if(data){
+                        genderArr.push(data['Gender Name']);
+                    }
                 }
             }else{
-                for(ga = 0; ga < genderArr.length; ga++){
-                    genderArr[ga] = genderArr[ga].toLowerCase();
+                for(let ga = 0; ga < genderArr.length; ga++){
+                    const name = genderArr[ga];
+                    if(name){
+                        genderArr[ga] = name.toString().toLowerCase();
+                    }
                 }
             }
             const genderIdx = Math.floor(Math.random() * genderArr.length);

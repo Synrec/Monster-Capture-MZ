@@ -1,55 +1,26 @@
-/*:@author Synrec 
+/*:@author Synrec/Kylestclr
  * @target MZ
+ * @url https://synrec.itch.io/
  *
- * @plugindesc v1.8 Enemies spawn on the map based on notetags
+ * @plugindesc v1.0.0 Enemies spawn on the map based plugin parameters
  *
  * @help
- * You are not permitted to:
- * - Use this plugin in projects not mentioned above without authorization
- * from the author.
- * - Use this plugin as part of a method to steal assets from other projects.
- * - Use this plugin to create fan projects which you gain monetary or any otherwise
- * financial benefit
- * - Use this plugin as a form of harassment
- * - Claim this plugin as your own
- *
- * You are required to:
- * - Give credit to the author.
- * - Notify the author of your use of the plugin.
- * This plugin uses enemy notetags to setup enemies on the map itself.
- * 
- * Use enemy notetag <characterName:x> to set the character file used for enemy
- * graphic. x = file name from /img/characters/
- * 
- * Use enemy notetag <characterIndex:x> to set the character index from the enemy
- * chracter file. x = number (0 ~ 7)
  * 
  * Use enemy notetag <detectRange:x> to set the detection range of the enemy. x = number.
  * 
  * Use enemy notetag <moveType:x> to set the move type when enemy detects player.
  * x = flee, observe, random or approach.
  * 
- * Use map notetag <enemies:[x,y,z]> to setup map enemies.
- * x, y, z are enemy IDs from the database.
- * 
- * Use map notetag <enemyCount:x> to set the number of enemies for the map.
- * x is a number or script which can be evaluated as such.
- * 
  * Use script call $gameSystem._escapeMapEnemy = true to allow
- * actor to escape map enemy. Default value is true.
+ * actor to escape map enemy. Default value is 'false'.
  * 
  * Use script call $gameSystem._loseMapEnemy = true to allow
- * actor to lose to map enemy. Default value is false.
+ * actor to lose to map enemy. Default value is 'false'.
  * 
- * @param Enemy Placement Positions
- * @desc Setup enemy positioning.
- * @type struct<PlacementPos>[]
+ * @param Map Configurations
+ * @desc Setup troop spawn on map
+ * @type struct<mapTroop>[]
  * @default []
- * 
- * @param Max Enemy Count
- * @desc Maximum number of enemies in troop
- * @type number
- * @default 8
  * 
  * @param Default Character Image
  * @desc Image used for character when none specified
@@ -63,41 +34,10 @@
  * @min 0
  * @max 7
  * 
- * @param Enemy Detection Range
- * @desc Number of tile distance before player is detected
- * @type number
- * @default 5
- * @min 1
- * @max 20
- * 
- * @param Enemy Move Type
- * @desc How enemy moves after detecting player
- * @type select
- * @default observe
- * @option observe
- * @option approach
- * @option random
- * @option flee
- * 
- * @param Spawn Regions
- * @desc Region IDs where the enemy will spawn.
- * @type number[]
+ * @param Enemy Placement Positions
+ * @desc Setup enemy positioning.
+ * @type struct<PlacementPos>[]
  * @default []
- * 
- * @param No Spawn Regions
- * @desc Region IDs where the enemy won't spawn
- * @type number[]
- * @default []
- * 
- * @param Default Enemy Count
- * @desc Default number of enemies per map
- * @type number
- * @default 10
- * 
- * @param Encounter Troop ID
- * @desc Troop ID used for encounter. Best if blank.
- * @type number
- * @default 1
  * 
  * @param Retain Enemies
  * @desc Resets enemies only when the map is changed.
@@ -116,112 +56,362 @@
  * @type number
  * @default 0
  */
+/*~struct~troopSetup:
+ * 
+ * @param Name
+ * @desc No function
+ * @type text
+ * @default TROOP
+ * 
+ * @param Event
+ * @desc Call common event instead of normal battle
+ * @type common_event
+ * @default 0
+ * 
+ * @param No Kill
+ * @parent Event
+ * @desc Prevent event from dying by event trigger and set respawn timer.
+ * @type boolean
+ * @default false
+ * 
+ * @param Enemies
+ * @desc Enemies that can be included in the troop
+ * @type enemy[]
+ * @default []
+ * 
+ * @param Victory Event
+ * @parent Enemies
+ * @desc Common event to play if the battle ends in victory.
+ * @type common_event
+ * @default 0
+ * 
+ * @param Defeat Event
+ * @parent Enemies
+ * @desc Common event to play if the battle ends in defeat.
+ * @type common_event
+ * @default 0
+ * 
+ * @param Can Escape
+ * @desc Allow player to escape troop
+ * @type boolean
+ * @default true
+ * 
+ * @param Can Lose
+ * @desc Allow player to lose to troop
+ * @type boolean
+ * @default false
+ * 
+ * @param Minimal Number
+ * @desc Least amount of enemies in troop
+ * @type text
+ * @default 1
+ * 
+ * @param Maximum Number
+ * @desc Max amount of enemies in troop
+ * @type text
+ * @default 4
+ * 
+ * @param Character File
+ * @desc Character file used to represent troop
+ * @type file
+ * @dir img/characters/
+ * 
+ * @param Character File Index
+ * @desc Image graphic index (For 8 character sheet)
+ * @type text
+ * @default 0
+ * 
+ * @param Move Speed
+ * @desc Speed of the troop
+ * @type text
+ * @default 3
+ * 
+ * @param Move Frequency
+ * @desc How frequent event will move
+ * @type text
+ * @default 5
+ * 
+ * @param Near Balloon
+ * @desc Balloon to play when near
+ * @type select
+ * @option Exclamation
+ * @value 1
+ * @option Question
+ * @value 2
+ * @option Music Note
+ * @value 3
+ * @option Heart
+ * @value 4
+ * @option Anger
+ * @value 5
+ * @option Sweat
+ * @value 6
+ * @option Fustration
+ * @value 7
+ * @option Silence
+ * @value 8
+ * @option Light Bulb
+ * @value 9
+ * @option ZZZ
+ * @value 10
+ * @option User Defined 1
+ * @value 11
+ * @option User Defined 2
+ * @value 12
+ * @option User Defined 3
+ * @value 13
+ * @option User Defined 4
+ * @value 14
+ * @option User Defined 5
+ * @value 15
+ * @default 1
+ * 
+ * @param Detect Range
+ * @desc Number of tiles for detect range
+ * @type text
+ * @default 5
+ * 
+ * @param Detect Action
+ * @parent Detect Range
+ * @desc Action to take if player is near
+ * @type select
+ * @option random
+ * @option approach
+ * @option observe
+ * @option flee
+ * @default random
+ * 
+ */
+/*~struct~mapTroop:
+ *
+ * @param Name
+ * @desc No function
+ * @type text
+ * @default MAP
+ * 
+ * @param Map
+ * @desc ID of the map
+ * @type text
+ * @default 0
+ * 
+ * @param Troops
+ * @desc Setup potential troops
+ * @type struct<troopSetup>[]
+ * @default []
+ * 
+ * @param Maximum Number
+ * @desc Max amount of troops on map.
+ * @type text
+ * @default 4
+ * 
+ * @param Spawn Regions
+ * @desc Regions in which enemy can spawn
+ * @type text[]
+ * @default []
+ * 
+ */
 
 
-SynrecME = {};
-SynrecME.Version = "1.6";
+const SynrecME = {};
+SynrecME.Plugin = PluginManager.parameters('Synrec_MapEnemies');
 
-SynrecME.Plugins = PluginManager.parameters('Synrec_MapEnemies');
-SynrecME.DefaultEnemyImage = SynrecME.Plugins['Default Character Image'];
-SynrecME.DefaultEnemyIndex = eval(SynrecME.Plugins['Default Character Index']) || 0;
-SynrecME.DefaultEnemyRange = eval(SynrecME.Plugins['Enemy Detection Range']) || 5;
-SynrecME.DefaultEnemyMove = SynrecME.Plugins['Enemy Move Type'].toLowerCase();
+SynrecME.DEFAULT_CHARACTER_FILE = SynrecME.Plugin['Default Character Image'];
+SynrecME.DEFAULT_CHARACTER_INDEX = SynrecME.Plugin['Default Character Index'];
+SynrecME.RETAIN_ENEMIES = eval(SynrecME.Plugin['Retain Enemies']);
 
-if(SynrecME.Plugins['Spawn Regions']){
-    SynrecME.SpwnRgn = JSON.parse(SynrecME.Plugins['Spawn Regions']);
-    for(let ns = 0; ns < SynrecME.SpwnRgn.length; ns++){
-        SynrecME.SpwnRgn[ns] = eval(SynrecME.SpwnRgn[ns]);
+function TROOP_DATA_PARSER_MAP_ENEMIES(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Enemies'] = JSON.parse(obj['Enemies']);
+        return obj;
+    }catch(e){
+        return;
     }
-}else SynrecME.SpwnRgn = [];
-
-if(SynrecME.Plugins['No Spawn Regions']){
-    SynrecME.NoSpwnRgn = JSON.parse(SynrecME.Plugins['No Spawn Regions']);
-    for(let ns = 0; ns < SynrecME.NoSpwnRgn.length; ns++){
-        SynrecME.NoSpwnRgn[ns] = eval(SynrecME.NoSpwnRgn[ns]);
-    }
-}else SynrecME.NoSpwnRgn = [];
-
-SynrecME.DefaultCount = eval(SynrecME.Plugins['Default Enemy Count']) || 10;
-SynrecME.DefaultTroop = eval(SynrecME.Plugins['Encounter Troop ID']) || 1;
-SynrecME.TroopMax = eval(SynrecME.Plugins['Max Enemy Count']) || 8;
-
-SynrecME.RetainEnemy = eval(SynrecME.Plugins['Retain Enemies']);
-SynrecME.EnemyPositions = [];
-try{
-    SynrecME.EnemyPositions = JSON.parse(SynrecME.Plugins['Enemy Placement Positions']);
-    for(let i = 0; i < SynrecME.TroopMax; i++){
-        if(SynrecME.EnemyPositions[i]){
-            SynrecME.EnemyPositions[i] = JSON.parse(SynrecME.EnemyPositions[i]);
-            SynrecME.EnemyPositions[i]['Position X'] = eval(SynrecME.EnemyPositions[i]['Position X']);
-            SynrecME.EnemyPositions[i]['Position Y'] = eval(SynrecME.EnemyPositions[i]['Position Y']);
-        }
-    }
-}catch(e){
-    console.error(e);
 }
 
-function Game_MapEnemy(){
+function MAP_ENEMIES_PARSER_MAP_ENEMIES(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Troops'] = JSON.parse(obj['Troops']).map((config)=>{
+                return TROOP_DATA_PARSER_MAP_ENEMIES(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Troops'] = [];
+        }
+        try{
+            obj['Spawn Regions'] = JSON.parse(obj['Spawn Regions']);
+        }catch(e){
+            obj['Spawn Regions'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+try{
+    SynrecME.MAP_CONFIGURATIONS = JSON.parse(SynrecME.Plugin['Map Configurations']).map((config)=>{
+        return MAP_ENEMIES_PARSER_MAP_ENEMIES(config);
+    }).filter(Boolean)
+}catch(e){
+    SynrecME.MAP_CONFIGURATIONS = [];
+}
+
+function ENEMY_POSITION_PARSER_MAP_ENEMIES(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Position X'] = eval(obj['Position X']);
+        obj['Position Y'] = eval(obj['Position Y']);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+try{
+    SynrecME.EnemyPositions = JSON.parse(SynrecME.Plugins['Enemy Placement Positions']).map((pos)=>{
+        return ENEMY_POSITION_PARSER_MAP_ENEMIES(pos);
+    }).filter(Boolean);
+}catch(e){
+    SynrecME.EnemyPositions = [];
+}
+
+SynrecME_BattMngr_EndBatt = BattleManager.endBattle
+BattleManager.endBattle = function(result) {
+    SynrecME_BattMngr_EndBatt.call(this, ...arguments);
+    if(this.engagedMapTroop()){
+        switch(result){
+            case 0:
+                $gameTemp.reserveCommonEvent($gameTemp._victory_map_enemies);
+                break;
+            case 2:
+                $gameTemp.reserveCommonEvent($gameTemp._defeat_map_enemies);
+                break;
+        }
+    }
+}
+
+BattleManager.engagedMapTroop = function(){
+    const map_enemies = SceneManager._mapEnemies;
+    if(!map_enemies)return false;
+    return map_enemies.some((map_troop)=>{
+        return map_troop._engaged;
+    })
+}
+
+function Game_MapTroop(){
     this.initialize(...arguments);
 }
 
-Game_MapEnemy.prototype = Object.create(Game_Character.prototype);
-Game_MapEnemy.prototype.constructor = Game_MapEnemy;
+Game_MapTroop.prototype = Object.create(Game_Character.prototype);
+Game_MapTroop.prototype.constructor = Game_MapTroop;
 
-Game_MapEnemy.prototype.initialize = function(enemyId){
+Game_MapTroop.prototype.initialize = function(data){
     Game_Character.prototype.initialize.call(this);
-    this.createEnemy(enemyId);
-    this._spawnDur = 300;
-    this.setMoveSpeed(3);
-    this.setMoveFrequency(5);
+    this.setData(data);
+    this.createTroop();
+    this.setCharaData();
 }
 
-Game_MapEnemy.prototype.createEnemy = function(id){
-    this._gameEnemy = new Game_Enemy(id);
-    const enemyData = $dataEnemies[id];
-    const characterName = enemyData.meta.characterName ? enemyData.meta.characterName : SynrecME.DefaultEnemyImage;
-    const characterIndex= enemyData.meta.characterIndex ? eval(enemyData.meta.characterIndex) : SynrecME.DefaultEnemyIndex;
-    if(characterName && characterIndex){
-        this.setImage(characterName, characterIndex);
-        this._moveType = enemyData.meta.moveType ? (enemyData.meta.moveType).toLowerCase() : SynrecME.DefaultEnemyMove;
-        this._detectRange = enemyData.meta.detectRange ? eval(enemyData.meta.detectRange) : SynrecME.DefaultEnemyRange;
+Game_MapTroop.prototype.isAlive = function(){
+    if(this._trigger_event){
+        return !this._event_activated;
     }else{
-        this._noEnemy = true;
+        if(this._troop.length > 0){
+            return this._troop.some((enemy)=>{
+                return enemy.hp > 0;
+            })
+        }
     }
+    return false;
 }
 
-Game_MapEnemy.prototype.isCollidedWithPlayer = function() {
+Game_MapTroop.prototype.setData = function(data){
+    this._spawnDur = 300;
+    this._trigger_event = eval(data['Event']) || 0;
+    this._detectRange = eval(data['Detect Range']) || 1;
+    this._troop_id = eval(data['Troop ID']) || 1;
+    this._can_escape = eval(data['Can Escape']);
+    this._can_lose = eval(data['Can Lose']);
+    this._victory_event = eval(data['Victory Event']);
+    this._defeat_event = eval(data['Defeat Event']);
+    this._near_balloon = eval(data['Near Balloon']) || 1;
+    this._moveType = data['Detect Action'];
+    this._no_event_kill = eval(data['No Kill']);
+    this._data = data;
+}
+
+Game_MapTroop.prototype.createTroop = function(){
+    if(!isNaN(this._trigger_event) && this._trigger_event > 0){
+        return this._troop = [];
+    }
+    const data = this._data;
+    const enemies = (data['Enemies'] || []).map((id)=>{
+        return eval(id);
+    }).filter(Boolean);
+    if(enemies.length <= 0){
+        throw new Error(`You need to have enemies setup for your troop.`);
+    }
+    const min = eval(data['Minimal Number']);
+    const max = eval(data['Maximum Number']);
+    const num = min + (Math.randomInt(max - min));
+    const game_enemies = [];
+    for(let i = 0; i < num; i++){
+        const e_indx = Math.randomInt(enemies.length);
+        const enemy_id = enemies[e_indx];
+        const game_enemy = new Game_Enemy(enemy_id);
+        game_enemies.push(game_enemy);
+    }
+    this._troop = game_enemies;
+    this._battler = this._troop[0];
+}
+
+Game_MapTroop.prototype.setCharaData = function(){
+    const data = this._data;
+    const file = data['Character File'] || SynrecME.DEFAULT_CHARACTER_FILE || "";
+    const data_index = eval(data['Character File Index']);
+    const index =  isNaN(data_index) ? SynrecME.DEFAULT_CHARACTER_INDEX : data_index || 0;
+    this.setImage(file, index);
+    const spd = eval(data['Move Speed']);
+    const frq = eval(data['Move Frequency']);
+    this.setMoveSpeed(spd || 1);
+    this.setMoveFrequency(frq || 1);
+}
+
+Game_MapTroop.prototype.isCollidedWithPlayer = function() {
     if(this._noEnemy)return false;
     return $gamePlayer._x == this._x 
     && $gamePlayer._y == this._y 
     && $gamePlayer._priorityType == this._priorityType;
 }
 
-Game_MapEnemy.prototype.checkStop = function(threshold) {
+Game_MapTroop.prototype.checkStop = function(threshold) {
     return this._stopCount > threshold;
 }
 
-Game_MapEnemy.prototype.stopCountThreshold = function() {
+Game_MapTroop.prototype.stopCountThreshold = function() {
     return 30 * (5 - this.moveFrequency());
 }
 
-Game_MapEnemy.prototype.isNearPlayer = function() {
+Game_MapTroop.prototype.isNearPlayer = function() {
     const sx = Math.abs(this.deltaXFrom($gamePlayer.x));
     const sy = Math.abs(this.deltaYFrom($gamePlayer.y));
     return sx + sy <= this._detectRange;
 }
 
-Game_MapEnemy.prototype.moveObservePlayer = function(){
+Game_MapTroop.prototype.moveObservePlayer = function(){
     this.turnTowardPlayer();
 }
 
-Game_MapEnemy.prototype.update = function() {
+Game_MapTroop.prototype.update = function() {
     Game_Character.prototype.update.call(this);
     this.updateSelfMovement();
     if(this._spawnDur > 0)this.updateSpawning();
     this.updateDead();
 }
 
-Game_MapEnemy.prototype.updateSpawning = function(){
+Game_MapTroop.prototype.updateSpawning = function(){
     if(this._spawnDur > 0){
         this._spawnDur--;
         if(this._blinkDur <= 0 || isNaN(this._blinkDur)){
@@ -243,13 +433,13 @@ Game_MapEnemy.prototype.updateSpawning = function(){
     }
 }
 
-Game_MapEnemy.prototype.updateSelfMovement = function() {
+Game_MapTroop.prototype.updateSelfMovement = function() {
     if($gameMap.isEventRunning())return false;
     if(this._spawnDur > 0)return false;
     if (this.stopCountThreshold() < this._stopCount) {
         this.resetStopCount();
         if(this.isNearPlayer()){
-            if(!this.isBalloonPlaying())$gameTemp.requestBalloon(this, 1);
+            if(!this.isBalloonPlaying())$gameTemp.requestBalloon(this, this._near_balloon);
             this.resetStopCount();
             switch (this._moveType) {
                 case 'random':
@@ -264,6 +454,7 @@ Game_MapEnemy.prototype.updateSelfMovement = function() {
                 case 'flee':
                     this.moveAwayFromPlayer();
                     break;
+                default: this.moveRandom();
             }
         }else{
             this.resetStopCount();
@@ -273,63 +464,56 @@ Game_MapEnemy.prototype.updateSelfMovement = function() {
     this.updateOnPlayer();
 }
 
-Game_MapEnemy.prototype.updateOnPlayer = function(){
+Game_MapTroop.prototype.updateOnPlayer = function(){
     if($gameMap.isEventRunning())return;
     if($gameTemp.isCommonEventReserved())return;
     if(this._spawnDur > 0)return;
-    if(this.menuCalling)return;
-    if(this._gameEnemy.isDead()){
+    if(!this.isAlive()){
         this._noEnemy = true;
         return;
     }
-    if(this.isCollidedWithPlayer() && $gameTroop._enemies.length <= 0 && !this._engaged && this._gameEnemy.isAlive()){
-        $gameTroop.clear();
-        $gameTroop._troopId = SynrecME.DefaultTroop;
-        const data = this._gameEnemy.enemy();
-        const mapEvnt = data.meta['Map Enemy Event'] ? eval(data.meta['Map Enemy Event']) : 0;
-        if(mapEvnt){
-            if(isNaN(mapEvnt))throw new Error('Map Event must be evaluated as a number.');
-            $gameTemp.reserveCommonEvent(mapEvnt);
+    if(
+        this.isCollidedWithPlayer() && 
+        $gameTroop._enemies.length <= 0 && 
+        !this._engaged && 
+        this.isAlive()
+    ){
+        const trigger_event = this._trigger_event;
+        const troop = this._troop;
+        if(trigger_event){
+            $gameTemp.reserveCommonEvent(trigger_event);
+            if(this._no_event_kill){
+                this._spawnDur = 300;
+            }else{
+                this._event_activated = true;
+                this._engaged = true;
+            }
         }else{
-            this.grabEnemies();
+            $gameTemp._victory_map_enemies = this._victory_event;
+            $gameTemp._defeat_map_enemies = this._defeat_event;
+            $gameTroop.clear();
+            $gameTroop._troopId = 1;
+            $gameTroop._enemies = troop;
             this.fixEnemyPositions();
             this._engaged = true;
             $gameTroop.makeUniqueNames();
             BattleManager.initMembers();
             BattleManager.makeEscapeRatio();
-            BattleManager._canEscape = $gameSystem._escapeMapEnemy || true;
-            BattleManager._canLose = $gameSystem._loseMapEnemy || false;
+            BattleManager._canEscape = $gameSystem._escapeMapEnemy || this._can_escape;
+            BattleManager._canLose = $gameSystem._loseMapEnemy || this._can_lose;
             BattleManager.onEncounter();
             SceneManager.push(Scene_Battle);
         }
     }
 }
 
-Game_MapEnemy.prototype.updateDead = function(){
-    if(this._gameEnemy.isDead()){
+Game_MapTroop.prototype.updateDead = function(){
+    if(!this.isAlive()){
         this._noEnemy = true;
     }
 }
 
-Game_MapEnemy.prototype.grabEnemies = function(){
-    const scene = SceneManager._scene
-    for (let emem = 0; emem < scene._mapEnemies.length; emem++){
-        const targetEnem = scene._mapEnemies[emem];
-        const pluX = this._x + this._detectRange;
-        const negX = this._x - this._detectRange;
-        const pluY = this._y + this._detectRange;
-        const negY = this._y - this._detectRange;
-        if($gameTroop._enemies.length + 1 >= SynrecME.TroopMax)return;
-        if(!$gameTroop._enemies.includes(targetEnem) && targetEnem._gameEnemy.isAlive()){
-            if(targetEnem._x >= negX && targetEnem._x <= pluX && targetEnem._y >= negY && targetEnem._y <= pluY){
-                $gameTroop._enemies.push(targetEnem._gameEnemy);
-            }
-        }
-        if($gameTroop._enemies.length >= SynrecME.TroopMax)return;
-    }
-}
-
-Game_MapEnemy.prototype.fixEnemyPositions = function(){
+Game_MapTroop.prototype.fixEnemyPositions = function(){
     const numEnemies = $gameTroop._enemies.length;
     const paramPosArr = SynrecME.EnemyPositions;
     const offsetX = 0;
@@ -379,7 +563,7 @@ Scene_Map.prototype.checkForDead = function(){
     for(let deid = 0; deid < this._mapEnemies.length; deid++){
         const enem = this._mapEnemies[deid];
         if(enem){
-            if(enem._gameEnemy.isDead()){
+            if(!enem.isAlive()){
                 for(let sprtChk = 0; sprtChk < spriteset._characterSprites.length; sprtChk++){
                     const chara = spriteset._characterSprites[sprtChk];
                     if(chara._character == enem){
@@ -402,12 +586,14 @@ Scene_Map.prototype.createDisplayObjects = function() {
 
 Scene_Map.prototype.createEnemies = function(){
     $gameTroop.clear();
-    const allowedRegions = SynrecME.SpwnRgn;
-    const bannedRegions = SynrecME.NoSpwnRgn;
-    const retainEnemy = SynrecME.RetainEnemy;
-    if(!$dataMap.meta.enemies)return;
-    const enemyArr = JSON.parse($dataMap.meta.enemies || []);
-    const enemyCnt = $dataMap.meta.enemyCount ? eval($dataMap.meta.enemyCount) : SynrecME.DefaultCount;
+    const map_enemy_config = SynrecME.MAP_CONFIGURATIONS.find((map_config)=>{
+        return eval(map_config['Map']) == $gameMap._mapId;
+    })
+    if(!map_enemy_config)return;
+    const allowedRegions = map_enemy_config['Spawn Regions'].map(id=>eval(id));
+    const retainEnemy = SynrecME.RETAIN_ENEMIES;
+    const enemyArr = map_enemy_config['Troops'];
+    const enemyCnt = eval(map_enemy_config['Maximum Number']);
     this._mapEnemies = [];
     if(retainEnemy){
         if(SceneManager._mapEnemies && SceneManager._mapId == $gameMap._mapId){
@@ -415,15 +601,14 @@ Scene_Map.prototype.createEnemies = function(){
             for(let chkr = 0; chkr < this._mapEnemies.length; chkr++){
                 const chkE = this._mapEnemies[chkr];
                 chkE.update();
-                if(chkE._gameEnemy.isDead()){
+                if(!chkE.isAlive()){
                     this._mapEnemies.splice(chkr, 1);
                     chkr--;
                 }
             }
             this._mapEnemies.forEach((enemy)=>{
                 const scene = SceneManager._scene;
-                const gameEnem = enemy._gameEnemy;
-                if(gameEnem.isAlive()){
+                if(enemy.isAlive()){
                     const sprite = new Sprite_Character(enemy);
                     scene._spriteset._characterSprites.push(sprite);
                     scene._spriteset._tilemap.addChild(sprite);
@@ -441,11 +626,8 @@ Scene_Map.prototype.createEnemies = function(){
             for(let x = 0; x < $gameMap.width(); x++){
                 const region = $gameMap.regionId(x, y);
                 if(
-                    !bannedRegions.includes(region) &&
-                    (
-                        allowedRegions.includes(region) ||
-                        allowedRegions.length <= 0
-                    )
+                    allowedRegions.includes(region) ||
+                    allowedRegions.length <= 0
                 ){
                     coords.push([x,y]);
                 }
@@ -454,7 +636,7 @@ Scene_Map.prototype.createEnemies = function(){
         while(this._mapEnemies.length < enemyCnt && coords.length > 0){
             const rndmEnemyIdx = Math.floor(Math.random() * enemyArr.length);
             const rndmEnemy = enemyArr[rndmEnemyIdx];
-            const enemData = new Game_MapEnemy(rndmEnemy);
+            const enemData = new Game_MapTroop(rndmEnemy);
             const ci = Math.randomInt(coords.length);
             const coord = coords.splice(ci, 1)[0];
             if(coord){
@@ -470,24 +652,6 @@ Scene_Map.prototype.createEnemies = function(){
                     SceneManager._mapId = $gameMap._mapId;
                 }
             }else break;
-        }
-    }
-    if(!isNaN($dataMap.meta.eliteEnemy)){
-        const enemyId = eval($dataMap.meta.eliteEnemy);
-        let enemData = new Game_MapEnemy(enemyId);
-        while(!this._eliteSpawned){
-            var rndmX = Math.floor(Math.random() * $gameMap.width());
-            var rndmY = Math.floor(Math.random() * $gameMap.height());
-            var regionId = $gameMap.regionId(rndmX, rndmY);
-            if(!bannedRegions.includes(regionId)){
-                enemData.locate(rndmX, rndmY);
-                var sprite = new Sprite_Character(enemData);
-                this._spriteset._characterSprites.push(sprite);
-                this._spriteset._tilemap.addChild(sprite);
-                this._mapEnemies.push(enemData);
-                SceneManager._mapEnemies = this._mapEnemies;
-                SceneManager._mapId = $gameMap._mapId;
-            }
         }
     }
 }

@@ -1,4 +1,5 @@
-/*:@author Synrec/Kylestclr
+/*:
+ * @author Synrec/Kylestclr
  * @target MZ
  * @url https://synrec.itch.io/
  *
@@ -212,12 +213,12 @@
  */
 
 
-const SynrecME = {};
-SynrecME.Plugin = PluginManager.parameters('Synrec_MapEnemies');
+const Syn_ME = {};
+Syn_ME.Plugin = PluginManager.parameters('Synrec_MapEnemies');
 
-SynrecME.DEFAULT_CHARACTER_FILE = SynrecME.Plugin['Default Character Image'];
-SynrecME.DEFAULT_CHARACTER_INDEX = SynrecME.Plugin['Default Character Index'];
-SynrecME.RETAIN_ENEMIES = eval(SynrecME.Plugin['Retain Enemies']);
+Syn_ME.DEFAULT_CHARACTER_FILE = Syn_ME.Plugin['Default Character Image'];
+Syn_ME.DEFAULT_CHARACTER_INDEX = Syn_ME.Plugin['Default Character Index'];
+Syn_ME.RETAIN_ENEMIES = eval(Syn_ME.Plugin['Retain Enemies']);
 
 function TROOP_DATA_PARSER_MAP_ENEMIES(obj){
     try{
@@ -251,11 +252,11 @@ function MAP_ENEMIES_PARSER_MAP_ENEMIES(obj){
 }
 
 try{
-    SynrecME.MAP_CONFIGURATIONS = JSON.parse(SynrecME.Plugin['Map Configurations']).map((config)=>{
+    Syn_ME.MAP_CONFIGURATIONS = JSON.parse(Syn_ME.Plugin['Map Configurations']).map((config)=>{
         return MAP_ENEMIES_PARSER_MAP_ENEMIES(config);
     }).filter(Boolean)
 }catch(e){
-    SynrecME.MAP_CONFIGURATIONS = [];
+    Syn_ME.MAP_CONFIGURATIONS = [];
 }
 
 function ENEMY_POSITION_PARSER_MAP_ENEMIES(obj){
@@ -270,11 +271,11 @@ function ENEMY_POSITION_PARSER_MAP_ENEMIES(obj){
 }
 
 try{
-    SynrecME.EnemyPositions = JSON.parse(SynrecME.Plugins['Enemy Placement Positions']).map((pos)=>{
+    Syn_ME.EnemyPositions = JSON.parse(Syn_ME.Plugins['Enemy Placement Positions']).map((pos)=>{
         return ENEMY_POSITION_PARSER_MAP_ENEMIES(pos);
     }).filter(Boolean);
 }catch(e){
-    SynrecME.EnemyPositions = [];
+    Syn_ME.EnemyPositions = [];
 }
 
 SynrecME_BattMngr_EndBatt = BattleManager.endBattle
@@ -369,9 +370,9 @@ Game_MapTroop.prototype.createTroop = function(){
 
 Game_MapTroop.prototype.setCharaData = function(){
     const data = this._data;
-    const file = data['Character File'] || SynrecME.DEFAULT_CHARACTER_FILE || "";
+    const file = data['Character File'] || Syn_ME.DEFAULT_CHARACTER_FILE || "";
     const data_index = eval(data['Character File Index']);
-    const index =  isNaN(data_index) ? SynrecME.DEFAULT_CHARACTER_INDEX : data_index || 0;
+    const index =  isNaN(data_index) ? Syn_ME.DEFAULT_CHARACTER_INDEX : data_index || 0;
     this.setImage(file, index);
     const spd = eval(data['Move Speed']);
     const frq = eval(data['Move Frequency']);
@@ -515,15 +516,15 @@ Game_MapTroop.prototype.updateDead = function(){
 
 Game_MapTroop.prototype.fixEnemyPositions = function(){
     const numEnemies = $gameTroop._enemies.length;
-    const paramPosArr = SynrecME.EnemyPositions;
+    const paramPosArr = Syn_ME.EnemyPositions;
     const offsetX = 0;
     const offsetY = 300;
     for(let pos = 0; pos < numEnemies; pos++){
         let posX = (((Graphics.width / numEnemies) / 2) + (((Graphics.width / numEnemies) / 2) * pos)) + offsetX;
         let posY = offsetY;
-        if(SynrecME.EnemyPositions[pos]){
-            posX = SynrecME.EnemyPositions[pos]['Position X'];
-            posY = SynrecME.EnemyPositions[pos]['Position Y'];
+        if(Syn_ME.EnemyPositions[pos]){
+            posX = Syn_ME.EnemyPositions[pos]['Position X'];
+            posY = Syn_ME.EnemyPositions[pos]['Position Y'];
         }
         $gameTroop._enemies[pos]._screenX = posX;
         $gameTroop._enemies[pos]._screenY = posY;
@@ -586,12 +587,12 @@ Scene_Map.prototype.createDisplayObjects = function() {
 
 Scene_Map.prototype.createEnemies = function(){
     $gameTroop.clear();
-    const map_enemy_config = SynrecME.MAP_CONFIGURATIONS.find((map_config)=>{
+    const map_enemy_config = Syn_ME.MAP_CONFIGURATIONS.find((map_config)=>{
         return eval(map_config['Map']) == $gameMap._mapId;
     })
     if(!map_enemy_config)return;
     const allowedRegions = map_enemy_config['Spawn Regions'].map(id=>eval(id));
-    const retainEnemy = SynrecME.RETAIN_ENEMIES;
+    const retainEnemy = Syn_ME.RETAIN_ENEMIES;
     const enemyArr = map_enemy_config['Troops'];
     const enemyCnt = eval(map_enemy_config['Maximum Number']);
     this._mapEnemies = [];

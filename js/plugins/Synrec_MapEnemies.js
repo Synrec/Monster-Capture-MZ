@@ -1,9 +1,9 @@
 /*:
  * @author Synrec/Kylestclr
+ * @plugindesc v1.0.2 Enemies spawn on the map based plugin parameters
  * @target MZ
  * @url https://synrec.itch.io/
  *
- * @plugindesc v1.0.1 Enemies spawn on the map based plugin parameters
  *
  * @help
  * 
@@ -212,7 +212,6 @@
  * 
  */
 
-
 const Syn_ME = {};
 Syn_ME.Plugin = PluginManager.parameters('Synrec_MapEnemies');
 
@@ -301,21 +300,21 @@ BattleManager.engagedMapTroop = function(){
     })
 }
 
-function Game_MapTroop(){
+function Game_MapSpawn(){
     this.initialize(...arguments);
 }
 
-Game_MapTroop.prototype = Object.create(Game_Character.prototype);
-Game_MapTroop.prototype.constructor = Game_MapTroop;
+Game_MapSpawn.prototype = Object.create(Game_Character.prototype);
+Game_MapSpawn.prototype.constructor = Game_MapSpawn;
 
-Game_MapTroop.prototype.initialize = function(data){
+Game_MapSpawn.prototype.initialize = function(data){
     Game_Character.prototype.initialize.call(this);
     this.setData(data);
     this.createTroop();
     this.setCharaData();
 }
 
-Game_MapTroop.prototype.isAlive = function(){
+Game_MapSpawn.prototype.isAlive = function(){
     if(this._trigger_event){
         return !this._event_activated;
     }else{
@@ -328,7 +327,7 @@ Game_MapTroop.prototype.isAlive = function(){
     return false;
 }
 
-Game_MapTroop.prototype.setData = function(data){
+Game_MapSpawn.prototype.setData = function(data){
     this._spawnDur = 300;
     this._trigger_event = eval(data['Event']) || 0;
     this._detectRange = eval(data['Detect Range']) || 1;
@@ -343,7 +342,7 @@ Game_MapTroop.prototype.setData = function(data){
     this._data = data;
 }
 
-Game_MapTroop.prototype.createTroop = function(){
+Game_MapSpawn.prototype.createTroop = function(){
     if(!isNaN(this._trigger_event) && this._trigger_event > 0){
         return this._troop = [];
     }
@@ -368,7 +367,7 @@ Game_MapTroop.prototype.createTroop = function(){
     this._battler = this._troop[0];
 }
 
-Game_MapTroop.prototype.setCharaData = function(){
+Game_MapSpawn.prototype.setCharaData = function(){
     const data = this._data;
     const file = data['Character File'] || Syn_ME.DEFAULT_CHARACTER_FILE || "";
     const data_index = eval(data['Character File Index']);
@@ -380,39 +379,39 @@ Game_MapTroop.prototype.setCharaData = function(){
     this.setMoveFrequency(frq || 1);
 }
 
-Game_MapTroop.prototype.isCollidedWithPlayer = function() {
+Game_MapSpawn.prototype.isCollidedWithPlayer = function() {
     if(this._noEnemy)return false;
     return $gamePlayer._x == this._x 
     && $gamePlayer._y == this._y 
     && $gamePlayer._priorityType == this._priorityType;
 }
 
-Game_MapTroop.prototype.checkStop = function(threshold) {
+Game_MapSpawn.prototype.checkStop = function(threshold) {
     return this._stopCount > threshold;
 }
 
-Game_MapTroop.prototype.stopCountThreshold = function() {
+Game_MapSpawn.prototype.stopCountThreshold = function() {
     return 30 * (5 - this.moveFrequency());
 }
 
-Game_MapTroop.prototype.isNearPlayer = function() {
+Game_MapSpawn.prototype.isNearPlayer = function() {
     const sx = Math.abs(this.deltaXFrom($gamePlayer.x));
     const sy = Math.abs(this.deltaYFrom($gamePlayer.y));
     return sx + sy <= this._detectRange;
 }
 
-Game_MapTroop.prototype.moveObservePlayer = function(){
+Game_MapSpawn.prototype.moveObservePlayer = function(){
     this.turnTowardPlayer();
 }
 
-Game_MapTroop.prototype.update = function() {
+Game_MapSpawn.prototype.update = function() {
     Game_Character.prototype.update.call(this);
     this.updateSelfMovement();
     if(this._spawnDur > 0)this.updateSpawning();
     this.updateDead();
 }
 
-Game_MapTroop.prototype.updateSpawning = function(){
+Game_MapSpawn.prototype.updateSpawning = function(){
     if(this._spawnDur > 0){
         this._spawnDur--;
         if(this._blinkDur <= 0 || isNaN(this._blinkDur)){
@@ -434,7 +433,7 @@ Game_MapTroop.prototype.updateSpawning = function(){
     }
 }
 
-Game_MapTroop.prototype.updateSelfMovement = function() {
+Game_MapSpawn.prototype.updateSelfMovement = function() {
     if($gameMap.isEventRunning())return false;
     if(this._spawnDur > 0)return false;
     if (this.stopCountThreshold() < this._stopCount) {
@@ -465,7 +464,7 @@ Game_MapTroop.prototype.updateSelfMovement = function() {
     this.updateOnPlayer();
 }
 
-Game_MapTroop.prototype.updateOnPlayer = function(){
+Game_MapSpawn.prototype.updateOnPlayer = function(){
     if($gameMap.isEventRunning())return;
     if($gameTemp.isCommonEventReserved())return;
     if(this._spawnDur > 0)return;
@@ -508,13 +507,13 @@ Game_MapTroop.prototype.updateOnPlayer = function(){
     }
 }
 
-Game_MapTroop.prototype.updateDead = function(){
+Game_MapSpawn.prototype.updateDead = function(){
     if(!this.isAlive()){
         this._noEnemy = true;
     }
 }
 
-Game_MapTroop.prototype.fixEnemyPositions = function(){
+Game_MapSpawn.prototype.fixEnemyPositions = function(){
     const numEnemies = $gameTroop._enemies.length;
     const paramPosArr = Syn_ME.EnemyPositions;
     const offsetX = 0;
@@ -523,8 +522,8 @@ Game_MapTroop.prototype.fixEnemyPositions = function(){
         let posX = (((Graphics.width / numEnemies) / 2) + (((Graphics.width / numEnemies) / 2) * pos)) + offsetX;
         let posY = offsetY;
         if(Syn_ME.EnemyPositions[pos]){
-            posX = Syn_ME.EnemyPositions[pos]['Position X'];
-            posY = Syn_ME.EnemyPositions[pos]['Position Y'];
+            posX = paramPosArr[pos]['Position X'];
+            posY = paramPosArr[pos]['Position Y'];
         }
         $gameTroop._enemies[pos]._screenX = posX;
         $gameTroop._enemies[pos]._screenY = posY;
@@ -637,7 +636,7 @@ Scene_Map.prototype.createEnemies = function(){
         while(this._mapEnemies.length < enemyCnt && coords.length > 0){
             const rndmEnemyIdx = Math.floor(Math.random() * enemyArr.length);
             const rndmEnemy = enemyArr[rndmEnemyIdx];
-            const enemData = new Game_MapTroop(rndmEnemy);
+            const enemData = new Game_MapSpawn(rndmEnemy);
             const ci = Math.randomInt(coords.length);
             const coord = coords.splice(ci, 1)[0];
             if(coord){

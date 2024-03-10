@@ -3,7 +3,7 @@
  * @target MZ
  * @url https://synrec.itch.io/
  *
- * @plugindesc v1.0.0 Enemies spawn on the map based plugin parameters
+ * @plugindesc v1.0.1 Enemies spawn on the map based plugin parameters
  *
  * @help
  * 

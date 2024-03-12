@@ -223,6 +223,17 @@ SynrecMC.Breeder.MenuCmd = eval(SynrecMC.Breeder['Show Breed Menu Command']);
 SynrecMC.Breeder.MenuCmdName = SynrecMC.Breeder['Breed Command Name'];
 
 
+SynrecMC_Brdr_GmActr_Setup = Game_Actor.prototype.setup;
+Game_Actor.prototype.setup = function(actorId) {
+    SynrecMC_Brdr_GmActr_Setup.call(this, ...arguments);
+    this.initBreederBonus();
+    this.recoverAll();
+}
+
+Game_Actor.prototype.initBreederBonus = function(){
+    this._breed_bonus = [0,0,0,0,0,0,0,0];
+}
+
 Game_Actor.prototype.gainExpBreed = function(exp) {
     const newExp = this.currentExp() + Math.round(exp);
     if(newExp >= this.nextLevelExp() && this.isMaxLevel())return;
@@ -277,13 +288,13 @@ Game_Party.prototype.progressPreBreed = function(){
                 obj['Max Steps'] = steps;
                 const percGlobal = ((data['Stat Transfer Global Value'] / 100) || 0)
                 const percAppHp = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppMp = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppAtk = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppDef = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppMat = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppMdf = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppAgi = ((data['HP Transfer'] / 100) || 0) + percGlobal;
-                const percAppLuk = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                const percAppMp = ((data['MP Transfer'] / 100) || 0) + percGlobal;
+                const percAppAtk = ((data['ATK Transfer'] / 100) || 0) + percGlobal;
+                const percAppDef = ((data['DEF Transfer'] / 100) || 0) + percGlobal;
+                const percAppMat = ((data['MAT Transfer'] / 100) || 0) + percGlobal;
+                const percAppMdf = ((data['MDF Transfer'] / 100) || 0) + percGlobal;
+                const percAppAgi = ((data['AGI Transfer'] / 100) || 0) + percGlobal;
+                const percAppLuk = ((data['LUK Transfer'] / 100) || 0) + percGlobal;
                 if(data['Fuse Stats']){
                     const hp = ((this._breederParent1.param(0) + this._breederParent2.param(0)) / 2) * percAppHp;
                     const mp = ((this._breederParent1.param(1) + this._breederParent2.param(1)) / 2) * percAppMp;
@@ -385,14 +396,17 @@ Game_Map.prototype.updateHatch = function(){
                     const agi = actor.param(6);
                     const luk = actor.param(7);
                     const parAvgs = item['Fusion Params'];
-                    actor._paramPlus[0] += parAvgs[0] - hp;
-                    actor._paramPlus[1] += parAvgs[1] - mp;
-                    actor._paramPlus[2] += parAvgs[2] - atk;
-                    actor._paramPlus[3] += parAvgs[3] - def;
-                    actor._paramPlus[4] += parAvgs[4] - mat;
-                    actor._paramPlus[5] += parAvgs[5] - mdf;
-                    actor._paramPlus[6] += parAvgs[6] - agi;
-                    actor._paramPlus[7] += parAvgs[7] - luk;
+                    if(!actor._breed_bonus){
+                        actor.initBreederBonus();
+                    }
+                    actor._breed_bonus[0] += parAvgs[0] - hp;
+                    actor._breed_bonus[1] += parAvgs[1] - mp;
+                    actor._breed_bonus[2] += parAvgs[2] - atk;
+                    actor._breed_bonus[3] += parAvgs[3] - def;
+                    actor._breed_bonus[4] += parAvgs[4] - mat;
+                    actor._breed_bonus[5] += parAvgs[5] - mdf;
+                    actor._breed_bonus[6] += parAvgs[6] - agi;
+                    actor._breed_bonus[7] += parAvgs[7] - luk;
                     actor.setTp(0);
                     actor.setGender();
                     if($gameParty._actors.length >= $gameParty.maxBattleMembers()){

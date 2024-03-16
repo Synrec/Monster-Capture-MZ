@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v3.4 Preloads image and audio for the game on start
+ * @plugindesc v3.5 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -10,13 +10,9 @@
  * 
  * 
  * 
- * TERMS OF USE:
- * > You are REQUIRED to credit Synrec/Kylestclair in your project.
- * > Not to be re-sold or redistributed in non-game projects
- * > Do not redistribute, this includes edits.
- * > Can be used in commercial or free RPG Maker MZ games.
- * > Do not redistribute for educational purposes.
+ * ADDITIONAL TERMS OF USE:
  * > Do not use for malicious intent.
+ * > Applies additionally to terms on synrec.itch.io
  * 
  * @param Loading Video Name
  * @desc Name of the video for preload
@@ -538,7 +534,7 @@ AudioManager.createBuffer = function(folder, name) {
         }
     }else AudioManager._preloadedAudio[`${folder}`] = {};
     const newBuffer = SynrecPLAudMngrCrtBuffer.call(this, folder, name);
-    newBuffer.destroy = function(){this.stop()} //Special thanks to snaphat for the mod.
+    newBuffer.destroy = function(){this.stop()}
     if(!this.isIgnored(folder.concat(name)))AudioManager._preloadedAudio[`${folder}`][`${name}`] = newBuffer;
     return newBuffer;
 }
@@ -742,7 +738,7 @@ Scene_Preload.prototype.createImagePreload = function(){
     try{
         const is_test = Utils.isOptionValid("test");
         const dir = !is_test && is_MV_Preload ? `./www/img/` : `./img/`;
-        const dir_load = !is_test && is_MV_Preload ? `www/img/` : `img/`;
+        const dir_load = !is_test && is_MV_Preload ? `img/` : `img/`;
         const folders = fs.readdirSync(dir);
         folders.forEach((folder)=>{
             try{

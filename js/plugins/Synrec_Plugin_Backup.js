@@ -28,7 +28,19 @@
  * In the event you wish to overwrite your "plugins.js" file
  * there are two script calls you may use:
  * 1) $gameTemp.executePluginOverwriteAuto();
+ * > This will overwrite the plugins javascript file with auto
+ * backup data.
  * 2) $gameTemp.executePluginOverwriteManual();
+ * > This will overwrite the plugins javascript file with user
+ * backup data.
+ * 
+ * On any overwrite script call, if not existing, a backup file
+ * will be created in `./js/plugins/` with the filename: "plugins_BACKUP.js"
+ * 
+ * 
+ * If you wish to update the backup, you must manually delete this file.
+ * If you know javascript, you may edit this plugin to remove this
+ * safety feature. Know that you do this at your own risk.
  * 
  */
 
@@ -106,8 +118,8 @@ function EXECUTE_PLUGINS_OVERWRITE(auto){
         const plugins_exists = file_system.existsSync(plugin_file_path);
         if(plugins_exists){
             const plugin_file = file_system.readFileSync(plugin_file_path, 'utf8');
-            const backup_exits = file_system.existsSync(`./js/plugins_BACKUP.js`);
-            if(!backup_exists){
+            const plugin_backup_exists = file_system.existsSync(`./js/plugins_BACKUP.js`);
+            if(!plugin_backup_exists){
                 file_system.writeFileSync(`./js/plugins_BACKUP.js`, plugin_file, (e)=>{
                     throw new Error(`Failed to create backup plugin file. ${e}`)
                 });

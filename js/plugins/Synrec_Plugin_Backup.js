@@ -126,6 +126,7 @@ function EXECUTE_PLUGINS_OVERWRITE(auto){
             }
             const plugin_array_str = plugin_file.substring(plugin_file.indexOf('['));
             const plugin_array = plugin_array_str.split(';')[0];
+            console.log(plugin_array)
             const parsed_plugins = JSON.parse(plugin_array);
             const mapped_changed_plugins = parsed_plugins.map((plugin)=>{
                 const name = plugin.name.toLowerCase();
@@ -137,10 +138,14 @@ function EXECUTE_PLUGINS_OVERWRITE(auto){
             })
             const new_plugin_str = plugin_file.split('[', 1)[0];
             let new_plugin_params = new_plugin_str.concat('[');
+            let index = 0;
             mapped_changed_plugins.forEach((new_plugin)=>{
                 new_plugin_params = new_plugin_params.concat('\n');
                 new_plugin_params = new_plugin_params.concat(JSON.stringify(new_plugin));
-                new_plugin_params = new_plugin_params.concat(',');
+                index++;
+                if(index < mapped_changed_plugins.length){
+                    new_plugin_params = new_plugin_params.concat(',');
+                }
             })
             new_plugin_params = new_plugin_params.concat('\n];');
             file_system.writeFileSync(plugin_file_path, new_plugin_params, (e)=>{

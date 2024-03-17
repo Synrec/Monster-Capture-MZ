@@ -130,6 +130,7 @@ function EXECUTE_PLUGINS_OVERWRITE(auto){
             const mapped_changed_plugins = parsed_plugins.map((plugin)=>{
                 const name = plugin.name.toLowerCase();
                 const backup_data = parsed_backup[name];
+                console.log(backup_data)
                 if(backup_data){
                     plugin.parameters = backup_data;
                 }

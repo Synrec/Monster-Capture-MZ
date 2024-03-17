@@ -126,7 +126,6 @@ function EXECUTE_PLUGINS_OVERWRITE(auto){
             }
             const plugin_array_str = plugin_file.substring(plugin_file.indexOf('['));
             const plugin_array = plugin_array_str.split(';')[0];
-            console.log(plugin_array)
             const parsed_plugins = JSON.parse(plugin_array);
             const mapped_changed_plugins = parsed_plugins.map((plugin)=>{
                 const name = plugin.name.toLowerCase();

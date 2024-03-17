@@ -9,7 +9,7 @@
  * 
  * Plugin data is automatically backed up once Game_Temp is
  * initialized. This backup file may be found in the dir:
- * > `./js/plugins/`
+ * > `./js/`
  * With the file name: "plugin_backup_auto"
  * 
  * If you wish to do a manual backup, you may use the
@@ -18,7 +18,7 @@
  * 
  * The above script call will save the plugin parameter
  * configurations into the directiory:
- * > `./js/plugins/`
+ * > `./js/`
  * With the file name: "plugin_backup_user"
  * 
  * This file will only be overwritten when the user 
@@ -35,10 +35,14 @@
  * backup data.
  * 
  * Note: You must close the RPG Maker project before executing
- * overwrite function.
+ * overwrite script if you want overwrite to be permanent.
+ * 
+ * If you are looking to restore plugin parameter data, load those
+ * plugins into the project plugin manager, save and then close the
+ * project before executing the script in your playtest game.
  * 
  * On any overwrite script call, if not existing, a backup file
- * will be created in `./js/plugins/` with the filename: "plugins_BACKUP.js"
+ * will be created in `./js/` with the filename: "plugins_BACKUP.js"
  * 
  * 
  * If you wish to update the backup, you must manually delete this file.
@@ -133,7 +137,6 @@ function EXECUTE_PLUGINS_OVERWRITE(auto){
             const mapped_changed_plugins = parsed_plugins.map((plugin)=>{
                 const name = plugin.name.toLowerCase();
                 const backup_data = parsed_backup[name];
-                console.log(backup_data)
                 if(backup_data){
                     plugin.parameters = backup_data;
                 }

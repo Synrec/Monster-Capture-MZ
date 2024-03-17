@@ -34,6 +34,9 @@
  * > This will overwrite the plugins javascript file with user
  * backup data.
  * 
+ * Note: You must close the RPG Maker project before executing
+ * overwrite function.
+ * 
  * On any overwrite script call, if not existing, a backup file
  * will be created in `./js/plugins/` with the filename: "plugins_BACKUP.js"
  * 

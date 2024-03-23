@@ -75,6 +75,12 @@
  * @max 99
  * @parent Gameplay
  * 
+ * @param Map Region Level Configuration
+ * @desc Setup enemy level by region
+ * @type struct<mapLevel>[]
+ * @default []
+ * @parent Gameplay
+ * 
  * @param Use Front Facing Actor Sprites
  * @desc Uses the SV Battler in front facing battle.
  * @type boolean
@@ -213,6 +219,48 @@
  * @parent Battle Positioning
  * 
  */
+/*~struct~regionLevel:
+ * 
+ * @param Name
+ * @desc No function
+ * @type text
+ * @default REGION SETUP
+ * 
+ * @param Region ID
+ * @desc ID of the region under consideration
+ * 0 = Unmarked region.
+ * @type text
+ * @default 0
+ * 
+ * @param Minimal Level
+ * @desc The lowest level in the region
+ * @type text
+ * @default 1
+ * 
+ * @param Maximum Level
+ * @desc The highest level in the region
+ * @type text
+ * @default 99
+ * 
+ */
+/*~struct~mapLevel:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default MAP SETUP
+ * 
+ * @param Map ID
+ * @desc ID of the map under consideration
+ * @type text
+ * @default 0
+ * 
+ * @param Regions
+ * @desc Set level data for region
+ * @type struct<regionLevel>[]
+ * @default []
+ * 
+ */
 
 if(!SynrecMC)throw new Error("Core Plugin Missing.");
 if(!isObject(SynrecMC))throw new Error("Bad Core Files.");
@@ -229,6 +277,39 @@ SynrecMC.Battle.frontActors = eval(SynrecMC.Battle.Plugins['Use Front Facing Act
 
 SynrecMC.Battle.minLevel = eval(SynrecMC.Battle.Plugins['Global Min Enemy Level']);
 SynrecMC.Battle.maxLevel = eval(SynrecMC.Battle.Plugins['Global Max Enemy Level']);
+
+function REGION_LEVEL_PARSER_SYN_MC_BATTLE(obj){
+    try{
+        obj = JSON.parse(obj);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+function MAP_REGION_PARSER_SYN_MC_BATTLE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Regions'] = JSON.parse(obj['Regions']).map((config)=>{
+                return REGION_LEVEL_PARSER_SYN_MC_BATTLE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Regions'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+try{
+    SynrecMC.Battle.REGION_MAP_LEVELS = JSON.parse(SynrecMC.Battle.Plugins['Map Region Level Configuration']).map((config)=>{
+        return MAP_REGION_PARSER_SYN_MC_BATTLE(config);
+    }).filter(Boolean)
+}catch(e){
+    SynrecMC.Battle.REGION_MAP_LEVELS = [];
+}
 
 SynrecMC.Battle.teamName = SynrecMC.Battle.Plugins['Team Command Name'];
 SynrecMC.Battle.battlingText = SynrecMC.Battle.Plugins['Battling Text'];
@@ -343,8 +424,24 @@ Game_Enemy.prototype.setLevel = function(){
         this._equips = this._actor._equips;
         return;
     }
-    const minLevel = $dataMap.meta.minEnemyLevel ? eval($dataMap.meta.minEnemyLevel) : SynrecMC.Battle.minLevel;
-    const maxLevel = $dataMap.meta.maxEnemyLevel ? eval($dataMap.meta.maxEnemyLevel) : SynrecMC.Battle.maxLevel;
+    let minLevel = $dataMap.meta.minEnemyLevel ? eval($dataMap.meta.minEnemyLevel) : SynrecMC.Battle.minLevel;
+    let maxLevel = $dataMap.meta.maxEnemyLevel ? eval($dataMap.meta.maxEnemyLevel) : SynrecMC.Battle.maxLevel;
+    const map_data = SynrecMC.Battle.REGION_MAP_LEVELS.find((config)=>{
+        return eval(config['Map ID']) == $gameMap._mapId; 
+    })
+    if(map_data){
+        const px = $gamePlayer.x;
+        const py = $gamePlayer.y;
+        const region = $gameMap.regionId(px,py);
+        const region_configs = map_data['Regions'] || [];
+        const region_data = region_configs.find((config)=>{
+            return eval(config['Region ID']) == region;
+        })
+        if(region_data){
+            minLevel = eval(region_data['Minimal Level']) || 1;
+            maxLevel = eval(region_data['Maximum Level']) || 1;
+        }
+    }
     if(maxLevel < minLevel)throw new Error("Max level is set less than min level. Please check plugin / map settings.");
     const actorMaxLevel = SynrecMC.Battle.maxLevel;
     const bandWidth = Math.abs(Math.floor(maxLevel - minLevel));

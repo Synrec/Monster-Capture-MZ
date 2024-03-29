@@ -57,20 +57,66 @@
  * @type text
  * @default 0
  * 
- * @param Width
- * @desc Size of the gauge
- * @type text
- * @default 1
- * 
- * @param Height
+ * @param Radius
  * @desc Size of the gauge
  * @type text
  * @default 1
  * 
  * @param Color
  * @desc Color of the gauge
+ * Use 0xHex; eg: 0xffffff
+ * @type text
+ * @default 0xffffff
+ * 
+ * @param Complete Text
+ * @desc Text when preload complete
+ * @type text
+ * @default Press OK To Continue
+ * 
+ * @param Text X
+ * @parent Complete Text
+ * @desc Position of text
+ * @type text
+ * @default 0
+ * 
+ * @param Text Y
+ * @parent Complete Text
+ * @desc Position of text
+ * @type text
+ * @default 0
+ * @default 0
+ * 
+ * @param Text Font Face
+ * @parent Complete Text
+ * @desc Font face of text
+ * @type text
+ * @default sans-serif
+ * 
+ * @param Text Size
+ * @parent Complete Text
+ * @desc Size of text
+ * @type text
+ * @default 24
+ * 
+ * @param Text Outline Size
+ * @parent Complete Text
+ * @desc Size of text
+ * @type text
+ * @default 4
+ * 
+ * @param Text Color
+ * @parent Complete Text
+ * @desc Color of text
+ * eg: #ffffff or rgba(255, 255, 255, 1)
  * @type text
  * @default #ffffff
+ * 
+ * @param Text Outline Color
+ * @parent Complete Text
+ * @desc Color of text
+ * eg: #ffffff or rgba(255, 255, 255, 1)
+ * @type text
+ * @default rgba(0, 0, 0, 0.5)
  * 
  */
 /*~struct~ignoreFile:
@@ -139,7 +185,101 @@ Syn_Preload.BYPASS_LOAD_CONFIRM = eval(Syn_Preload.Plugin['Bypass Load Confirm']
 
 Syn_Preload_ScnMngr_UpdtMain = SceneManager.updateMain;
 SceneManager.updateMain = function() {
-    Syn_Preload_ScnMngr_UpdtMain.call(this);
+    Syn_Preload_ScnMngr_UpdtMain.call(this, ...arguments);
+    this.updatePreload();
+}
+
+SceneManager.updatePreload = function(){
+    if(!$gameTemp)return;
+    const need_preload = $gameTemp._need_preload;
+    if(!need_preload){
+        if(this._running_preloader){
+            this.updatePreloadScene(true);
+            this._running_preloader = false;
+        }
+        return;
+    }
+    this._running_preloader = true;
+    $gameTemp.updatePreloadList();
+    this.updatePreloadScene(false);
+}
+
+SceneManager.updatePreloadScene = function(show_window_layer){
+    const scene = this._scene;
+    if(!scene)return;
+    const window_layer = scene._windowLayer;
+    if(window_layer){
+        window_layer.visible = show_window_layer;
+    }
+    if(!show_window_layer){
+        this.drawScenePreloadPIXI();
+    }else{
+        this.eraseScenePreloadPIXI();
+    }
+}
+
+SceneManager.drawScenePreloadPIXI = function(){
+    const scene = this._scene;
+    const gauge_settings = Syn_Preload.PRELOAD_GAUGE_SETTINGS;
+    const cur = $gameTemp._current_preload;
+    const max = $gameTemp._preload_length;
+    const ratio = (cur / max);
+    loading_circ.clear();
+    if(ratio < 1){
+        const x = eval(gauge_settings['Position X']) || 0;
+        const y = eval(gauge_settings['Position Y']) || 0;
+        const r = eval(gauge_settings['Radius']) || 1;
+        const color = eval(gauge_settings['Color']);
+        if(!this._preload_pixi_circ){
+            this._preload_pixi_circ = new PIXI.Graphics();
+            scene.addChild(this._preload_pixi_circ);
+        }
+        const loading_circ = this._preload_pixi_circ;
+        const ratio_arc = (Math.PI * 2) * ratio;
+        const line_size = Math.ceil(Math.max(Graphics.width, Graphics.height) / 100);
+        loading_circ.lineStyle(line_size, color);
+        loading_circ.arc(x, y, r, 0, ratio_arc);
+    }else if(!Syn_Preload.BYPASS_LOAD_CONFIRM){
+        const x = eval(gauge_settings['Text X']);
+        const y = eval(gauge_settings['Text Y']);
+        const text = (gauge_settings['Complete Text'] || "");
+        if(!this._confirm_sprite){
+            const sprite = new Sprite();
+            const bitmap = new Bitmap(Graphics.width, Graphics.height);
+            bitmap.fontFace = gauge_settings['Text Font Face'];
+            bitmap.fontSize = eval(gauge_settings['Text Size']);
+            bitmap.outlineWidth = eval(gauge_settings['Text Outline Size']);
+            bitmap.textColor = gauge_settings['Text Color'];
+            bitmap.outlineColor = gauge_settings['Text Outline Color'];
+            bitmap.drawText(text, x, y, Graphics.width, Math.max(36, bitmap.fontSize));
+            sprite.bitmap = bitmap;
+            scene.addChild(sprite);
+            this._confirm_sprite = sprite;
+        }
+    }
+}
+
+SceneManager.eraseScenePreloadPIXI = function(){
+    if(this._preload_pixi_circ){
+        if(this._preload_pixi_circ.parent){
+            this._preload_pixi_circ.parent.removeChild(this._preload_pixi_circ);
+            if(this._preload_pixi_circ.destroy)this._preload_pixi_circ.destroy();
+            this._preload_pixi_circ = null;
+        }
+    }
+    if(this._confirm_sprite){
+        if(this._confirm_sprite.parent){
+            this._confirm_sprite.parent.removeChild(this._confirm_sprite);
+            if(this._confirm_sprite.destroy)this._confirm_sprite.destroy();
+            this._confirm_sprite = null;
+        }
+    }
+}
+
+Syn_Preload_ScnBse_IsBsy = Scene_Base.prototype.isBusy;
+Scene_Base.prototype.isBusy = function() {
+    const base = Syn_Preload_ScnBse_IsBsy.call(this, ...arguments);
+    return base || SceneManager._running_preloader;
 }
 
 Game_Temp.prototype.setPreloadList = function(list){
@@ -303,6 +443,7 @@ Game_Temp.prototype.executePreload = function(){
     this.resyncBanIgnoreLists();
     this.generateImageList();
     this.generateAudioList();
+    this._current_preload = 0;
     this._preload_length = this._image_preloads.length + this._audio_preloads.length;
     this._need_preload = true;
 }
@@ -310,6 +451,7 @@ Game_Temp.prototype.executePreload = function(){
 Game_Temp.prototype.updatePreloadList = function(){
     if(this.updateImagePreload())return;
     if(this.updateAudioPreload())return;
+    if(this.updateConfirmPreload())return;
     this._preload_complete = true;
     delete this._need_preload;
 }

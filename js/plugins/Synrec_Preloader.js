@@ -241,7 +241,7 @@ SceneManager.drawScenePreloadPIXI = function(){
     const cur = $gameTemp._current_preload;
     const max = $gameTemp._preload_length;
     const ratio = (cur / max);
-    if(ratio < 1){
+    if(ratio <= 1){
         const x = eval(gauge_settings['Position X']) || 0;
         const y = eval(gauge_settings['Position Y']) || 0;
         const r = eval(gauge_settings['Radius']) || 1;
@@ -256,7 +256,8 @@ SceneManager.drawScenePreloadPIXI = function(){
         const line_size = Math.ceil(Math.max(Graphics.width, Graphics.height) / 100);
         loading_circ.lineStyle(line_size, color);
         loading_circ.arc(x, y, r, 0, ratio_arc);
-    }else if(!Syn_Preload.BYPASS_LOAD_CONFIRM){
+    }
+    if(!Syn_Preload.BYPASS_LOAD_CONFIRM && ratio >= 1){
         const x = eval(gauge_settings['Text X']);
         const y = eval(gauge_settings['Text Y']);
         const text = (gauge_settings['Complete Text'] || "");
@@ -332,10 +333,9 @@ AudioManager.createBuffer = function(folder, name) {
         if(ignored_folders.includes(folder))return base;
         const obj = {folder: `audio/${folder}`, file: name};
         const ignored_files = $gameTemp.audioIgnoredPreloadList();
-        console.log(ignored_files)
         if(ignored_files.some((file_data)=>{
-            const dir = file_data.folder;
-            const name = file_data.file;
+            const dir = file_data['Directory'];
+            const name = file_data['File Name'];
             return(
                 obj.folder == dir &&
                 obj.file == name
@@ -443,7 +443,7 @@ Game_Temp.prototype.loadPreloadList = function(){
 Game_Temp.prototype.resyncBanIgnoreLists = function(){
     const image_match_checker = /^(img\/)(?:.+)/gm;
     const audio_match_checker = /^(audio\/)(?:.+)/gm;
-    const ignored_folders = Syn_Preload.IGNORED_FOLDERS;
+    const ignored_folders = JsonEx.makeDeepCopy(Syn_Preload.IGNORED_FOLDERS);
     const preload_list = this.preloadList();
     const image_folder_list = preload_list['Image'] || {};
     const audio_folder_list = preload_list['Audio'] || {};
@@ -466,7 +466,7 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
     preload_list['Audio Folder Ignored'] = aud_fldr_list;
     preload_list['Image'] = image_folder_list;
     preload_list['Audio'] = audio_folder_list;
-    const ignored_files = Syn_Preload.IGNORED_FILES;
+    const ignored_files = JsonEx.makeDeepCopy(Syn_Preload.IGNORED_FILES);
     if(ignored_files.length > 0){
         const image_list = [];
         const audio_list = [];
@@ -491,12 +491,21 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
                 }
                 preload_list['Image'][chk_dir] = img_dir;
             }else{
-                preload_list['Image'][chk_dir] = [];
+                delete preload_list['Image'][chk_dir];
             }
         })
         audio_list.forEach((file_data)=>{
-            const chk_dir = file_data['Directory'];
+            let chk_dir = file_data['Directory'];
+            if(chk_dir[0] == "/"){
+                chk_dir = chk_dir.substring(1);
+            }
+            const dir_index_slash = chk_dir.indexOf("/") + 1;
+            if(dir_index_slash > 0){
+                chk_dir = chk_dir.substring(dir_index_slash);
+            }
             const aud_dir = preload_list['Audio'][chk_dir];
+            console.log(preload_list['Audio'])
+            console.log(chk_dir)
             if(Array.isArray(aud_dir)){
                 const index = aud_dir.indexOf(file_data['File Name']);
                 if(index >= 0){
@@ -504,12 +513,11 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
                 }
                 preload_list['Audio'][chk_dir] = aud_dir;
             }else{
-                preload_list['Audio'][chk_dir] = [];
+                delete preload_list['Audio'][chk_dir];
             }
         })
     }
     $gameTemp.setPreloadList(preload_list);
-    console.log(preload_list);
 }
 
 Game_Temp.prototype.generateImageList = function(){

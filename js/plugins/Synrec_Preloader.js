@@ -189,6 +189,14 @@ function PRELOADER_IMAGE_LOADER(folder, filename){
     return bitmap;
 }
 
+function PRELOADER_AUDIO_LOADER(folder, filename){
+    const audio_ext = AudioManager.audioFileExt();
+    const audio_path = AudioManager._path;
+    const url = audio_path + folder + Utils.encodeURI(filename) + audio_ext;
+    const buffer = new WebAudio(url);
+    return buffer;
+}
+
 Syn_Preload_ScnMngr_UpdtMain = SceneManager.updateMain;
 SceneManager.updateMain = function() {
     Syn_Preload_ScnMngr_UpdtMain.call(this, ...arguments);
@@ -287,7 +295,6 @@ SceneManager.eraseScenePreloadPIXI = function(){
 
 Syn_Preload_ImgMngr_LoadBitmp = ImageManager.loadBitmap;
 ImageManager.loadBitmap = function(folder, filename) {
-    console.log(folder, filename)
     const base = Syn_Preload_ImgMngr_LoadBitmp.call(this, ...arguments);
     if (filename && $gameTemp) {
         const ignored_folders = $gameTemp.imageBannedPreloadList();
@@ -631,26 +638,78 @@ Game_Temp.prototype.reserveLoadImage = function(obj){
 }
 
 Game_Temp.prototype.updateAudioPreload = function(){
-    if(this.checkReservedImages())return true;
+    if(this.checkReservedAudios())return true;
     const preload_data = this._audio_preloads;
     for(let i = 0; i < 5; i++){
         const file_data = preload_data.shift();
         if(file_data){
             const folder = file_data.folder;
             const filename = file_data.file;
-            const check_bitmap = PRELOADER_IMAGE_LOADER(folder, filename);
+            const check_audio = PRELOADER_AUDIO_LOADER(folder, filename);
             const obj = {
-                bitmap: check_bitmap,
+                audio: check_audio,
                 attempts: 0,
                 folder:folder,
                 file:filename
             }
-            this.reserveLoadImage(obj);
+            this.reserveLoadAudio(obj);
         }
         this._current_preload++;
     }
     const index = this._current_preload - this._image_preloads.length;
     return !(index >= preload_data.length);
+}
+
+Game_Temp.prototype.checkReservedAudios = function(obj){
+    if(!Array.isArray(this._reserve_preload_audios))this._reserve_preload_audios = [];
+    const rsvp_audios = this._reserve_preload_audios;
+    if(rsvp_audios.length <= 0)return false;
+    rsvp_audios.forEach((aud_obj)=>{
+        const audio = aud_obj.audio;
+        const attempts = aud_obj.attempts;
+        const folder = aud_obj.folder;
+        const file = aud_obj.file;
+        if(audio.isError() && attempts < 3){
+            audio.retry();
+            console.log(file)
+            aud_obj.attempts++;
+        }else if(audio.isReady()){
+            AudioManager.createBuffer(folder, file);
+            aud_obj.delete = true;
+        }else if(audio.isError() && attempts >= 3){
+            const preload_list = $gameTemp.preloadList();
+            const audio_folder_list = preload_list['Audio'];
+            const audio_folder = audio_folder_list[folder];
+            if(Array.isArray(audio_folder)){
+                const file_index = audio_folder.indexOf(file);
+                if(file_index >= 0){
+                    audio_folder.splice(file_index, 1);
+                }
+                if(audio_folder.length <= 0){
+                    delete audio_folder_list[folder];
+                    preload_list['Audio'] = audio_folder_list;
+                    $gameTemp.setPreloadList(preload_list);
+                }
+            }
+            aud_obj.delete = true;
+        }
+    })
+    for(let i = 0; i < rsvp_audios.length; i++){
+        const aud_obj = rsvp_audios[i];
+        if(aud_obj){
+            if(aud_obj.delete){
+                rsvp_audios.splice(i, 1);
+            }
+        }else{
+            rsvp_audios.splice(i, 1);
+            i--;
+        }
+    }
+}
+
+Game_Temp.prototype.reserveLoadAudio = function(obj){
+    if(!Array.isArray(this._reserve_preload_audios))this._reserve_preload_audios = [];
+    this._reserve_preload_audios.push(obj);
 }
 
 Game_Temp.prototype.updateConfirmPreload = function(){

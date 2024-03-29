@@ -34,6 +34,7 @@
  * @param Ignored Directories
  * @parent General Settings
  * @desc These directories are ignored by the preloader
+ * Format: main_dir/sub_dir/
  * @type text[]
  * @default []
  * 
@@ -81,6 +82,7 @@
  * 
  * @param Directory
  * @desc Directory file loaded from
+ * Format: main_dir/sub_dir/
  * @type text
  * @default img/pictures/
  * 
@@ -110,6 +112,12 @@ try{
     Syn_Preload.IGNORED_FILES = [];
 }
 
+try{
+    Syn_Preload.IGNORED_FOLDERS = JSON.parse(Syn_Preload.Plugin['Ignored Directories']);
+}catch(e){
+    Syn_Preload.IGNORED_FOLDERS = [];
+}
+
 function PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(obj){
     try{
         obj = JSON.parse(obj);
@@ -128,3 +136,125 @@ function PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(obj){
 Syn_Preload.PRELOAD_GAUGE_SETTINGS = PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(Syn_Preload.Plugin['Loading Gauge']);
 
 Syn_Preload.BYPASS_LOAD_CONFIRM = eval(Syn_Preload.Plugin['Bypass Load Confirm']);
+
+Game_Temp.prototype.setPreloadList = function(list){
+    this._preloader_list = list;
+}
+
+Game_Temp.prototype.preloadList = function(){
+    return this._preloader_list || {};
+}
+
+Game_Temp.prototype.imagePreloadList = function(){
+    const whole_list = this.preloadList();
+    return whole_list['Image'] || {};
+}
+
+Game_Temp.prototype.audioPreloadList = function(){
+    const whole_list = this.preloadList();
+    return whole_list['Audio'] || {};
+}
+
+Game_Temp.prototype.imageIgnoredPreloadList = function(){
+    const whole_list = this.preloadList();
+    return whole_list['Image File Ignored'] || {};
+}
+
+Game_Temp.prototype.audioIgnoredPreloadList = function(){
+    const whole_list = this.preloadList();
+    return whole_list['Audio File Ignored'] || {};
+}
+
+Game_Temp.prototype.imageBannedPreloadList = function(){
+    const whole_list = this.preloadList();
+    return whole_list['Image Folder Ignored'] || [];
+}
+
+Game_Temp.prototype.audioBannedPreloadList = function(){
+    const whole_list = this.preloadList();
+    return whole_list['Audio Folder Ignored'] || [];
+}
+
+Game_Temp.prototype.savePreloadList = function(){
+    const is_mz = Utils.RPGMAKER_NAME == "MZ";
+    const file_name = `Preload_JSON`;
+    if(is_mz){
+        const preload_list = this.preloadList();
+        const preload_json = JSON.stringify(preload_list);
+        StorageManager.saveObject(file_name, preload_json);
+    }
+}
+
+Syn_Preload_GmTemp_Init = Game_Temp.prototype.initialize;
+Game_Temp.prototype.initialize = function() {
+    Syn_Preload_GmTemp_Init.call(this, ...arguments);
+    this.executePreload();
+}
+
+Game_Temp.prototype.executePreload = function(){
+    this._need_preload = true;
+}
+
+function SceneSynrec_Preload(){
+    this.initialize(...arguments);
+}
+
+SceneSynrec_Preload.prototype = Object.create(Scene_Base.prototype);
+SceneSynrec_Preload.prototype.constructor = SceneSynrec_Preload;
+
+SceneSynrec_Preload.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackground();
+    this.getPreloadList();
+    this.resyncBanIgnoreLists();
+}
+
+SceneSynrec_Preload.prototype.getPreloadList = function(){
+    const is_mz = Utils.RPGMAKER_NAME == "MZ";
+    const file_name = `Preload_JSON`;
+    if(is_mz){
+        const file_exists = StorageManager.exists(file_name);
+        if(file_exists){
+            StorageManager.loadObject(file_name)
+            .then((file)=>{
+                const list = JSON.parse(file);
+                $gameTemp.setPreloadList(list);
+            })
+            .catch((e)=>{
+                console.error(e);
+            })
+        }
+    }
+}
+
+SceneSynrec_Preload.prototype.resyncBanIgnoreLists = function(){
+    const ignored_folders = Syn_Preload.IGNORED_FOLDERS;
+    const preload_list = $gameTemp.preloadList();
+    const image_folder_list = preload_list['Image'] || {};
+    const audio_folder_list = preload_list['Audio'] || {};
+    if(ignored_folders.length > 0){
+        for(let i = 0; i < ignored_folders.length; i++){
+            const del_fldr = ignored_folders[i];
+            delete audio_folder_list[del_fldr];
+            delete image_folder_list[del_fldr];
+        }
+    }
+    preload_list['Image'] = image_folder_list;
+    preload_list['Audio'] = audio_folder_list;
+    const ignored_files = Syn_Preload.IGNORED_FILES;
+    if(ignored_files.length > 0){
+        const image_match_checker = /^(img\/)(?.+)/gm;
+        const audio_match_checker = /^(audio\/)(?.+)/gm;
+        const image_list = [];
+        const audio_list = [];
+        ignored_files.forEach((file_data)=>{
+            const file_dir = file_data['Directory'];
+            if(file_dir.match(image_match_checker)){
+                image_list.push(file_data);
+            }
+            if(file_dir.match(audio_match_checker)){
+                audio_list.push(file_data);
+            }
+        })
+    }
+}

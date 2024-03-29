@@ -180,7 +180,7 @@ function PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(obj){
 }
 
 Syn_Preload.PRELOAD_GAUGE_SETTINGS = PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(Syn_Preload.Plugin['Loading Gauge']);
-
+Syn_Preload.PRELOADER_GRAPHIC = Syn_Preload.Plugin['Preload Background'];
 Syn_Preload.BYPASS_LOAD_CONFIRM = eval(Syn_Preload.Plugin['Bypass Load Confirm']);
 
 function PRELOADER_IMAGE_LOADER(folder, filename){
@@ -241,6 +241,15 @@ SceneManager.drawScenePreloadPIXI = function(){
     const cur = $gameTemp._current_preload;
     const max = $gameTemp._preload_length;
     const ratio = (cur / max);
+    if(!this._preload_sprite){
+        const bitmap_name = Syn_Preload.PRELOADER_GRAPHIC;
+        const sprite = new Sprite();
+        if(bitmap_name){
+            sprite.bitmap = ImageManager.loadSystem(bitmap_name);
+        }
+        scene.addChild(sprite);
+        this._preload_sprite = sprite;
+    }
     if(ratio <= 1){
         const x = eval(gauge_settings['Position X']) || 0;
         const y = eval(gauge_settings['Position Y']) || 0;
@@ -278,6 +287,13 @@ SceneManager.drawScenePreloadPIXI = function(){
 }
 
 SceneManager.eraseScenePreloadPIXI = function(){
+    if(this._preload_sprite){
+        if(this._preload_sprite.parent){
+            this._preload_sprite.parent.removeChild(this._preload_sprite);
+            if(this._preload_sprite.destroy)this._preload_sprite.destroy();
+            this._preload_sprite = null;
+        }
+    }
     if(this._preload_pixi_circ){
         if(this._preload_pixi_circ.parent){
             this._preload_pixi_circ.parent.removeChild(this._preload_pixi_circ);

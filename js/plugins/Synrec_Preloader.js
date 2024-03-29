@@ -42,4 +42,51 @@
  * @default []
  * 
  */
+/*~struct~preloadGauge:
+ * 
+ * @param Position X
+ * @desc Screen position of gauge
+ * @type text
+ * @default 0
+ * 
+ * @param Position Y
+ * @desc Screen position of gauge
+ * @type text
+ * @default 0
+ * 
+ * @param Width
+ * @desc Size of the gauge
+ * @type text
+ * @default 1
+ * 
+ * @param Height
+ * @desc Size of the gauge
+ * @type text
+ * @default 1
+ * 
+ * @param Color
+ * @desc Color of the gauge
+ * @type text
+ * @default #ffffff
+ * 
+ */
+/*~struct~ignoreFile:
+ * 
+ * @param Name
+ * @desc No function
+ * @type text
+ * @default FILE
+ * 
+ * @param Directory
+ * @desc Directory file loaded from
+ * @type text
+ * @default img/pictures/
+ * 
+ * @param File Name
+ * @desc Include sub-directory names as well.
+ * @type text
+ * 
+ */
 
+const Syn_Preload = {};
+Syn_Preload.Plugin = PluginManager.parameters(`Synrec_Preloader`);

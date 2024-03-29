@@ -204,7 +204,6 @@ SceneSynrec_Preload.prototype.constructor = SceneSynrec_Preload;
 
 SceneSynrec_Preload.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
-    this.createBackground();
     this.getPreloadList();
     this.resyncBanIgnoreLists();
 }
@@ -255,6 +254,28 @@ SceneSynrec_Preload.prototype.resyncBanIgnoreLists = function(){
             if(file_dir.match(audio_match_checker)){
                 audio_list.push(file_data);
             }
+        })
+        image_list.forEach((file_data)=>{
+            const chk_dir = file_data['Directory'];
+            const img_dir = preload_list['Image'][chk_dir];
+            if(Array.isArray(img_dir)){
+                const index = img_dir.indexOf(file_data['File Name']);
+                if(index >= 0){
+                    img_dir.splice(index, 1);
+                }
+            }
+            preload_list['Image'][chk_dir] = img_dir;
+        })
+        audio_list.forEach((file_data)=>{
+            const chk_dir = file_data['Directory'];
+            const aud_dir = preload_list['Audio'][chk_dir];
+            if(Array.isArray(aud_dir)){
+                const index = aud_dir.indexOf(file_data['File Name']);
+                if(index >= 0){
+                    aud_dir.splice(index, 1);
+                }
+            }
+            preload_list['Audio'][chk_dir] = aud_dir;
         })
     }
 }

@@ -431,6 +431,10 @@ Game_Temp.prototype.savePreloadList = function(){
         const preload_list = this.preloadList();
         const preload_json = JSON.stringify(preload_list);
         StorageManager.saveObject(file_name, preload_json);
+    }else{
+        const preload_list = this.preloadList();
+        const preload_json = JSON.stringify(preload_list);
+        StorageManager.save(file_name, preload_json);
     }
 }
 
@@ -444,13 +448,21 @@ Game_Temp.prototype.loadPreloadList = function(){
             .then((file)=>{
                 const list = JSON.parse(file);
                 $gameTemp.setPreloadList(list);
-                $gameTemp._preloadReady = true;
                 $gameTemp.resyncBanIgnoreLists();
+                $gameTemp._preloadReady = true;
             })
             .catch((e)=>{
                 console.error(e);
             })
         }else{
+            $gameTemp._preloadReady = true;
+        }
+    }else{
+        const list = StorageManager.load(file_name)
+        if(list){
+            const list = JSON.parse(file);
+            $gameTemp.setPreloadList(list);
+            $gameTemp.resyncBanIgnoreLists();
             $gameTemp._preloadReady = true;
         }
     }

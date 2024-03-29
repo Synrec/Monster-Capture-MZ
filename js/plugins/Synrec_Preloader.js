@@ -186,26 +186,7 @@ Syn_Preload.BYPASS_LOAD_CONFIRM = eval(Syn_Preload.Plugin['Bypass Load Confirm']
 function PRELOADER_IMAGE_LOADER(folder, filename){
     const url = folder + Utils.encodeURI(filename);
     const bitmap = Bitmap.load(url);
-    bitmap._onLoad = function(){
-        console.log('Bitmap Loaded!')
-        if (Utils.hasEncryptedImages()) {
-            URL.revokeObjectURL(this._image.src);
-        }
-        this._loadingState = "loaded";
-        this._createBaseTexture(this._image);
-        this._callLoadListeners();
-        ImageManager.loadBitmap(folder, filename);
-    }
-    bitmap._onError = function(){
-        console.warn(`Error Loading Bitmap!`)
-        const preload_list = $gameTemp.preloadList();
-        const image_preload_list = $gameTemp.imagePreloadList();
-        const image_folder = image_preload_list[folder];
-        if(Array.isArray(image_folder)){}
-    }
-    const image = bitmap._image;
-    image.onload = bitmap._onLoad.bind(bitmap);
-    image.onerror = bitmap._onError.bind(bitmap);
+    return bitmap;
 }
 
 Syn_Preload_ScnMngr_UpdtMain = SceneManager.updateMain;
@@ -576,13 +557,21 @@ Game_Temp.prototype.updateGenerateList = function(){
 }
 
 Game_Temp.prototype.updateImagePreload = function(){
+    if(this.checkReservedImages())return true;
     const preload_data = this._image_preloads;
     for(let i = 0; i < 5; i++){
         const file_data = preload_data.shift();
         if(file_data){
             const folder = file_data.folder;
             const filename = file_data.file;
-            PRELOADER_IMAGE_LOADER(folder, filename);
+            const check_bitmap = PRELOADER_IMAGE_LOADER(folder, filename);
+            const obj = {
+                bitmap: check_bitmap,
+                attempts: 0,
+                folder:folder,
+                file:filename
+            }
+            this.reserveLoadImage(obj);
         }
         this._current_preload++;
         if(this._current_preload >= preload_data.length)break;
@@ -590,14 +579,75 @@ Game_Temp.prototype.updateImagePreload = function(){
     return !(this._current_preload >= preload_data.length);
 }
 
+Game_Temp.prototype.checkReservedImages = function(obj){
+    if(!Array.isArray(this._reserve_preload_images))this._reserve_preload_images = [];
+    const rsvp_images = this._reserve_preload_images;
+    if(rsvp_images.length <= 0)return false;
+    rsvp_images.forEach((img_obj)=>{
+        const bitmap = img_obj.bitmap;
+        const attempts = img_obj.attempts;
+        const folder = img_obj.folder;
+        const file = img_obj.file;
+        if(bitmap.isError() && attempts < 3){
+            bitmap.retry();
+            img_obj.attempts++;
+        }else if(bitmap.isReady()){
+            console.log(`load data`)
+            ImageManager.loadBitmap(folder, file);
+            img_obj.delete = true;
+        }else if(bitmap.isError() && attempts >= 3){
+            const preload_list = $gameTemp.preloadList();
+            const image_folder_list = preload_list['Image'];
+            const image_folder = image_folder_list[folder];
+            if(Array.isArray(image_folder)){
+                console.log(img_obj);
+                // const file_index = image_folder.indexOf(file);
+                // if(file_index >= 0){
+                //     image_folder.splice(file_index, 1);
+                // }
+                // if(image_folder.length <= 0){
+                //     delete image_folder_list[folder];
+                //     preload_list['Image'] = image_folder_list;
+                //     $gameTemp.setPreloadList(preload_list);
+                // }
+            }
+            img_obj.delete = true;
+        }
+    })
+    for(let i = 0; i < rsvp_images.length; i++){
+        const img_obj = rsvp_images[i];
+        if(img_obj){
+            if(img_obj.delete){
+                rsvp_images.splice(i, 1);
+            }
+        }else{
+            rsvp_images.splice(i, 1);
+            i--;
+        }
+    }
+}
+
+Game_Temp.prototype.reserveLoadImage = function(obj){
+    if(!Array.isArray(this._reserve_preload_images))this._reserve_preload_images = [];
+    this._reserve_preload_images.push(obj);
+}
+
 Game_Temp.prototype.updateAudioPreload = function(){
+    if(this.checkReservedImages())return true;
     const preload_data = this._audio_preloads;
     for(let i = 0; i < 5; i++){
         const file_data = preload_data.shift();
         if(file_data){
             const folder = file_data.folder;
             const filename = file_data.file;
-            PRELOADER_IMAGE_LOADER(folder, filename);
+            const check_bitmap = PRELOADER_IMAGE_LOADER(folder, filename);
+            const obj = {
+                bitmap: check_bitmap,
+                attempts: 0,
+                folder:folder,
+                file:filename
+            }
+            this.reserveLoadImage(obj);
         }
         this._current_preload++;
     }

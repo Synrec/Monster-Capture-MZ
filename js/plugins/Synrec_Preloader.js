@@ -184,7 +184,7 @@ Syn_Preload.PRELOAD_GAUGE_SETTINGS = PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(Syn_P
 Syn_Preload.BYPASS_LOAD_CONFIRM = eval(Syn_Preload.Plugin['Bypass Load Confirm']);
 
 function PRELOADER_IMAGE_LOADER(folder, filename){
-    const url = folder + Utils.encodeURI(filename);
+    const url = folder + Utils.encodeURI(filename) + ".png";
     const bitmap = Bitmap.load(url);
     return bitmap;
 }
@@ -592,7 +592,6 @@ Game_Temp.prototype.checkReservedImages = function(obj){
             bitmap.retry();
             img_obj.attempts++;
         }else if(bitmap.isReady()){
-            console.log(`load data`)
             ImageManager.loadBitmap(folder, file);
             img_obj.delete = true;
         }else if(bitmap.isError() && attempts >= 3){
@@ -600,16 +599,15 @@ Game_Temp.prototype.checkReservedImages = function(obj){
             const image_folder_list = preload_list['Image'];
             const image_folder = image_folder_list[folder];
             if(Array.isArray(image_folder)){
-                console.log(img_obj);
-                // const file_index = image_folder.indexOf(file);
-                // if(file_index >= 0){
-                //     image_folder.splice(file_index, 1);
-                // }
-                // if(image_folder.length <= 0){
-                //     delete image_folder_list[folder];
-                //     preload_list['Image'] = image_folder_list;
-                //     $gameTemp.setPreloadList(preload_list);
-                // }
+                const file_index = image_folder.indexOf(file);
+                if(file_index >= 0){
+                    image_folder.splice(file_index, 1);
+                }
+                if(image_folder.length <= 0){
+                    delete image_folder_list[folder];
+                    preload_list['Image'] = image_folder_list;
+                    $gameTemp.setPreloadList(preload_list);
+                }
             }
             img_obj.delete = true;
         }

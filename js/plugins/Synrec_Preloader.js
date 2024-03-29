@@ -332,6 +332,7 @@ AudioManager.createBuffer = function(folder, name) {
         if(ignored_folders.includes(folder))return base;
         const obj = {folder: `audio/${folder}`, file: name};
         const ignored_files = $gameTemp.audioIgnoredPreloadList();
+        console.log(ignored_files)
         if(ignored_files.some((file_data)=>{
             const dir = file_data.folder;
             const name = file_data.file;
@@ -339,7 +340,10 @@ AudioManager.createBuffer = function(folder, name) {
                 obj.folder == dir &&
                 obj.file == name
             )
-        }))return base;
+        })){
+            console.log(name)
+            return base;
+        }
         const whole_list = $gameTemp.preloadList();
         const audio_list = whole_list['Audio'] || {};
         if(!Array.isArray(audio_list[folder])){
@@ -386,22 +390,22 @@ Game_Temp.prototype.audioPreloadList = function(){
 
 Game_Temp.prototype.imageIgnoredPreloadList = function(){
     const whole_list = this.preloadList();
-    return whole_list['Image File Ignored'] || [];
+    return whole_list['Image File Ignored'];
 }
 
 Game_Temp.prototype.audioIgnoredPreloadList = function(){
     const whole_list = this.preloadList();
-    return whole_list['Audio File Ignored'] || [];
+    return whole_list['Audio File Ignored'];
 }
 
 Game_Temp.prototype.imageBannedPreloadList = function(){
     const whole_list = this.preloadList();
-    return whole_list['Image Folder Ignored'] || [];
+    return whole_list['Image Folder Ignored'];
 }
 
 Game_Temp.prototype.audioBannedPreloadList = function(){
     const whole_list = this.preloadList();
-    return whole_list['Audio Folder Ignored'] || [];
+    return whole_list['Audio Folder Ignored'];
 }
 
 Game_Temp.prototype.savePreloadList = function(){
@@ -425,6 +429,7 @@ Game_Temp.prototype.loadPreloadList = function(){
                 const list = JSON.parse(file);
                 $gameTemp.setPreloadList(list);
                 $gameTemp._preloadReady = true;
+                $gameTemp.resyncBanIgnoreLists();
             })
             .catch((e)=>{
                 console.error(e);
@@ -436,23 +441,33 @@ Game_Temp.prototype.loadPreloadList = function(){
 }
 
 Game_Temp.prototype.resyncBanIgnoreLists = function(){
+    const image_match_checker = /^(img\/)(?:.+)/gm;
+    const audio_match_checker = /^(audio\/)(?:.+)/gm;
     const ignored_folders = Syn_Preload.IGNORED_FOLDERS;
     const preload_list = this.preloadList();
     const image_folder_list = preload_list['Image'] || {};
     const audio_folder_list = preload_list['Audio'] || {};
+    const img_fldr_list = [];
+    const aud_fldr_list = [];
     if(ignored_folders.length > 0){
         for(let i = 0; i < ignored_folders.length; i++){
             const del_fldr = ignored_folders[i];
-            delete audio_folder_list[del_fldr];
-            delete image_folder_list[del_fldr];
+            if(del_fldr.match(image_match_checker)){
+                img_fldr_list.push(del_fldr);
+                delete image_folder_list[del_fldr];
+            }
+            if(del_fldr.match(audio_match_checker)){
+                aud_fldr_list.push(del_fldr);
+                delete audio_folder_list[del_fldr];
+            }
         }
     }
+    preload_list['Image Folder Ignored'] = img_fldr_list;
+    preload_list['Audio Folder Ignored'] = aud_fldr_list;
     preload_list['Image'] = image_folder_list;
     preload_list['Audio'] = audio_folder_list;
     const ignored_files = Syn_Preload.IGNORED_FILES;
     if(ignored_files.length > 0){
-        const image_match_checker = /^(img\/)(?.+)/gm;
-        const audio_match_checker = /^(audio\/)(?.+)/gm;
         const image_list = [];
         const audio_list = [];
         ignored_files.forEach((file_data)=>{
@@ -464,6 +479,8 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
                 audio_list.push(file_data);
             }
         })
+        preload_list['Image File Ignored'] = image_list;
+        preload_list['Audio File Ignored'] = audio_list;
         image_list.forEach((file_data)=>{
             const chk_dir = file_data['Directory'];
             const img_dir = preload_list['Image'][chk_dir];
@@ -472,8 +489,10 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
                 if(index >= 0){
                     img_dir.splice(index, 1);
                 }
+                preload_list['Image'][chk_dir] = img_dir;
+            }else{
+                preload_list['Image'][chk_dir] = [];
             }
-            preload_list['Image'][chk_dir] = img_dir;
         })
         audio_list.forEach((file_data)=>{
             const chk_dir = file_data['Directory'];
@@ -483,17 +502,19 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
                 if(index >= 0){
                     aud_dir.splice(index, 1);
                 }
+                preload_list['Audio'][chk_dir] = aud_dir;
+            }else{
+                preload_list['Audio'][chk_dir] = [];
             }
-            preload_list['Audio'][chk_dir] = aud_dir;
         })
     }
+    $gameTemp.setPreloadList(preload_list);
+    console.log(preload_list);
 }
 
 Game_Temp.prototype.generateImageList = function(){
     const list = [];
     const image_preload_list = this.imagePreloadList();
-    console.log(this.preloadList())
-    console.log(image_preload_list)
     const folder_keys = Object.keys(image_preload_list);
     for(const folder_name of folder_keys){
         const folder_list = image_preload_list[folder_name];
@@ -526,6 +547,10 @@ Game_Temp.prototype.initializePreloader = function(){
     this._preloader_list = {};
     this._preloader_list['Image'] = {};
     this._preloader_list['Audio'] = {};
+    this._preloader_list['Image File Ignored'] = [];
+    this._preloader_list['Audio File Ignored'] = [];
+    this._preloader_list['Image Folder Ignored'] = [];
+    this._preloader_list['Audio Folder Ignored'] = [];
 }
 
 Syn_Preload_GmTemp_Init = Game_Temp.prototype.initialize;
@@ -537,7 +562,6 @@ Game_Temp.prototype.initialize = function() {
 Game_Temp.prototype.executePreload = function(){
     this.initializePreloader();
     this.loadPreloadList();
-    this.resyncBanIgnoreLists();
     const preloaded = SceneManager._complete_preload;
     if(preloaded)return;
     this._need_preload = true;

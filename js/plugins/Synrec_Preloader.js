@@ -224,7 +224,6 @@ SceneManager.drawScenePreloadPIXI = function(){
     const cur = $gameTemp._current_preload;
     const max = $gameTemp._preload_length;
     const ratio = (cur / max);
-    loading_circ.clear();
     if(ratio < 1){
         const x = eval(gauge_settings['Position X']) || 0;
         const y = eval(gauge_settings['Position Y']) || 0;
@@ -235,6 +234,7 @@ SceneManager.drawScenePreloadPIXI = function(){
             scene.addChild(this._preload_pixi_circ);
         }
         const loading_circ = this._preload_pixi_circ;
+        loading_circ.clear();
         const ratio_arc = (Math.PI * 2) * ratio;
         const line_size = Math.ceil(Math.max(Graphics.width, Graphics.height) / 100);
         loading_circ.lineStyle(line_size, color);
@@ -276,6 +276,70 @@ SceneManager.eraseScenePreloadPIXI = function(){
     }
 }
 
+Syn_Preload_ImgMngr_LoadBitmp = ImageManager.loadBitmap;
+ImageManager.loadBitmap = function(folder, filename) {
+    const base = Syn_Preload_ImgMngr_LoadBitmp.call(this, ...arguments);
+    if (filename && $gameTemp) {
+        const ignored_folders = $gameTemp.imageBannedPreloadList();
+        if(ignored_folders.includes(folder))return base;
+        const obj = {folder: folder, file: filename};
+        const ignored_files = $gameTemp.imageIgnoredPreloadList();
+        if(ignored_files.some((file_data)=>{
+            const dir = file_data.folder;
+            const name = file_data.file;
+            return(
+                obj.folder == dir &&
+                obj.file == name
+            )
+        }))return base;
+        const whole_list = $gameTemp.preloadList();
+        const image_list = whole_list['Image'] || {};
+        if(!Array.isArray(image_list[folder])){
+            image_list[folder] = [];
+        }
+        const dir_imgage_list = image_list[folder];
+        if(dir_imgage_list.includes(filename)){
+            return base;
+        }
+        dir_imgage_list.push(filename);
+        $gameTemp.setPreloadList(whole_list);
+        $gameTemp.savePreloadList();
+    }
+    return base;
+}
+
+Syn_Preload_AudMngr_CrtBufr = AudioManager.createBuffer;
+AudioManager.createBuffer = function(folder, name) {
+    const base = Syn_Preload_AudMngr_CrtBufr.call(this, ...arguments);
+    if(name && $gameTemp){
+        const ignored_folders = $gameTemp.audioBannedPreloadList();
+        if(ignored_folders.includes(folder))return base;
+        const obj = {folder: `audio/${folder}`, file: name};
+        const ignored_files = $gameTemp.audioIgnoredPreloadList();
+        if(ignored_files.some((file_data)=>{
+            const dir = file_data.folder;
+            const name = file_data.file;
+            return(
+                obj.folder == dir &&
+                obj.file == name
+            )
+        }))return base;
+        const whole_list = $gameTemp.preloadList();
+        const audio_list = whole_list['Audio'] || {};
+        if(!Array.isArray(audio_list[folder])){
+            audio_list[folder] = [];
+        }
+        const dir_audio_list = audio_list[folder];
+        if(dir_audio_list.includes(name)){
+            return base;
+        }
+        dir_audio_list.push(name);
+        $gameTemp.setPreloadList(whole_list);
+        $gameTemp.savePreloadList();
+    }
+    return base;
+}
+
 Syn_Preload_ScnBse_IsBsy = Scene_Base.prototype.isBusy;
 Scene_Base.prototype.isBusy = function() {
     const base = Syn_Preload_ScnBse_IsBsy.call(this, ...arguments);
@@ -283,11 +347,15 @@ Scene_Base.prototype.isBusy = function() {
 }
 
 Game_Temp.prototype.setPreloadList = function(list){
+    if(!list)return;
     this._preloader_list = list;
 }
 
 Game_Temp.prototype.preloadList = function(){
-    return this._preloader_list || {};
+    if(!this._preloader_list){
+        this.initializePreloader();
+    }
+    return this._preloader_list;
 }
 
 Game_Temp.prototype.imagePreloadList = function(){
@@ -302,12 +370,12 @@ Game_Temp.prototype.audioPreloadList = function(){
 
 Game_Temp.prototype.imageIgnoredPreloadList = function(){
     const whole_list = this.preloadList();
-    return whole_list['Image File Ignored'] || {};
+    return whole_list['Image File Ignored'] || [];
 }
 
 Game_Temp.prototype.audioIgnoredPreloadList = function(){
     const whole_list = this.preloadList();
-    return whole_list['Audio File Ignored'] || {};
+    return whole_list['Audio File Ignored'] || [];
 }
 
 Game_Temp.prototype.imageBannedPreloadList = function(){
@@ -339,6 +407,7 @@ Game_Temp.prototype.loadPreloadList = function(){
             StorageManager.loadObject(file_name)
             .then((file)=>{
                 const list = JSON.parse(file);
+                console.log(list)
                 $gameTemp.setPreloadList(list);
             })
             .catch((e)=>{
@@ -417,7 +486,7 @@ Game_Temp.prototype.generateImageList = function(){
     this._image_preloads = list;
 }
 
-Game_Temp.prototype.generateImageList = function(){
+Game_Temp.prototype.generateAudioList = function(){
     const list = [];
     const audio_preload_list = this.audioPreloadList();
     const folder_keys = Object.keys(audio_preload_list);
@@ -432,6 +501,12 @@ Game_Temp.prototype.generateImageList = function(){
     this._audio_preloads = list;
 }
 
+Game_Temp.prototype.initializePreloader = function(){
+    this._preloader_list = {};
+    this._preloader_list['Image'] = {};
+    this._preloader_list['Audio'] = {};
+}
+
 Syn_Preload_GmTemp_Init = Game_Temp.prototype.initialize;
 Game_Temp.prototype.initialize = function() {
     Syn_Preload_GmTemp_Init.call(this, ...arguments);
@@ -439,6 +514,7 @@ Game_Temp.prototype.initialize = function() {
 }
 
 Game_Temp.prototype.executePreload = function(){
+    this.initializePreloader();
     this.loadPreloadList();
     this.resyncBanIgnoreLists();
     this.generateImageList();
@@ -454,4 +530,28 @@ Game_Temp.prototype.updatePreloadList = function(){
     if(this.updateConfirmPreload())return;
     this._preload_complete = true;
     delete this._need_preload;
+}
+
+Game_Temp.prototype.updateImagePreload = function(){
+    const index = this._current_preload;
+}
+
+Game_Temp.prototype.updateAudioPreload = function(){
+    const index = this._image_preloads.length + this._current_preload;
+}
+
+Game_Temp.prototype.updateConfirmPreload = function(){
+    if(!this._confirm_preload){
+        if(
+            Input.isTriggered('ok') ||
+            Input.isTriggered('cancel') ||
+            TouchInput.isTriggered() ||
+            TouchInput.isCancelled() ||
+            Syn_Preload.BYPASS_LOAD_CONFIRM
+        ){
+            this._confirm_preload = true;
+            return false;
+        }
+    }
+    return true;
 }

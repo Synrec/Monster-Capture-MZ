@@ -1820,6 +1820,7 @@ Bitmap.prototype._onLoad = function() {
     if (Utils.hasEncryptedImages()) {
         URL.revokeObjectURL(this._image.src);
     }
+    console.log(this._url)
     this._loadingState = "loaded";
     this._createBaseTexture(this._image);
     this._callLoadListeners();

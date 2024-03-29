@@ -187,7 +187,7 @@ function PRELOADER_IMAGE_LOADER(folder, filename){
     const url = folder + Utils.encodeURI(filename);
     const bitmap = Bitmap.load(url);
     bitmap._onLoad = function(){
-        console.log('yes')
+        console.log('Bitmap Loaded!')
         if (Utils.hasEncryptedImages()) {
             URL.revokeObjectURL(this._image.src);
         }
@@ -197,30 +197,11 @@ function PRELOADER_IMAGE_LOADER(folder, filename){
         ImageManager.loadBitmap(folder, filename);
     }
     bitmap._onError = function(){
+        console.warn(`Error Loading Bitmap!`)
         const preload_list = $gameTemp.preloadList();
         const image_preload_list = $gameTemp.imagePreloadList();
         const image_folder = image_preload_list[folder];
-        if(Array.isArray(image_folder)){
-            if(image_folder.length <= 0){
-                delete image_preload_list[folder];
-                preload_list['Image'] = image_preload_list;
-                console.log(image_preload_list)
-                $gameTemp.setPreloadList(preload_list);
-            }
-            const file_index = image_folder.indexOf(filename);
-            if(file_index >= 0){
-                image_folder.splice(file_index, 1);
-                preload_list['Image'] = image_preload_list;
-                $gameTemp.setPreloadList(preload_list);
-            }
-            if(image_folder.length <= 0){
-                delete image_preload_list[folder];
-                preload_list['Image'] = image_preload_list;
-                $gameTemp.setPreloadList(preload_list);
-            }
-        }else{
-            delete image_preload_list[folder]
-        }
+        if(Array.isArray(image_folder)){}
     }
     const image = bitmap._image;
     image.onload = bitmap._onLoad.bind(bitmap);

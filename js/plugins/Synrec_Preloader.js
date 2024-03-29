@@ -25,12 +25,6 @@
  * 
  * @param General Settings
  * 
- * @param Load Rate
- * @parent General Settings
- * @desc Speed to preload data
- * @type number
- * @default 1
- * 
  * @param Ignored Directories
  * @parent General Settings
  * @desc These directories are ignored by the preloader
@@ -184,17 +178,33 @@ Syn_Preload.PRELOADER_GRAPHIC = Syn_Preload.Plugin['Preload Background'];
 Syn_Preload.BYPASS_LOAD_CONFIRM = eval(Syn_Preload.Plugin['Bypass Load Confirm']);
 
 function PRELOADER_IMAGE_LOADER(folder, filename){
-    const url = folder + Utils.encodeURI(filename) + ".png";
-    const bitmap = Bitmap.load(url);
-    return bitmap;
+    const is_mz = Utils.RPGMAKER_NAME == "MZ";
+    if(is_mz){
+        const url = folder + Utils.encodeURI(filename) + ".png";
+        const bitmap = Bitmap.load(url);
+        return bitmap;
+    }else{
+        const url = decodeURIComponent(folder + encodeURIComponent(filename) + ".png");
+        const bitmap = Bitmap.load(url);
+        return bitmap;
+    }
 }
 
 function PRELOADER_AUDIO_LOADER(folder, filename){
-    const audio_ext = AudioManager.audioFileExt();
-    const audio_path = AudioManager._path;
-    const url = audio_path + folder + Utils.encodeURI(filename) + audio_ext;
-    const buffer = new WebAudio(url);
-    return buffer;
+    const is_mz = Utils.RPGMAKER_NAME == "MZ";
+    if(is_mz){
+        const audio_ext = AudioManager.audioFileExt();
+        const audio_path = AudioManager._path;
+        const url = audio_path + folder + Utils.encodeURI(filename) + audio_ext;
+        const buffer = new WebAudio(url);
+        return buffer;
+    }else{
+        const audio_ext = AudioManager.audioFileExt();
+        const audio_path = AudioManager._path;
+        const url = audio_path + folder + '/' + encodeURIComponent(filename) + audio_ext;
+        const buffer = new WebAudio(url);
+        return buffer;
+    }
 }
 
 Syn_Preload_ScnMngr_UpdtMain = SceneManager.updateMain;
@@ -240,7 +250,7 @@ SceneManager.drawScenePreloadPIXI = function(){
     const gauge_settings = Syn_Preload.PRELOAD_GAUGE_SETTINGS;
     const cur = $gameTemp._current_preload;
     const max = $gameTemp._preload_length;
-    const ratio = (cur / max);
+    const ratio = Math.min(1, Math.max(0, (cur / max)));
     if(!this._preload_sprite){
         const bitmap_name = Syn_Preload.PRELOADER_GRAPHIC;
         const sprite = new Sprite();
@@ -458,12 +468,14 @@ Game_Temp.prototype.loadPreloadList = function(){
             $gameTemp._preloadReady = true;
         }
     }else{
-        const list = StorageManager.load(file_name)
+        const list = StorageManager.load(file_name);
         if(list){
-            const list = JSON.parse(file);
-            $gameTemp.setPreloadList(list);
-            $gameTemp.resyncBanIgnoreLists();
-            $gameTemp._preloadReady = true;
+            const parsed_list = JSON.parse(list);
+            this.setPreloadList(parsed_list);
+            this.resyncBanIgnoreLists();
+            this._preloadReady = true;
+        }else{
+            this._preloadReady = true;
         }
     }
 }
@@ -545,7 +557,7 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
             }
         })
     }
-    $gameTemp.setPreloadList(preload_list);
+    this.setPreloadList(preload_list);
 }
 
 Game_Temp.prototype.generateImageList = function(){
@@ -560,7 +572,6 @@ Game_Temp.prototype.generateImageList = function(){
             list.push(preload_obj);
         }
     }
-    console.log(list)
     this._image_preloads = list;
 }
 
@@ -656,7 +667,12 @@ Game_Temp.prototype.checkReservedImages = function(obj){
         const folder = img_obj.folder;
         const file = img_obj.file;
         if(bitmap.isError() && attempts < 3){
-            bitmap.retry();
+            const is_mz = Utils.RPGMAKER_NAME == "MZ";
+            if(is_mz){
+                bitmap.retry();
+            }else{
+                bitmap.decode();
+            }
             img_obj.attempts++;
         }else if(bitmap.isReady()){
             ImageManager.loadBitmap(folder, file);
@@ -730,10 +746,15 @@ Game_Temp.prototype.checkReservedAudios = function(obj){
         const folder = aud_obj.folder;
         const file = aud_obj.file;
         if(audio.isError() && attempts < 3){
-            audio.retry();
-            console.log(file)
-            aud_obj.attempts++;
+            const is_mz = Utils.RPGMAKER_NAME == "MZ";
+            if(is_mz){
+                audio.retry();
+                aud_obj.attempts++;
+            }else{
+                aud_obj.attempts = 3;
+            }
         }else if(audio.isReady()){
+            console.log(file)
             AudioManager.createBuffer(folder, file);
             aud_obj.delete = true;
         }else if(audio.isError() && attempts >= 3){

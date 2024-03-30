@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.0 Preloads image and audio for the game on start
+ * @plugindesc v1.0.1 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 

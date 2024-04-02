@@ -333,27 +333,39 @@ Game_Party.prototype.grabValidData = function(){
         let r1, r2 = false;
         if(
             p1._actorId == req1['Actor'] && 
-            p1._gender == req1['Gender'].toLowerCase()
+            (
+                p1._gender == req1['Gender'].toLowerCase() ||
+                !req1['Gender']
+            )
         ){
             r1 = true;
         }
         if(
             p1._actorId == req2['Actor'] && 
-            p1._gender == req2['Gender'].toLowerCase()
+            (
+                p1._gender == req2['Gender'].toLowerCase() ||
+                !req2['Gender']
+            )
         ){
             r2 = true;
         }
         if(r1){
             if(
                 p2._actorId == req2['Actor'] && 
-                p2._gender == req2['Gender'].toLowerCase()
+                (
+                    p2._gender == req2['Gender'].toLowerCase() ||
+                    !req2['Gender']
+                )
             ){
                 return data;
             }
         }else if(r2){
             if(
                 p2._actorId == req1['Actor'] && 
-                p2._gender == req1['Gender'].toLowerCase()
+                (
+                    p2._gender == req1['Gender'].toLowerCase() ||
+                    !req1['Gender']
+                )
             ){
                 return data;
             }

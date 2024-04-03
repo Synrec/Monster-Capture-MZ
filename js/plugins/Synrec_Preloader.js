@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.1 Preloads image and audio for the game on start
+ * @plugindesc v1.0.3 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -23,6 +23,11 @@
  * @type file
  * @dir img/system/
  * 
+ * @param Preload Fonts
+ * @desc Setup fonts to preload
+ * @type struct<preloadFont>[]
+ * @default []
+ * 
  * @param General Settings
  * 
  * @param Ignored Directories
@@ -37,6 +42,20 @@
  * @desc These files are ignored by the preloader
  * @type struct<ignoreFile>[]
  * @default []
+ * 
+ */
+/*~struct~preloadFont:
+ * 
+ * @param Font Name
+ * @desc Name of the font
+ * @type text
+ * @default Font Name
+ * 
+ * @param Font URL
+ * @desc mv: ./fonts/font_name.ttf
+ * mz: font_name.ttf
+ * @type text
+ * @default ./fonts/font_name.ttf
  * 
  */
 /*~struct~preloadGauge:
@@ -134,6 +153,23 @@
 
 const Syn_Preload = {};
 Syn_Preload.Plugin = PluginManager.parameters(`Synrec_Preloader`);
+
+function FONT_CONFIG_PARSER_PRELOAD(obj){
+    try{
+        obj = JSON.parse(obj);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+try{
+    Syn_Preload.PRELOAD_FONTS = JSON.parse(Syn_Preload.Plugin['Preload Fonts']).map((font_config)=>{
+        return FONT_CONFIG_PARSER_PRELOAD(font_config);
+    }).filter(Boolean)
+}catch(e){
+    Syn_Preload.PRELOAD_FONTS = [];
+}
 
 function IGNORE_FILE_PARSER_PRELOAD(obj){
     try{
@@ -367,7 +403,6 @@ AudioManager.createBuffer = function(folder, name) {
                 obj.file == name
             )
         })){
-            console.log(name)
             return base;
         }
         const whole_list = $gameTemp.preloadList();
@@ -544,8 +579,6 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
                 chk_dir = chk_dir.substring(dir_index_slash);
             }
             const aud_dir = preload_list['Audio'][chk_dir];
-            console.log(preload_list['Audio'])
-            console.log(chk_dir)
             if(Array.isArray(aud_dir)){
                 const index = aud_dir.indexOf(file_data['File Name']);
                 if(index >= 0){
@@ -615,12 +648,33 @@ Game_Temp.prototype.executePreload = function(){
 }
 
 Game_Temp.prototype.updatePreloadList = function(){
+    if(this.updatePreloadFonts())return;
     if(this.updateGenerateList())return;
     if(this.updateImagePreload())return;
     if(this.updateAudioPreload())return;
     if(this.updateConfirmPreload())return;
     this._preload_complete = true;
     delete this._need_preload;
+}
+
+Game_Temp.prototype.updatePreloadFonts = function(){
+    if(this._preloadedFonts)return;
+    const is_mz = Utils.RPGMAKER_NAME == "MZ";
+    const font_data = Syn_Preload.PRELOAD_FONTS;
+    if(is_mz){
+        font_data.forEach((font_config)=>{
+            const name = font_config['Font Name'];
+            const url = font_config['Font URL']
+            FontManager.load(name, url);
+        })
+    }else{
+        font_data.forEach((font_config)=>{
+            const name = font_config['Font Name'];
+            const url = font_config['Font URL']
+            Graphics.loadFont(name, url);
+        })
+    }
+    this._preloadedFonts = true;
 }
 
 Game_Temp.prototype.updateGenerateList = function(){
@@ -667,6 +721,7 @@ Game_Temp.prototype.checkReservedImages = function(obj){
         const folder = img_obj.folder;
         const file = img_obj.file;
         if(bitmap.isError() && attempts < 3){
+            if(file == "Bat")console.log(bitmap._loadingState);
             const is_mz = Utils.RPGMAKER_NAME == "MZ";
             if(is_mz){
                 bitmap.retry();
@@ -689,8 +744,8 @@ Game_Temp.prototype.checkReservedImages = function(obj){
                 if(image_folder.length <= 0){
                     delete image_folder_list[folder];
                     preload_list['Image'] = image_folder_list;
-                    $gameTemp.setPreloadList(preload_list);
                 }
+                $gameTemp.setPreloadList(preload_list);
             }
             img_obj.delete = true;
         }
@@ -754,7 +809,6 @@ Game_Temp.prototype.checkReservedAudios = function(obj){
                 aud_obj.attempts = 3;
             }
         }else if(audio.isReady()){
-            console.log(file)
             AudioManager.createBuffer(folder, file);
             aud_obj.delete = true;
         }else if(audio.isError() && attempts >= 3){

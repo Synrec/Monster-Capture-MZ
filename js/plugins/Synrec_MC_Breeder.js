@@ -331,11 +331,14 @@ Game_Party.prototype.grabValidData = function(){
         const req1 = reqActors[0];
         const req2 = reqActors[1];
         let r1, r2 = false;
+        const req1_gender = (req1['Gender'] || "").toLowerCase();
+        const req2_gender = (req2['Gender'] || "").toLowerCase();
         if(
             p1._actorId == req1['Actor'] && 
             (
-                p1._gender == req1['Gender'].toLowerCase() ||
-                !req1['Gender']
+                p1._gender == req1_gender ||
+                !req1_gender ||
+                req1_gender == 'none'
             )
         ){
             r1 = true;
@@ -343,8 +346,9 @@ Game_Party.prototype.grabValidData = function(){
         if(
             p1._actorId == req2['Actor'] && 
             (
-                p1._gender == req2['Gender'].toLowerCase() ||
-                !req2['Gender']
+                p1._gender == req2_gender ||
+                !req2_gender ||
+                req2_gender == 'none'
             )
         ){
             r2 = true;
@@ -353,8 +357,9 @@ Game_Party.prototype.grabValidData = function(){
             if(
                 p2._actorId == req2['Actor'] && 
                 (
-                    p2._gender == req2['Gender'].toLowerCase() ||
-                    !req2['Gender']
+                    p2._gender == req2_gender ||
+                    !req2_gender ||
+                    req2_gender == 'none'
                 )
             ){
                 return data;
@@ -363,8 +368,9 @@ Game_Party.prototype.grabValidData = function(){
             if(
                 p2._actorId == req1['Actor'] && 
                 (
-                    p2._gender == req1['Gender'].toLowerCase() ||
-                    !req1['Gender']
+                    p2._gender == req1_gender ||
+                    !req1_gender ||
+                    req1_gender == 'none'
                 )
             ){
                 return data;

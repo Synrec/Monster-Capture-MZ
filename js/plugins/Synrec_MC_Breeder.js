@@ -843,6 +843,7 @@ Scene_Breeding.prototype.swapWith1 = function(){
     }
     this.immediateBreed();
     this.cancelCommand();
+    $gamePlayer.refresh();
 }
 
 Scene_Breeding.prototype.swapWith2 = function(){
@@ -863,6 +864,7 @@ Scene_Breeding.prototype.swapWith2 = function(){
     }
     this.immediateBreed();
     this.cancelCommand();
+    $gamePlayer.refresh();
 }
 
 Scene_Breeding.prototype.getBreedResult = function(){
@@ -874,6 +876,7 @@ Scene_Breeding.prototype.getBreedResult = function(){
         SoundManager.playBuzzer();
         this._breedCommand.activate();
     }
+    $gamePlayer.refresh();
 }
 
 Scene_Breeding.prototype.immediateBreed = function(){

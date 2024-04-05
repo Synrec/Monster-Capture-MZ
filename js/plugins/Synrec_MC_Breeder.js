@@ -98,6 +98,12 @@
  * @type boolean
  * @default false
  * 
+ * @param Fuse Stats Only
+ * @parent Fuse Stats
+ * @desc Only consider fusion stats and not base stats
+ * @type boolean
+ * @default false
+ * 
  * @param Stat Transfer Value
  * @parent Fuse Stats
  * @desc Default values are 0
@@ -240,6 +246,12 @@ Game_Actor.prototype.gainExpBreed = function(exp) {
     this.changeExp(newExp, false);
 }
 
+SynrecMC_Brdr_GmActr_ParamBse = Game_Actor.prototype.paramBase;
+Game_Actor.prototype.paramBase = function(){
+    if(this._fuse_only_params)return 0;
+    return SynrecMC_Brdr_GmActr_ParamBse.call(this, ...arguments);
+}
+
 SynrecBrdrGmPrtyInit = Game_Party.prototype.initialize;
 Game_Party.prototype.initialize = function(){
     SynrecBrdrGmPrtyInit.call(this);
@@ -306,6 +318,7 @@ Game_Party.prototype.progressPreBreed = function(){
                     const luk = ((this._breederParent1.param(7) + this._breederParent2.param(7)) / 2) * percAppLuk;
                     obj['Fusion Params'] = [hp, mp, atk, def, mat, mdf, agi, luk];
                 }
+                obj['Fusion Params Only'] = eval(data['Fuse Stats Only']);
                 if(data['Delete Parents']){
                     this._breederParent1 = undefined;
                     this._breederParent2 = undefined;
@@ -401,6 +414,7 @@ Game_Map.prototype.updateHatch = function(){
             const progress = item['Step Progress'];
             const complete = item['Step Complete'];
             const averageStats = item['Fusion Params'];
+            const fuse_stats_only = eval(item['Fusion Params Only']);
             if(progress >= complete){
                 if(averageStats){
                     const actorId = item['Result Actor'];
@@ -417,14 +431,26 @@ Game_Map.prototype.updateHatch = function(){
                     if(!actor._breed_bonus){
                         actor.initBreederBonus();
                     }
-                    actor._breed_bonus[0] += parAvgs[0] - hp;
-                    actor._breed_bonus[1] += parAvgs[1] - mp;
-                    actor._breed_bonus[2] += parAvgs[2] - atk;
-                    actor._breed_bonus[3] += parAvgs[3] - def;
-                    actor._breed_bonus[4] += parAvgs[4] - mat;
-                    actor._breed_bonus[5] += parAvgs[5] - mdf;
-                    actor._breed_bonus[6] += parAvgs[6] - agi;
-                    actor._breed_bonus[7] += parAvgs[7] - luk;
+                    if(fuse_stats_only){
+                        actor._paramPlus[0] += parAvgs[0];          
+                        actor._paramPlus[1] += parAvgs[1];            
+                        actor._paramPlus[2] += parAvgs[2];
+                        actor._paramPlus[3] += parAvgs[3];
+                        actor._paramPlus[4] += parAvgs[4];
+                        actor._paramPlus[5] += parAvgs[5];
+                        actor._paramPlus[6] += parAvgs[6];
+                        actor._paramPlus[7] += parAvgs[7];
+                    }else{
+                        actor._paramPlus[0] += parAvgs[0] - hp;
+                        actor._paramPlus[1] += parAvgs[1] - mp;
+                        actor._paramPlus[2] += parAvgs[2] - atk;
+                        actor._paramPlus[3] += parAvgs[3] - def;
+                        actor._paramPlus[4] += parAvgs[4] - mat;
+                        actor._paramPlus[5] += parAvgs[5] - mdf;
+                        actor._paramPlus[6] += parAvgs[6] - agi;
+                        actor._paramPlus[7] += parAvgs[7] - luk;
+                    }
+                    actor._fuse_only_params = fuse_stats_only;
                     actor.setTp(0);
                     actor.setGender();
                     if($gameParty._actors.length >= $gameParty.maxBattleMembers()){
@@ -954,6 +980,7 @@ Scene_Hatch.prototype.startHatch = function(){
     }
     const actorId = data['Result Actor'];
     const averageStats = data['Fusion Params'];
+    const fuse_stats_only = eval(data['Fusion Params Only']);
     if(averageStats){
         const actor = new Game_Actor(actorId);
         const hp = actor.param(0);
@@ -965,14 +992,29 @@ Scene_Hatch.prototype.startHatch = function(){
         const agi = actor.param(6);
         const luk = actor.param(7);
         const parAvgs = data['Fusion Params'];
-        actor._paramPlus[0] += parAvgs[0] - hp;
-        actor._paramPlus[1] += parAvgs[1] - mp;
-        actor._paramPlus[2] += parAvgs[2] - atk;
-        actor._paramPlus[3] += parAvgs[3] - def;
-        actor._paramPlus[4] += parAvgs[4] - mat;
-        actor._paramPlus[5] += parAvgs[5] - mdf;
-        actor._paramPlus[6] += parAvgs[6] - agi;
-        actor._paramPlus[7] += parAvgs[7] - luk;
+        if(!actor._breed_bonus){
+            actor.initBreederBonus();
+        }
+        if(fuse_stats_only){
+            actor._paramPlus[0] += parAvgs[0];          
+            actor._paramPlus[1] += parAvgs[1];            
+            actor._paramPlus[2] += parAvgs[2];
+            actor._paramPlus[3] += parAvgs[3];
+            actor._paramPlus[4] += parAvgs[4];
+            actor._paramPlus[5] += parAvgs[5];
+            actor._paramPlus[6] += parAvgs[6];
+            actor._paramPlus[7] += parAvgs[7];
+        }else{
+            actor._paramPlus[0] += parAvgs[0] - hp;
+            actor._paramPlus[1] += parAvgs[1] - mp;
+            actor._paramPlus[2] += parAvgs[2] - atk;
+            actor._paramPlus[3] += parAvgs[3] - def;
+            actor._paramPlus[4] += parAvgs[4] - mat;
+            actor._paramPlus[5] += parAvgs[5] - mdf;
+            actor._paramPlus[6] += parAvgs[6] - agi;
+            actor._paramPlus[7] += parAvgs[7] - luk;
+        }
+        actor._fuse_only_params = fuse_stats_only;
         actor.setTp(0);
         actor.setGender();
         if($gameParty._actors.length >= $gameParty.maxBattleMembers()){

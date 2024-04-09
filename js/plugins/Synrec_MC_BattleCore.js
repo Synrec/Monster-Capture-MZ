@@ -446,7 +446,9 @@ Game_Enemy.prototype.setLevel = function(){
     const actorMaxLevel = SynrecMC.Battle.maxLevel;
     const bandWidth = Math.abs(Math.floor(maxLevel - minLevel));
     if(minLevel + bandWidth > actorMaxLevel)throw new Error("Actor maximum level set too low with current settings.");
-    this._actor._level = minLevel + Math.floor(Math.random() * bandWidth);
+    const enemy_data = this.enemy();
+    const force_level = eval(enemy_data.meta['Force Level']);
+    this._actor._level = force_level ? force_level : minLevel + Math.floor(Math.random() * bandWidth);
     this._actor.initExp();
     this._actor.initSkills();
     this._level = this._actor._level;

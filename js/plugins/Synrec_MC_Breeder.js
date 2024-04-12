@@ -1,7 +1,7 @@
 /*:
  * @author Synrec/kylestclr
  * @target MZ
- * @plugindesc v1.3 Breeding System for Monster Capture Plugins
+ * @plugindesc v1.4 Breeding System for Monster Capture Plugins
  * 
  * @help
  * 
@@ -960,10 +960,6 @@ Scene_Hatch.prototype.createSprite = function(){
     this._hatchChar.setImage(SynrecMC.Breeder.CharImg, SynrecMC.Breeder.CharIdx);
     this._hatchSprite = new Sprite_Character(this._hatchChar);
     this._hatchSpriteset.addChild(this._hatchSprite);
-    this._animSprite = new Sprite_Animation();
-    this._animSprite.anchor.x = 0.5;
-    this._animSprite.anchor.y = 0.5;
-    this._hatchSpriteset.addChild(this._animSprite);
 }
 
 Scene_Hatch.prototype.startHatch = function(){
@@ -1033,8 +1029,22 @@ Scene_Hatch.prototype.startHatch = function(){
     this._hatchChar.setImage(img, idx);
     const animId = SynrecMC.Breeder.AnimHatch;
     const animData = $dataAnimations[animId];
-    const targets = [this._hatchSprite];
-    this._animSprite.setup(targets, animData);
+    const is_mv_anim = !!animData.frames;
+    if(Utils.RPGMAKER_NAME == "MZ"){
+        const targets = [this._hatchSprite];
+        this._animSprite = new (is_mv_anim ? Sprite_AnimationMV : Sprite_Animation)();
+        this._animSprite.anchor.x = 0.5;
+        this._animSprite.anchor.y = 0.5;
+        this._animSprite.setup(targets, animData);
+        this._hatchSpriteset.addChild(this._animSprite);
+    }else{
+        const target = this._hatchSprite;
+        this._animSprite = new Sprite_Animation();
+        this._animSprite.anchor.x = 0.5;
+        this._animSprite.anchor.y = 0.5;
+        this._animSprite.setup(target, animData);
+        this._hatchSpriteset.addChild(this._animSprite);
+    }
     this._isHatching = true;
     this._canHatch = false;
     this._exitDelay = 60;
@@ -1043,7 +1053,9 @@ Scene_Hatch.prototype.startHatch = function(){
 Scene_Hatch.prototype.update = function(){
     Scene_Base.prototype.update.call(this);
     this._hatchChar.update();
-    if(this._animSprite.isPlaying())return;
+    if(this._animSprite){
+        if(this._animSprite.isPlaying())return;
+    }
     if(this._isHatching){
         this._hatchSprite.alpha -= 0.01;
         if(this._hatchSprite.alpha <= 0){

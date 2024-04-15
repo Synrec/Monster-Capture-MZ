@@ -577,8 +577,8 @@ try{
     SynrecMC.NO_RENAMES = [];
 }
 
-SynrecMC.successCaptureAnim = eval(SynrecMC.Plugins['Capture Success Animation']);
-SynrecMC.failCaptureAnim = eval(SynrecMC.Plugins['Capture Failure Animation']);
+SynrecMC.successCaptureAnim = SynrecMC.Plugins['Capture Success Animation'];
+SynrecMC.failCaptureAnim = SynrecMC.Plugins['Capture Failure Animation'];
 SynrecMC.permaDeath = eval(SynrecMC.Plugins['Perma Death']);
 SynrecMC.numberReserveBoxes = eval(SynrecMC.Plugins['Number of Reserve Boxes']);
 SynrecMC.sizeReserveBoxes = eval(SynrecMC.Plugins['Reserve Box Size']);
@@ -1142,10 +1142,13 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
     const hpSet = target._hp;
     const mpSet = target._mp;
     const gender = target._gender;
-    if(MONSTER_CAPTURE_MV){
-        target.startAnimation(SynrecMC.successCaptureAnim);
-    }else{
-        $gameTemp.requestAnimation([target], SynrecMC.successCaptureAnim);
+    const anim = eval(SynrecMC.successCaptureAnim);
+    if(anim){
+        if(MONSTER_CAPTURE_MV){
+            target.startAnimation(anim);
+        }else{
+            $gameTemp.requestAnimation([target], anim);
+        }
     }
     target._isCaptured = true;
     target.die();
@@ -1154,10 +1157,13 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
 }
 
 Game_Action.prototype.playCaptureFail = function(target){
-    if(MONSTER_CAPTURE_MV){
-        target.startAnimation(SynrecMC.failCaptureAnim);
-    }else{
-        $gameTemp.requestAnimation([target], SynrecMC.failCaptureAnim);
+    const anim = eval(SynrecMC.failCaptureAnim);
+    if(anim){
+        if(MONSTER_CAPTURE_MV){
+            target.startAnimation(anim);
+        }else{
+            $gameTemp.requestAnimation([target], anim);
+        }
     }
 }
 

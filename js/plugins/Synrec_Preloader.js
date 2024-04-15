@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.3 Preloads image and audio for the game on start
+ * @plugindesc v1.0.4 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -500,7 +500,7 @@ Game_Temp.prototype.loadPreloadList = function(){
                 console.error(e);
             })
         }else{
-            $gameTemp._preloadReady = true;
+            this._preloadReady = true;
         }
     }else{
         const list = StorageManager.load(file_name);

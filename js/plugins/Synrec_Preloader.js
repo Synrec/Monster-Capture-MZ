@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.4 Preloads image and audio for the game on start
+ * @plugindesc v1.0.5 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -356,9 +356,36 @@ SceneManager.eraseScenePreloadPIXI = function(){
     }
 }
 
+ImageManager.addPreloadedData = function(folder, filename, image){
+    if(!this._preloaded_data)this._preloaded_data = {};
+    if(!this._preloaded_data[folder]){
+        this._preloaded_data[folder] = {};
+    }
+    const loaded_files = Object.keys(this._preloaded_data[folder]);
+    if(loaded_files.some((name)=>{
+        return name == filename;
+    })){
+        if(this._preloaded_data[folder][filename]){
+            return;
+        }
+    }
+    this._preloaded_data[folder][filename] = image;
+}
+
+ImageManager.callPreloadData = function(folder, filename){
+    if(!this._preloaded_data)this._preloaded_data = {};
+    if(!this._preloaded_data[folder])return null;
+    if(!this._preloaded_data[folder][filename])return null;
+    return this._preloaded_data[folder][filename];
+}
+
 Syn_Preload_ImgMngr_LoadBitmp = ImageManager.loadBitmap;
 ImageManager.loadBitmap = function(folder, filename) {
     const base = Syn_Preload_ImgMngr_LoadBitmp.call(this, ...arguments);
+    const preloaded = this.callPreloadData(folder, filename);
+    if(preloaded){
+        return preloaded;
+    }
     if (filename && $gameTemp) {
         const ignored_folders = $gameTemp.imageBannedPreloadList();
         if(ignored_folders.includes(folder))return base;
@@ -372,6 +399,7 @@ ImageManager.loadBitmap = function(folder, filename) {
                 obj.file == name
             )
         }))return base;
+        this.addPreloadedData(folder, filename, base);
         const whole_list = $gameTemp.preloadList();
         const image_list = whole_list['Image'] || {};
         if(!Array.isArray(image_list[folder])){
@@ -387,9 +415,33 @@ ImageManager.loadBitmap = function(folder, filename) {
     return base;
 }
 
+
+AudioManager.addPreloadedData = function(folder, filename, audio){
+    if(!this._preloaded_data)this._preloaded_data = {};
+    if(!this._preloaded_data[folder]){
+        this._preloaded_data[folder] = {};
+    }
+    const loaded_files = Object.keys(this._preloaded_data[folder]);
+    if(loaded_files.some((name)=>{
+        return name == filename;
+    }))return;
+    this._preloaded_data[folder][filename] = audio;
+}
+
+AudioManager.callPreloadData = function(folder, filename){
+    if(!this._preloaded_data)this._preloaded_data = {};
+    if(!this._preloaded_data[folder])return null;
+    if(!this._preloaded_data[folder][filename])return null;
+    return this._preloaded_data[folder][filename];
+}
+
 Syn_Preload_AudMngr_CrtBufr = AudioManager.createBuffer;
 AudioManager.createBuffer = function(folder, name) {
     const base = Syn_Preload_AudMngr_CrtBufr.call(this, ...arguments);
+    const preloaded = this.callPreloadData(folder, name);
+    if(preloaded){
+        return preloaded;
+    }
     if(name && $gameTemp){
         const ignored_folders = $gameTemp.audioBannedPreloadList();
         if(ignored_folders.includes(folder))return base;
@@ -405,6 +457,7 @@ AudioManager.createBuffer = function(folder, name) {
         })){
             return base;
         }
+        this.addPreloadedData(folder, name, base);
         const whole_list = $gameTemp.preloadList();
         const audio_list = whole_list['Audio'] || {};
         if(!Array.isArray(audio_list[folder])){

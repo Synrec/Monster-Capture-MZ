@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.5 Preloads image and audio for the game on start
+ * @plugindesc v1.0.6 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -251,6 +251,7 @@ SceneManager.updateMain = function() {
 
 SceneManager.updatePreload = function(){
     if(!$gameTemp)return;
+    if(!ImageManager.isReady())return;
     const need_preload = $gameTemp._need_preload;
     if(!need_preload){
         if(this._running_preloader){
@@ -369,6 +370,7 @@ ImageManager.addPreloadedData = function(folder, filename, image){
             return;
         }
     }
+    image.destroy = function(){this._paintOpacity = 0}
     this._preloaded_data[folder][filename] = image;
 }
 
@@ -384,6 +386,7 @@ ImageManager.loadBitmap = function(folder, filename) {
     const base = Syn_Preload_ImgMngr_LoadBitmp.call(this, ...arguments);
     const preloaded = this.callPreloadData(folder, filename);
     if(preloaded){
+        preloaded._paintOpacity = 255;
         return preloaded;
     }
     if (filename && $gameTemp) {
@@ -425,6 +428,7 @@ AudioManager.addPreloadedData = function(folder, filename, audio){
     if(loaded_files.some((name)=>{
         return name == filename;
     }))return;
+    audio.destroy = function(){this.stop()}
     this._preloaded_data[folder][filename] = audio;
 }
 
@@ -703,8 +707,8 @@ Game_Temp.prototype.executePreload = function(){
 Game_Temp.prototype.updatePreloadList = function(){
     if(this.updatePreloadFonts())return;
     if(this.updateGenerateList())return;
-    if(this.updateImagePreload())return;
     if(this.updateAudioPreload())return;
+    if(this.updateImagePreload())return;
     if(this.updateConfirmPreload())return;
     this._preload_complete = true;
     delete this._need_preload;
@@ -774,7 +778,6 @@ Game_Temp.prototype.checkReservedImages = function(obj){
         const folder = img_obj.folder;
         const file = img_obj.file;
         if(bitmap.isError() && attempts < 3){
-            if(file == "Bat")console.log(bitmap._loadingState);
             const is_mz = Utils.RPGMAKER_NAME == "MZ";
             if(is_mz){
                 bitmap.retry();

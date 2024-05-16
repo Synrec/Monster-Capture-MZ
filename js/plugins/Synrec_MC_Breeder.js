@@ -1,7 +1,7 @@
 /*:
  * @author Synrec/kylestclr
  * @target MZ
- * @plugindesc v1.4 Breeding System for Monster Capture Plugins
+ * @plugindesc v1.5 Breeding System for Monster Capture Plugins
  * 
  * @help
  * 
@@ -274,6 +274,9 @@ Game_Party.prototype.addBreed = function(data){
     obj['Step Complete'] = data['Max Steps'];
     obj['Fusion Params'] = data['Fusion Params'];
     this._breederArray.push(obj);
+    this.progressBreed();
+    this.progressPreBreed();
+    $gameMap.updateHatch();
 }
 
 Game_Party.prototype.progressBreed = function(){
@@ -405,6 +408,7 @@ Game_Map.prototype.updateHatch = function(){
     const validHatches = $gameParty._breederArray.filter((item)=>{
         return item['Step Progress'] >= item['Step Complete']
     })
+    console.log(validHatches)
     if(validHatches.length <= 0)return;
     if(SynrecMC.Breeder.CharImg && !isNaN(SynrecMC.Breeder.CharIdx) && !isNaN(SynrecMC.Breeder.AnimHatch)){
         SceneManager.push(Scene_Hatch);
@@ -663,9 +667,9 @@ Window_PartyBreed.prototype.drawItem = function(index){
         const charName = actor._characterName;
         const charIdx = actor._characterIndex;
         this.drawCharacter(charName, charIdx, rect.x + rect.width / 2 , rect.y + 64);
-        this.drawText(actor.name(), rect.x, rect.height - this.lineHeight() * 1.5, rect.width, 'center');
+        this.drawText(actor.name(), rect.x, rect.y + rect.height - this.lineHeight() * 1.5, rect.width, 'center');
         this.makeFontSmaller()
-        this.drawText(actor._gender, rect.x, rect.height - this.lineHeight(), rect.width, 'center');
+        this.drawText(actor._gender, rect.x, rect.y + rect.height - this.lineHeight(), rect.width, 'center');
         this.makeFontBigger();
     }
 }

@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.6 Preloads image and audio for the game on start
+ * @plugindesc v1.0.7 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -584,13 +584,14 @@ Game_Temp.prototype.resyncBanIgnoreLists = function(){
     if(ignored_folders.length > 0){
         for(let i = 0; i < ignored_folders.length; i++){
             const del_fldr = ignored_folders[i];
+            const aud_string = del_fldr.split('/')[1].concat('/');
             if(del_fldr.match(image_match_checker)){
                 img_fldr_list.push(del_fldr);
                 delete image_folder_list[del_fldr];
             }
             if(del_fldr.match(audio_match_checker)){
-                aud_fldr_list.push(del_fldr);
-                delete audio_folder_list[del_fldr];
+                aud_fldr_list.push(aud_string);
+                delete audio_folder_list[aud_string];
             }
         }
     }

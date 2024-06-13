@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.7 Preloads image and audio for the game on start
+ * @plugindesc v1.0.9 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -13,6 +13,11 @@
  * @desc Bypass needing to use a confirm button
  * @type boolean
  * @default false
+ * 
+ * @param Skip Title
+ * @desc Skips title if no save game
+ * @type boolean
+ * @default true
  * 
  * @param Loading Gauge
  * @desc Setup the loading gauge
@@ -153,6 +158,7 @@
 
 const Syn_Preload = {};
 Syn_Preload.Plugin = PluginManager.parameters(`Synrec_Preloader`);
+Syn_Preload.SKIP_TITLE = eval(Syn_Preload.Plugin['Skip Title']);
 
 function FONT_CONFIG_PARSER_PRELOAD(obj){
     try{
@@ -204,7 +210,7 @@ function PRELOAD_GAUGE_SETTINGS_PARSER_PRELOAD(obj){
         obj['Position Y'] = 0;
         obj['Width'] = Graphics.width;
         obj['Height'] = Graphics.height;
-        obj['Color'] = '#ffffff';
+        obj['Color'] = '0xffffff';
         return obj;
     }
 }
@@ -475,6 +481,17 @@ AudioManager.createBuffer = function(folder, name) {
         $gameTemp.setPreloadList(whole_list);
     }
     return base;
+}
+
+Syn_Preload_ScnBoot_StrtNormGame = Scene_Boot.prototype.startNormalGame;
+Scene_Boot.prototype.startNormalGame = function() {
+    if(Syn_Preload.SKIP_TITLE){
+        this.checkPlayerLocation();
+        DataManager.setupNewGame();
+        SceneManager.goto(Scene_Map);
+    }else{
+        Syn_Preload_ScnBoot_StrtNormGame.call(this);
+    }
 }
 
 Syn_Preload_ScnBse_IsBsy = Scene_Base.prototype.isBusy;

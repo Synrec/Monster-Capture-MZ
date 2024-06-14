@@ -490,21 +490,25 @@ Scene_Boot.prototype.start = function() {
         !DataManager.isBattleTest() &&
         !DataManager.isEventTest() &&
         Syn_Preload.SKIP_TITLE &&
-        !this.hasSaveFile() && false
+        !this.hasSaveFile()
     ){
+        Scene_Base.prototype.start.call(this);
         this.checkPlayerLocation();
         DataManager.setupNewGame();
         SceneManager.goto(Scene_Map);
     }else{
         Syn_Preload_ScnBoot_Strt.call(this);
     }
+    if(this.resizeScreen)this.resizeScreen();
     this.updateDocumentTitle();
 }
 
 Scene_Boot.prototype.hasSaveFile = function(){
+    const is_mz = Utils.RPGMAKER_NAME === "MZ";
     const max = DataManager.maxSavefiles();
     for(let i = 0; i < max; i++){
-        if(DataManager.savefileExists(i)){
+        const exists = is_mz ? DataManager.savefileExists(i) : StorageManager.exists(i);
+        if(exists){
             return true;
         }
     }
@@ -514,8 +518,23 @@ Scene_Boot.prototype.hasSaveFile = function(){
 Syn_Preload_ScnBse_IsBsy = Scene_Base.prototype.isBusy;
 Scene_Base.prototype.isBusy = function() {
     const base = Syn_Preload_ScnBse_IsBsy.call(this, ...arguments);
-    return base || SceneManager._running_preloader;
+    return (
+        base || 
+        SceneManager._running_preloader || 
+        !SceneManager._complete_preload ||
+        !$gameTemp._confirm_preload
+    );
 }
+
+// Syn_Preload_ScnBse_IsRdy = Scene_Base.prototype.isReady;
+// Scene_Base.prototype.isReady = function() {
+//     const base = Syn_Preload_ScnBse_IsRdy.call(this, ...arguments);
+//     return (
+//         base &&
+//         SceneManager._running_preloader && 
+//         !$gameTemp._need_preload
+//     );
+// }
 
 Game_Temp.prototype.setPreloadList = function(list){
     if(!list)return;

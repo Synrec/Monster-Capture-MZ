@@ -483,15 +483,32 @@ AudioManager.createBuffer = function(folder, name) {
     return base;
 }
 
-Syn_Preload_ScnBoot_StrtNormGame = Scene_Boot.prototype.startNormalGame;
-Scene_Boot.prototype.startNormalGame = function() {
-    if(Syn_Preload.SKIP_TITLE){
+Syn_Preload_ScnBoot_Strt = Scene_Boot.prototype.start;
+Scene_Boot.prototype.start = function() {
+    SoundManager.preloadImportantSounds();
+    if(
+        !DataManager.isBattleTest() &&
+        !DataManager.isEventTest() &&
+        Syn_Preload.SKIP_TITLE &&
+        !this.hasSaveFile()
+    ){
         this.checkPlayerLocation();
         DataManager.setupNewGame();
         SceneManager.goto(Scene_Map);
     }else{
-        Syn_Preload_ScnBoot_StrtNormGame.call(this);
+        Syn_Preload_ScnBoot_Strt.call(this);
     }
+    this.updateDocumentTitle();
+}
+
+Scene_Boot.prototype.hasSaveFile = function(){
+    const max = DataManager.maxSavefiles();
+    for(let i = 1; i < max; i++){
+        if(DataManager.savefileExists(i)){
+            return true;
+        }
+    }
+    return false;
 }
 
 Syn_Preload_ScnBse_IsBsy = Scene_Base.prototype.isBusy;

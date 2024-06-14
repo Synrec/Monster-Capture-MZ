@@ -503,7 +503,7 @@ Scene_Boot.prototype.start = function() {
 
 Scene_Boot.prototype.hasSaveFile = function(){
     const max = DataManager.maxSavefiles();
-    for(let i = 1; i < max; i++){
+    for(let i = 0; i < max; i++){
         if(DataManager.savefileExists(i)){
             return true;
         }

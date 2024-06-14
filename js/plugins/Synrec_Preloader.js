@@ -490,7 +490,7 @@ Scene_Boot.prototype.start = function() {
         !DataManager.isBattleTest() &&
         !DataManager.isEventTest() &&
         Syn_Preload.SKIP_TITLE &&
-        !this.hasSaveFile()
+        !this.hasSaveFile() && false
     ){
         this.checkPlayerLocation();
         DataManager.setupNewGame();

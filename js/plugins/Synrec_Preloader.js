@@ -496,11 +496,11 @@ Scene_Boot.prototype.start = function() {
         this.checkPlayerLocation();
         DataManager.setupNewGame();
         SceneManager.goto(Scene_Map);
+        if(this.resizeScreen)this.resizeScreen();
+        this.updateDocumentTitle();
     }else{
         Syn_Preload_ScnBoot_Strt.call(this);
     }
-    if(this.resizeScreen)this.resizeScreen();
-    this.updateDocumentTitle();
 }
 
 Scene_Boot.prototype.hasSaveFile = function(){

@@ -40,6 +40,11 @@
  * @type struct<genderConfig>[]
  * @default []
  * 
+ * @param Breeder Combination Array
+ * @desc Create valid actor combinations here
+ * @type struct<actorCombine>[]
+ * @default []
+ * 
  * @param Map Configurations
  * @desc Setup maps and specific regions/terrain
  * @type struct<mapData>[]
@@ -115,6 +120,11 @@
  * @desc Instead of using party leader, use custom player
  * @type boolean
  * @default false
+ * 
+ * @param Follower Count
+ * @desc Max number of player followers
+ * @type text
+ * @default 1
  * 
  * @param Player Configuration Variable
  * @desc Variable used to select player configuration in project
@@ -219,16 +229,19 @@
  * 
  * @param HP Bonus
  * @desc Applies bonus to capture rate based on HP rate.
+ * Ignored if value is 0.
  * @type text
  * @default 0
  * 
  * @param MP Bonus
- * @desc Applies bonus to capture rate based on HP rate.
+ * @desc Applies bonus to capture rate based on MP rate.
+ * Ignored if value is 0.
  * @type text
  * @default 0
  * 
  * @param TP Bonus
- * @desc Applies bonus to capture rate based on HP rate.
+ * @desc Applies bonus to capture rate based on TP rate.
+ * Ignored if value is 0.
  * @type text
  * @default 0
  * 
@@ -271,11 +284,44 @@
  * @type enemy
  * @default 0
  * 
+ * @param Ultimate Skill
+ * @desc Force skill use when TP is at max value
+ * @type skill
+ * @default 0
+ * 
  * @param Capture Actor
  * @desc The actor that would be captured.
  * Capture actor MUST be configured.
  * @type actor
  * @default 0
+ * 
+ * @param Critical HP Rate
+ * @desc HP Rate considered critical
+ * Value of 1 = 100% or less
+ * @type text
+ * @default 0.3
+ * 
+ * @param Critical MP Rate
+ * @desc HP Rate considered critical
+ * Value of 1 = 100% or less
+ * @type text
+ * @default 0.3
+ * 
+ * @param Critical TP Rate
+ * @desc HP Rate considered critical
+ * Value of 0 = 0% or more
+ * @type text
+ * @default 0.7
+ * 
+ * @param Allow Capture States
+ * @desc States that allow enemy to be captured
+ * @type state[]
+ * @default []
+ * 
+ * @param Block Capture States
+ * @desc States that prevent enemy from being captured
+ * @type state[]
+ * @default []
  * 
  * @param Ignore Enemy Database
  * @desc Ignores enemy stats settings from database
@@ -295,8 +341,14 @@
  * @type skill
  * @default 0
  * 
- * @param Apply Capture Rate
+ * @param Use Limit
+ * @desc Number of times skill can be used.
+ * @type text
+ * @default 1
+ * 
+ * @param Capture Rate
  * @desc Allows this skill to be used for capture.
+ * Value of 1 = Max Rate
  * @type text
  * @default 0
  * 
@@ -313,8 +365,9 @@
  * @type item
  * @default 0
  * 
- * @param Apply Capture Rate
+ * @param Capture Rate
  * @desc Allows this item to be used for capture.
+ * Value of 1 = Max Rate
  * @type text
  * @default 0
  * 
@@ -652,6 +705,138 @@
  * @parent Sp Param Mod
  * 
  */
+/*~struct~actorGender:
+ * @param Actor
+ * @desc Select the actor
+ * @type actor
+ * @default 1
+ *
+ * @param Gender
+ * @desc Type name of gender
+ * @type text
+ * @default None
+ */
+/*~struct~actorCombine:
+ * 
+ * @param Name
+ * @desc No function
+ * @type text
+ * @default Combination
+ * 
+ * @param Result Actor
+ * @desc Actor gained from combination
+ * @type actor
+ * @default 1
+ * 
+ * @param Actor 1 Required
+ * @desc The actor required if set.
+ * @type struct<actorGender>
+ * 
+ * @param Actor 2 Required
+ * @desc The actor required if set.
+ * @type struct<actorGender>
+ * 
+ * @param Required Steps
+ * @desc Number of steps to get actor from pre-breed
+ * @type number
+ * @default 10
+ * 
+ * @param Random Steps
+ * @desc Random number between 0 and this removed from required.
+ * @type number
+ * @default 5
+ * 
+ * @param Delete Parents
+ * @desc Delete parents
+ * @type boolean
+ * @default false
+ * 
+ * @param Fuse Stats
+ * @desc Allow stat fusion from parents
+ * @type boolean
+ * @default false
+ * 
+ * @param Fuse Stats Only
+ * @parent Fuse Stats
+ * @desc Only consider fusion stats and not base stats
+ * @type boolean
+ * @default false
+ * 
+ * @param Stat Transfer Value
+ * @parent Fuse Stats
+ * @desc Default values are 0
+ * 
+ * @param Stat Transfer Global Value
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered (globally, additive)
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param HP Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param MP Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param ATK Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param DEF Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param MAT Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param MDF Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ * 
+ * @param AGI Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @min -100
+ * @max 100
+ * 
+ * @param LUK Transfer
+ * @parent Stat Transfer Value
+ * @desc Percentage of stat transfered
+ * @default 0
+ * @type number
+ * @min -100
+ * @max 100
+ */
 /*~struct~regionSettings:
  * 
  * @param Name
@@ -701,6 +886,10 @@
  * @desc Do specific settings per region
  * @type struct<regionSettings>
  * @default []
+ * 
+ * @param Breeder EXP Growth
+ * @desc Set exp gain for actors in breeder for the map.
+ * @type 
  * 
  */
 /*~struct~animPic:
@@ -858,6 +1047,77 @@
  * @default false
  * 
  */
+/*~struct~gaugeDraw:
+ * 
+ * @param Label
+ * @desc Label text for gauge
+ * @type text
+ * @default gauge
+ * 
+ * @param Label X
+ * @desc Position of the label text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Label Y
+ * @desc Position of the label text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Gauge Current Value
+ * @desc How to set gauge current value
+ * Evaluated value.
+ * @type text
+ * @default
+ * 
+ * @param Gauge Max Value
+ * @desc How to set gauge max value
+ * Evaluated value.
+ * @type text
+ * @default
+ * 
+ * @param Gauge X
+ * @desc Position of the gauge in window
+ * @type text
+ * @default 0
+ * 
+ * @param Gauge Y
+ * @desc Position of the gauge in window
+ * @type text
+ * @default 0
+ * 
+ * @param Gauge Width
+ * @desc Size of the gauge
+ * @type text
+ * @default 1
+ * 
+ * @param Gauge Height
+ * @desc Size of the gauge
+ * @type text
+ * @default 1
+ * @default 1
+ * 
+ * @param Gauge Border
+ * @desc Border size indent of the gauge
+ * @type text
+ * @default 2
+ * 
+ * @param Gauge Border Color
+ * @desc Color for gauge border
+ * @type text
+ * @default #000000
+ * 
+ * @param Gauge Background Color
+ * @desc Color for gauge background
+ * @type text
+ * @default #666666
+ * 
+ * @param Gauge Color
+ * @desc Color for gauge background
+ * @type text
+ * @default #aaffaa
+ * 
+ */
 /*~struct~gameDataWindow:
  * 
  * @param Name
@@ -880,6 +1140,11 @@
  * If no switch, always show
  * @type switch
  * @default 0
+ * 
+ * @param Gauges
+ * @desc Setup gauges for the window
+ * @type struct<gaugeDraw>[]
+ * @default []
  * 
  * @param Draw Graphic
  * @desc Set graphic to draw
@@ -1079,6 +1344,49 @@
  * @type text
  * @default 0
  * 
+ * @param Display Map Character
+ * @desc Display actor map character
+ * @type boolean
+ * @default false
+ * 
+ * @param Character Direction
+ * @parent Display Map Character
+ * @desc Facing direction of the character.
+ * @type select
+ * @option down
+ * @value 2
+ * @option left
+ * @value 4
+ * @option right
+ * @value 6
+ * @option up
+ * @value 8
+ * @default 2
+ * 
+ * @param Character X
+ * @parent Display Map Character
+ * @desc Position relative to window
+ * @type text
+ * @default 0
+ * 
+ * @param Character Y
+ * @parent Display Map Character
+ * @desc Position relative to window
+ * @type text
+ * @default 0
+ * 
+ * @param Character Scale X
+ * @parent Display Map Character
+ * @desc Size of the character
+ * @type text
+ * @default 1
+ * 
+ * @param Character Scale Y
+ * @parent Display Map Character
+ * @desc Size of the character
+ * @type text
+ * @default 1
+ * 
  */
 /*~struct~actorBaseParamWindow:
  * 
@@ -1108,6 +1416,110 @@
  * @value 7
  * @default 0
  * 
+ * @param Param Text
+ * @desc How to draw param text
+ * %1 = param value
+ * @type text
+ * @default %1
+ * 
+ * @param X
+ * @desc Position in window
+ * @type text
+ * @default 0
+ * 
+ * @param Y
+ * @desc Position in window
+ * @type text
+ * @default 0
+ * 
+ */
+/*~struct~actorExParamWindow:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default Window
+ * 
+ * @param Ex Param
+ * @desc The ex param to draw. Converted to percentage.
+ * @type select
+ * @option Hit Rate
+ * @value 0
+ * @option Evasion Rate
+ * @value 1
+ * @option Critical Rate
+ * @value 2
+ * @option Critical Evasion Rate
+ * @value 3
+ * @option Magic Evasion Rate
+ * @value 4
+ * @option Magic Reflection Rate
+ * @value 5
+ * @option Counter Attack Rate
+ * @value 6
+ * @option HP Regeneration Rate
+ * @value 7
+ * @option MP Regeneration Rate
+ * @value 8
+ * @option TP Regeneration Rate
+ * @value 9
+ * @default 0
+ * 
+ * @param Param Text
+ * @desc How to draw param text
+ * %1 = param value
+ * @type text
+ * @default %1
+ * 
+ * @param X
+ * @desc Position in window
+ * @type text
+ * @default 0
+ * 
+ * @param Y
+ * @desc Position in window
+ * @type text
+ * @default 0
+ * 
+ */
+/*~struct~actorSPParamWindow:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default Window
+ * 
+ * @param Sp Param
+ * @desc The sp param to draw. Converted to percentage.
+ * @type select
+ * @option Target Rate
+ * @value 0
+ * @option Guard Effect Rate
+ * @value 1
+ * @option Recovery Effect Rate
+ * @value 2
+ * @option Pharmacology
+ * @value 3
+ * @option MP Cost Rate
+ * @value 4
+ * @option TP Charge Rate
+ * @value 5
+ * @option Physical Damage Rate
+ * @value 6
+ * @option Magical Damage Rate
+ * @value 7
+ * @option Floor Damage Rate
+ * @value 8
+ * @option Experience Rate
+ * @value 9
+ * @default 0
+ * 
+ * @param Param Text
+ * @desc How to draw param text
+ * %1 = param value
+ * @type text
+ * @default %1
+ * 
  * @param X
  * @desc Position in window
  * @type text
@@ -1135,6 +1547,11 @@
  * @desc Custom style the window
  * @type struct<windowStyle>
  * @default {"Font Settings":"","Font Size":"16","Font Face":"sans-serif","Base Font Color":"#ffffff","Font Outline Color":"rgba(0, 0, 0, 0.5)","Font Outline Thickness":"3","Window Skin":"Window","Window Opacity":"255","Show Window Dimmer":"false"}
+ * 
+ * @param Gauges
+ * @desc Setup gauges for the window
+ * @type struct<gaugeDraw>[]
+ * @default []
  * 
  * @param Draw Actor Name
  * @desc Draw actor name
@@ -1201,6 +1618,78 @@
  * @type text
  * @default 0
  * 
+ * @param Draw HP Resource
+ * @desc Draw actor current and max HP
+ * @type boolean
+ * @default false
+ * 
+ * @param HP Text
+ * @parent Draw HP Resource
+ * @desc Text for HP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[84]%1 / %2
+ * 
+ * @param HP X
+ * @parent Draw HP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param HP Y
+ * @parent Draw HP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw MP Resource
+ * @desc Draw actor current and max MP
+ * @type boolean
+ * @default false
+ * 
+ * @param MP Text
+ * @parent Draw MP Resource
+ * @desc Text for MP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[79]%1 / %2
+ * 
+ * @param MP X
+ * @parent Draw MP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param MP Y
+ * @parent Draw MP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw TP Resource
+ * @desc Draw actor current and max TP
+ * @type boolean
+ * @default false
+ * 
+ * @param TP Text
+ * @parent Draw TP Resource
+ * @desc Text for TP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[79]%1 / %2
+ * 
+ * @param TP X
+ * @parent Draw TP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param TP Y
+ * @parent Draw TP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
  * @param Draw Base Params
  * @desc Draw actor base params
  * @type struct<actorBaseParamWindow>[]
@@ -1263,6 +1752,30 @@
  * @desc Display actor battler
  * @type boolean
  * @default false
+ * 
+ * @param Battler Motion
+ * @parent Display Battler
+ * @desc Battler motion to refresh to
+ * @type select
+ * @option walk
+ * @option wait
+ * @option chant
+ * @option guard
+ * @option damage
+ * @option evade
+ * @option thrust
+ * @option swing
+ * @option missile
+ * @option skill
+ * @option spell
+ * @option item
+ * @option escape
+ * @option victory
+ * @option dying
+ * @option abnormal
+ * @option sleep
+ * @option dead
+ * @default wait
  * 
  * @param Battler X
  * @parent Display Battler
@@ -1429,6 +1942,16 @@ try{
 function ENEMY_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
+        try{
+            obj['Allow Capture States'] = JSON.parse(obj['Allow Capture States']);
+        }catch(e){
+            obj['Allow Capture States'] = [];
+        }
+        try{
+            obj['Block Capture States'] = JSON.parse(obj['Block Capture States']);
+        }catch(e){
+            obj['Block Capture States'] = [];
+        }
         return obj;
     }catch(e){
         return;
@@ -1529,6 +2052,14 @@ function MAP_DATA_PARSER_MONSTERCAPTURE(obj){
     }
 }
 
+try{
+    Syn_MC.MAP_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Map Configurations']).map((config)=>{
+        return MAP_DATA_PARSER_MONSTERCAPTURE(config);
+    }).filter(Boolean)
+}catch(e){
+    Syn_MC.MAP_CONFIGURATIONS = [];
+}
+
 function ANIM_IMAGE_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -1587,11 +2118,27 @@ function WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj){
     return obj;
 }
 
+function GAUGE_DRAW_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
 function GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
         obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
         obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
+        try{
+            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
+                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Gauges'] = [];
+        }
         return obj;
     }catch(e){
         return;
@@ -1631,6 +2178,13 @@ function ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
         obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
         obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
         try{
+            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
+                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Gauges'] = [];
+        }
+        try{
             obj['Draw Base Params'] = JSON.parse(obj['Draw Base Params']).map((data)=>{
                 return ACTOR_BASE_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
             }).filter(Boolean);
@@ -1655,6 +2209,140 @@ function ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
     }catch(e){
         return;
     }
+}
+
+Syn_MC_GmSys_Init = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function(){
+    Syn_MC_GmSys_Init.call(this, ...arguments);
+    this._player_name = "";
+}
+
+Syn_MC_GmActn_SetSub = Game_Action.prototype.setSubject;
+Game_Action.prototype.setSubject = function(subject) {
+    if(!subject)return;
+    if (subject.isActor()) {
+        this._subjectActorId = subject.index();
+        this._subjectEnemyIndex = -1;
+    } else {
+        Syn_MC_GmActn_SetSub.call(this, subject);
+    }
+}
+
+
+Game_Action.prototype.subject = function() { //Overwritten Func
+    if (!isNaN(this._subjectActorId)) {
+        return $gameParty.battleMembers()[this._subjectActorId];
+    } else {
+        return $gameTroop.members()[this._subjectEnemyIndex];
+    }
+}
+
+Syn_MC_GmActn_App = Game_Action.prototype.apply;
+Game_Action.prototype.apply = function(target) {
+    Syn_MC_GmActn_App.call(this, ...arguments);
+    this.consumePowerPoint();
+}
+
+Game_Action.prototype.consumePowerPoint = function(){
+    const obj = this.item();
+    if (DataManager.isSkill(obj)) {
+        const skill_id = obj.id;
+        const power_skill = this.subject().powerSkills()[skill_id];
+        if(power_skill){
+            power_skill['PP']--;
+        }
+    }
+}
+
+Syn_MC_GmActn_AppItmUserEfct = Game_Action.prototype.applyItemUserEffect;
+Game_Action.prototype.applyItemUserEffect = function(target) {
+    Syn_MC_GmActn_AppItmUserEfct.call(this, target);
+    this.checkCapture(target);
+}
+
+Game_Action.prototype.checkCapture = function(target){
+    const item = this.item();
+    const itemCaptureRate = !isNaN(eval(item.meta.captureRate))? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
+    if(!itemCaptureRate)return;
+    if(this.subject().isActor())this.performCapture(target);
+}
+
+Game_Action.prototype.performCapture = function(target){
+    if(target.isEnemy()){
+        const data_obj = this.item();
+        const data_config = DataManager.isItem(item_obj) ? Syn_MC.ITEM_CONFIGURATIONS.find(config => eval(config['Item']) == data_obj.id) : DataManager.isSkill(item_obj) ? Syn_MC.SKILL_CONFIGURATIONS.find(config => eval(config['Skill']) == data_obj.id) : null;
+        if(!data_config)return;
+        const capture_rate = eval(data_config['Capture Rate']);
+        if(capture_rate > 0 && !isNaN(capture_rate)){
+            const id = target._enemyId;
+            const enemy_config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+                return eval(config['Enemy']) == id;
+            })
+            if(enemy_config){
+                const capture_actor_id = eval(enemy_config['Capture Actor']);
+                const actor_config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
+                    return eval(config['Actor']) == capture_actor_id;
+                })
+                if(actor_config){
+                    const capture_settings = actor_config['Capture Settings'] || {};
+                    const hp_rate = target.hpRate();
+                    const mp_rate = target.mpRate();
+                    const tp_rate = target.tpRate();
+                    const hp_bonus = (eval(capture_settings['HP Bonus']) || 0) * hp_rate;
+                    const mp_bonus = (eval(capture_settings['MP Bonus']) || 0) * mp_rate;
+                    const tp_bonus = (eval(capture_settings['TP Bonus']) || 0) * tp_rate;
+                    const total_bonus = hp_bonus + mp_bonus + tp_bonus;
+                    const capture_chance = capture_rate + total_bonus;
+                    if(
+                        Math.random() > capture_chance &&
+                        !target.hasAntiCaptureState() &&
+                        target.hasCaptureState()
+                    ){
+                        this.playCaptureSuccess(target, capture_actor_id);
+                    }else{
+                        this.playCaptureFail(target);
+                    }
+                }
+            }
+        }
+    }else{
+        return false;
+    }
+}
+
+Game_Action.prototype.playCaptureSuccess = function(target, actor){
+    $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
+    const captureLevel = isNaN(target._level) ? 1 : target._level;
+    const hpSet = target._hp;
+    const mpSet = target._mp;
+    const gender = target._gender;
+    const anim = eval(SynrecMC.successCaptureAnim);
+    if(anim){
+        if(MONSTER_CAPTURE_MV){
+            target.startAnimation(anim);
+        }else{
+            $gameTemp.requestAnimation([target], anim);
+        }
+    }
+    target._isCaptured = true;
+    target.die();
+    target.refresh();
+    $gameParty.addActor(actor, captureLevel, hpSet, mpSet, gender);
+}
+
+Game_Action.prototype.playCaptureFail = function(target){
+    const anim = eval(SynrecMC.failCaptureAnim);
+    if(anim){
+        if(MONSTER_CAPTURE_MV){
+            target.startAnimation(anim);
+        }else{
+            $gameTemp.requestAnimation([target], anim);
+        }
+    }
+}
+
+Game_Player.prototype.customData = function(){
+    return this._custom_data;
 }
 
 Syn_MC_GmPlyr_Updt = Game_Player.prototype.update;
@@ -1742,6 +2430,59 @@ Game_Player.prototype.refresh = function() {
     return Syn_MC_GmPlyr_Rfsh.call(this, ...arguments);
 }
 
+Syn_MC_GmFolws_Init = Game_Followers.prototype.initialize;
+Game_Followers.prototype.initialize = function() {
+    Syn_MC_GmFolws_Init.call(this);
+    const player_data = Syn_MC.PLAYER_DATA;
+    if(
+        $gamePlayer.customData() &&
+        Utils.RPGMAKER_NAME == "MV" &&
+        eval(player_data['Use Custom Player'])
+    ){
+        const scene = SceneManager._scene;
+        const spriteset = scene._spriteset;
+        const follNum = Math.min(eval(player_data['Follower Count']) || 0, $gameParty.maxBattleMembers());
+        for(let i = 0; i < this._data.length; i++){
+            if(i >= follNum){
+                const member = this._data[i];
+                if(spriteset){
+                    const charSprites = spriteset._characterSprites;
+                    const tilemap = spriteset._tilemap;
+                    const sprite = charSprites.find((char_sprite)=>{
+                        const character = char_sprite._character;
+                        if(character == member){
+                            return true;
+                        }
+                    })
+                    if(sprite){
+                        tilemap.removeChild(sprite);
+                        const index = charSprites.indexOf(sprite);
+                        charSprites.splice(index, 1);
+                    }
+                }
+            }
+        }
+        while(this._data.length < follNum){
+            const index = JsonEx.makeDeepCopy(this._data.length);
+			this._data.push(new Game_Follower(index));
+        }
+    }
+}
+
+Syn_MC_GmFolws_Setup = Game_Followers.prototype.setup;
+Game_Followers.prototype.setup = function() {
+    const player_data = Syn_MC.PLAYER_DATA;
+	if( eval(player_data['Use Custom Player'])){
+        const follNum = Math.min(eval(player_data['Follower Count']) || 0, $gameParty.maxBattleMembers());
+		this._data = [];
+		for (let i = 0; i < follNum; i++) {
+			this._data.push(new Game_Follower(i));
+		}
+	}else{
+		Syn_MC_GmFolws_Setup.call(this);
+	}
+}
+
 function Game_MonsterCharacter(){
     this.initialize(...arguments);
 }
@@ -1780,6 +2521,767 @@ Game_MonsterCharacter.prototype.setScreenX = function(num){
 Game_MonsterCharacter.prototype.setScreenY = function(num){
     isNaN(num) ? num = 0 : num;
     this._screenY = num;
+}
+
+Syn_MC_GmBattBse_InitMems = Game_BattlerBase.prototype.initMembers;
+Game_BattlerBase.prototype.initMembers = function() {
+    Syn_MC_GmBattBse_InitMems.call(this);
+    this.initPowerPoints();
+}
+
+Game_BattlerBase.prototype.initPowerPoints = function(){
+    this._power_skills = {};
+}
+
+Game_BattlerBase.prototype.gender = function(){
+    return this._gender;
+}
+
+Game_BattlerBase.prototype.powerSkills = function(){
+    if(!this._power_skills)this.initPowerPoints();
+    return this._power_skills;
+}
+
+Game_BattlerBase.prototype.isPowerSkill = function(id){
+    return !!this.powerSkills()[id];
+}
+
+Game_BattlerBase.prototype.addPowerSkill = function(id){
+    if(this.isPowerSkill(id))return;
+    const configs = Syn_MC.SKILL_CONFIGURATIONS;
+    const config = configs.find((configuration)=>{
+        return configuration['Skill'] == id;
+    })
+    if(config){
+        const power_skills = this.powerSkills();
+        const obj = {};
+        obj['PP'] = eval(config['Use Limit']);
+        obj['Max PP'] = eval(config['Use Limit']);
+        power_skills[id] = obj;
+        return true;
+    }else{
+        this.removePowerSkill(id);
+    }
+    return false;
+}
+
+Game_BattlerBase.prototype.removePowerSkill = function(id){
+    const power_skills = this.powerSkills();
+    delete power_skills[id];
+}
+
+Syn_MC_PP_GmBattBse_Rfsh = Game_BattlerBase.prototype.refresh;
+Game_BattlerBase.prototype.refresh = function() {
+    Syn_MC_PP_GmBattBse_Rfsh.call(this);
+    this.refreshPowerPoints();
+}
+
+Syn_MC_PP_GmBattBse_RecovAll = Game_BattlerBase.prototype.recoverAll;
+Game_BattlerBase.prototype.recoverAll = function() {
+    Syn_MC_PP_GmBattBse_RecovAll.call(this);
+    this.restorePowerPoints();
+}
+
+Syn_MC_PP_GmBattBse_MetSklConds = Game_BattlerBase.prototype.meetsSkillConditions;
+Game_BattlerBase.prototype.meetsSkillConditions = function(skill) {
+    const base = Syn_MC_PP_GmBattBse_MetSklConds.call(this, ...arguments);
+    const power_valid = this.canUsePowerSkill(skill.id);
+    return (
+        base && 
+        power_valid
+    );
+}
+
+Game_BattlerBase.prototype.canUsePowerSkill = function(id){
+    if(!this.isPowerSkill(id))return true;
+    const power_skill = this.powerSkills()[id];
+    if(isNaN(power_skill['PP']))console.error(`NaN value for power skill: ${id}.`);
+    return power_skill['PP'] > 0 && !isNaN(power_skill['PP']);
+}
+
+Game_BattlerBase.prototype.consumePP = function(id){
+    if(!this.isPowerSkill(id))return false;
+    const power_skill = this.powerSkills()[id];
+    power_skill['PP']--;
+}
+
+Game_BattlerBase.prototype.refreshPowerPoints = function(){
+    const power_skills = this.powerSkills();
+    const skill_ids = Object.keys(power_skills);
+    const battler = this;
+    skill_ids.forEach((id)=>{
+        battler.addPowerSkill(id);
+    })
+}
+
+Game_BattlerBase.prototype.restorePowerPoints = function(){
+    this.refreshPowerPoints();
+    const power_skills = this.powerSkills();
+    const skill_ids = Object.keys(power_skills);
+    for(const id of skill_ids){
+        const power_skill_data = power_skills[id];
+        const pp = power_skill_data['PP'];
+        const max_pp = power_skill_data['Max PP'];
+        const diff = max_pp - pp;
+        power_skill_data['PP'] += diff;
+    }
+}
+
+Syn_MC_GmBattBse_Die = Game_BattlerBase.prototype.die;
+Game_BattlerBase.prototype.die = function() {
+    if(this._isCaptured){
+        this.clearStates();
+        this.clearBuffs();
+    }
+    Syn_MC_GmBattBse_Die.call(this);
+}
+
+Syn_MC_GmBattBse_Rev = Game_BattlerBase.prototype.revive;
+Game_BattlerBase.prototype.revive = function() {
+    if(this._isCaptured)return;
+    Syn_MC_GmBattBse_Rev.call(this);
+}
+
+Game_BattlerBase.prototype.setGender = function(gender){
+    if(SynrecMC.genders.length <= 0)return this._gender = undefined;
+    if(this._gender)return true;
+	if(gender){
+        gender = (gender || "").toLowerCase().replace(/\s/g, '');
+		this._gender = gender;
+	}else{
+		if(this.isEnemy()){
+            const id = this._enemyId;
+            const enemy_config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+                return eval(config['Enemy']) == id;
+            });
+            if(enemy_config){
+                const actorId = eval(enemy_config['Capture Actor']);
+                if(actorId){
+                    const actor_config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
+                        return eval(config['Actor']) == actorId;
+                    })
+                    if(actor_config){
+                        const genders = actor_config['Genders'];
+                        const gender_index = Math.randomInt(genders.length);
+                        this._gender = genders[gender_index];
+                    }else{
+                        this._gender = "";
+                    }
+                }else{
+                    this._gender = "";
+                }
+            }
+        }else if(this.isActor()){
+            const id = this._actorId;
+            const actor_config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
+                return eval(config['Actor']) == id;
+            })
+            if(actor_config){
+                const genders = actor_config['Genders'];
+                const gender_index = Math.randomInt(genders.length);
+                this._gender = genders[gender_index];
+            }else{
+                this._gender = "";
+            }
+        }
+	}
+    return false;
+}
+
+Syn_MC_GmActr_Setup = Game_Actor.prototype.setup;
+Game_Actor.prototype.setup = function(actorId) {
+    const length = $dataActors.length;
+    if(actorId <= 0 || actorId >= length || isNaN(actorId)){
+        throw new Error(`Actor Id ${actorId} is invalid. It is either greater than the number of actors or less than or completely invalid. Please check database setup.`)
+    }
+    Syn_MC_GmActr_Setup.call(this, ...arguments);
+    this.initBreederBonus();
+}
+
+Game_Actor.prototype.initBreederBonus = function(){
+    this._breed_bonus = [0,0,0,0,0,0,0,0];
+}
+
+Game_Actor.prototype.gainExpBreed = function(exp) {
+    const newExp = this.currentExp() + Math.round(exp);
+    if(newExp >= this.nextLevelExp() && this.isMaxLevel())return;
+    this.changeExp(newExp, false);
+}
+
+Syn_MC_GmActr_BseParam = Game_Actor.prototype.paramBase;
+Game_Actor.prototype.paramBase = function(){
+    if(this._fuse_only_params)return 0;
+    return Syn_MC_GmActr_BseParam.call(this, ...arguments);
+}
+
+Syn_MC_GmEnem_Init = Game_Enemy.prototype.initialize
+Game_Enemy.prototype.initialize = function(enemyId, x, y) {
+    Syn_MC_GmEnem_Init.call(this, ...arguments);
+    this.setupActorEnemy();
+    this.refresh();
+}
+
+Game_Enemy.prototype.setupActorEnemy = function(){
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id
+    })
+    const actor_id = eval(config['Capture Actor'])
+    if(actor_id > 0 && !isNaN(actor_id)){
+        this._actor = new Game_Actor(actorId);
+        this.setLevel();
+        this.recoverAll();
+    }else return false;
+    this.recoverAll();
+}
+
+Game_Enemy.prototype.setLevel = function(force_level, recover){
+    const px = $gamePlayer.x;
+    const py = $gamePlayer.y;
+    const region = $gameMap.regionId(px,py);
+    const map_id = $gameMap._mapId;
+    const map_config = Syn_MC.MAP_CONFIGURATIONS.find((config)=>{
+        return eval(config['Map']) == map_id;
+    })
+    if(!map_config){
+        this._actor._level = force_level || $dataActors[this._actor._actorId].initialLevel;
+        this._actor.initExp();
+        this._actor.initSkills();
+        this._level = this._actor._level;
+        this._skills = this._actor._skills;
+        this._classId = this._actor._classId;
+        this._equips = this._actor._equips;
+        if(recover)this.recoverAll();
+        return;
+    }
+    let minLevel = eval(map_config['Minimal Enemy Level']) || 1;
+    let maxLevel = eval(map_config['Maximum Enemy Level']) || 100;
+    const region_settings = map_config['Region Settings'];
+    const region_config = region_settings.find((config)=>{
+        return eval(config['Region ID']) == region;
+    })
+    if(region_config){
+        minLevel = eval(region_data['Minimal Enemy Level']) || 1;
+        maxLevel = eval(region_data['Maximum Enemy Level']) || 100;
+    }
+    if(maxLevel < minLevel)throw new Error("Max level is set less than min level. Please check plugin / map settings.");
+    const bandWidth = Math.abs(Math.floor(maxLevel - minLevel));
+    if(minLevel + bandWidth > actorMaxLevel)throw new Error("Actor maximum level set too low with current settings.");
+    this._actor._level = force_level ? force_level : Math.min($dataActors[this._actor._actorId].maxLevel, (minLevel + Math.randomInt(bandWidth)));
+    this._actor.initExp();
+    this._actor.initSkills();
+    this._level = this._actor._level;
+    this._skills = this._actor._skills;
+    this._classId = this._actor._classId;
+    this._equips = this._actor._equips;
+    if(recover)this.recoverAll();
+}
+
+Game_Enemy.prototype.equipSlots = function() {
+    const slots = [];
+    for (let i = 1; i < $dataSystem.equipTypes.length; i++) {
+        slots.push(i);
+    }
+    if (slots.length >= 2 && this.isDualWield()) {
+        slots[1] = 1;
+    }
+    return slots;
+}
+
+Game_Enemy.prototype.equips = function() {
+    return this._actor._equips.map(item => item.object());
+}
+
+Game_Enemy.prototype.currentClass = function() {
+    return $dataClasses[this._classId];
+}
+
+Syn_MC_GmEnem_BseParam = Game_Enemy.prototype.paramBase;
+Game_Enemy.prototype.paramBase = function(paramId) {
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id
+    })
+    if(config){
+        const blockBaseParam = eval(config['Ignore Enemy Database']);
+        const defParamBase = blockBaseParam ? 0 : Syn_MC_GmEnem_BseParam.call(this, ...arguments);
+        const actorParamBase = this._actor ? this.currentClass().params[paramId][this._level] : 0;
+        return defParamBase + actorParamBase;
+    }else{
+        Syn_MC_GmEnem_BseParam.call(this, ...arguments);
+    }
+}
+
+Game_Enemy.prototype.paramPlus = function(paramId) {
+    let value = Game_Battler.prototype.paramPlus.call(this, paramId);
+    if(this._actor){
+        for (const item of this.equips()) {
+            if (item) {
+                value += item.params[paramId];
+            }
+        }
+    }
+    return value;
+}
+
+Syn_MC_GmEnem_Trans = Game_Enemy.prototype.transform;
+Game_Enemy.prototype.transform = function(enemyId) {
+    Syn_MC_GmEnem_Trans.call(this, ...arguments);
+    this.setupActorEnemy();
+}
+
+Game_Enemy.prototype.performSwap = function(){
+    this.hide();
+    $gameTroop.members()[this._swapId].appear();
+    const animTarget = $gameTroop.members()[this._swapId];
+    const anim = !isNaN(SynrecMC.Battle.SwapAnim) ? SynrecMC.Battle.SwapAnim : 4;
+    if(MONSTER_CAPTURE_MV){
+        this.startAnimation(anim);
+    }else{
+        $gameTemp.requestAnimation([animTarget], anim);
+    }
+}
+
+Syn_MC_GmEnem_MkActns = Game_Enemy.prototype.makeActions;
+Game_Enemy.prototype.makeActions = function() {
+    if(this._actor){
+        Game_Battler.prototype.makeActions.call(this);
+        if(this.numActions() > 0){
+            const skillList = this._skills;
+            this.selectSkill(skillList);
+        }
+        this.setActionState("waiting");
+    }else{
+        Syn_MC_GmEnem_MkActns.call(this);
+    }
+}
+
+Game_Enemy.prototype.selectSkill = function(list){
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id
+    })
+    let skillActArr = [];
+    const tpMaxSkill = eval(config['Ultimate Skill']);
+    if(this.tp >= this.maxTp() && tpMaxSkill){
+        let skillId = tpMaxSkill;
+        let skillData = $dataSkills[skillId];
+        let skillType = skillData.damage.type;
+        let skillObj = {skillId:skillId, skillType:skillType, conditionParam1:0, conditionParam2:0};
+        skillActArr = [skillObj];
+    }else{
+        for(sk = 0; sk < list.length; sk++){
+            if(!isNaN(list[sk])){
+                let skillId = list[sk];
+                let skillData = $dataSkills[skillId];
+                let skillType = skillData.damage.type;
+                let skillObj = {skillId:skillId, skillType:skillType, conditionParam1:0, conditionParam2:0};
+                skillActArr.push(skillObj);
+            }
+        }
+    }
+    this.setupSkillAction(skillActArr);
+}
+
+Game_Enemy.prototype.setupSkillAction = function(list){
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id
+    })
+    const enemyCritHpPerc = eval(config['Critical HP Rate']) || 0.3;
+    const enemyCritMpPerc = eval(config['Critical MP Rate']) || 0.3;
+    const enemyCritTpPerc = eval(config['Critical TP Rate']) || 0.7;
+    const hpRatio = this.hpRate();
+    const mpRatio = this.mpRate();
+    const tpRatio = this.tpRate();
+    if(list.length > 1){
+        let healHpList = [];
+        let healMpList = [];
+        let dmgHpList = [];
+        let dmgMpList = [];
+        let supportList = [];
+        for(h = 0; h < list.length; h++){
+            const healHpType = [3, 5];
+            const healMpType = [4, 6];
+            const dmgHpType = [1, 5];
+            const dmgMpType = [2, 6];
+            const supportType = [0];
+            let skillId = list[h]['skillId'];
+            let canUseSkill = this.canUse($dataSkills[skillId]);
+            if(canUseSkill){
+                if(healHpType.includes(list[h]['skillType'])){
+                    healHpList.push(list[h]);
+                }
+                if(healMpType.includes(list[h]['skillType'])){
+                    healMpList.push(list[h]);
+                }
+                if(dmgHpType.includes(list[h]['skillType'])){
+                    dmgHpList.push(list[h]);
+                }
+                if(dmgMpType.includes(list[h]['skillType'])){
+                    dmgMpList.push(list[h]);
+                }
+                if(supportType.includes(list[h]['skillType'])){
+                    supportList.push(list[h]);
+                }
+            }else{
+                list.splice(h, 1);
+                h--;
+            }
+        }
+        if(tpRatio > enemyCritTpPerc){
+            list = supportList.length > 0 ? supportList : list;
+        }
+        if(mpRatio < enemyCritMpPerc){
+            list = healMpList.length > 0 ? healMpList : list;
+        }
+        if(hpRatio < enemyCritHpPerc){
+            list = healHpList.length > 0 ? healHpList : list;
+        }
+        const dmgArr = dmgHpList.concat(dmgMpList);
+        if(hpRatio > enemyCritHpPerc && mpRatio > enemyCritMpPerc){
+            list = dmgArr;
+        }
+    }
+    for(i = 0; i < this.numActions(); i++){
+        let listIndex = Math.floor(Math.random() * list.length);
+        let listItem = list[listIndex];
+        this.action(i).setEnemyAction(listItem);
+    }
+}
+
+Syn_MC_GmPrty_Init = Game_Party.prototype.initialize;
+Game_Party.prototype.initialize = function() {
+    Syn_MC_GmPrty_Init.call(this);
+    this.createReserveBoxes();
+    this.initBreeder();
+}
+
+Game_Party.prototype.createReserveBoxes = function(){
+    this._reserveBoxes = [];
+    for(ib = 0; ib < SynrecMC.numberReserveBoxes; ib++){
+        this._reserveBoxes[ib] = {name:'Box ' + ib, box:[]};
+        for(jb = 0; jb < SynrecMC.sizeReserveBoxes; jb++){
+            this._reserveBoxes[ib]['box'][jb] = undefined;
+        }
+    }
+}
+
+Game_Party.prototype.initBreeder = function(){
+    this._map_breeder = {};
+    this._breederArray = [];
+    this._breederParent1 = undefined;
+    this._breederParent2 = undefined;
+    this._breederChild = undefined;
+    this._preBreedSteps = 0;
+    this._preBreedMaxSteps = SynrecMC.Breeder.MaxSteps;
+}
+
+Game_Party.prototype.allMembers = function() {
+    return this._actors;
+}
+
+Game_Party.prototype.removeInvalidMembers = function() {
+    for(let i = 0; i < this._actors.length; i++){
+        if(!this._actors[i] && i >= 0){
+            this._actors.splice(i, 1);
+            i--;
+        }
+        if(this._actors[i]){
+            if(!this._actors[i].isActor()){
+                this._actors.remove(this._actors[i]);
+                i--;
+            }
+        }
+    }
+}
+
+Game_Party.prototype.setupStartingMembers = function() {
+    this._actors = [];
+    for (let i = 0; i < $dataSystem.partyMembers.length; i++) {
+        let actor = new Game_Actor($dataSystem.partyMembers[i]);
+        actor.setGender();
+        if(SynrecMC.lockActors){
+            actor._teamLock = true;
+        }
+        this._actors.push(actor);
+    }
+}
+
+Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
+    let actor;
+    if(!isNaN(actorId)){
+        actor = new Game_Actor(actorId);
+        if(level)actor.changeLevel(level, false);
+        if(hp)actor.setHp(hp);
+        if(mp)actor.setMp(mp);
+        actor.setTp(0);
+        actor.setGender(gender);
+        if(this._actors.length < this.maxBattleMembers())actor.onBattleStart();
+        if(this._actors.length >= this.maxBattleMembers()){
+            actor.onBattleEnd();
+            this.addToReserve(actor);
+        }else{
+            actor.onBattleStart();
+            this._actors.push(actor);
+        }
+    }else{
+        return false;
+    }
+    $gamePlayer.refresh();
+    $gameMap.requestRefresh();
+    if(!MONSTER_CAPTURE_MV)$gameTemp.requestBattleRefresh();
+    if(actor)this.doAddActorExtra(actor);
+}
+
+Game_Party.prototype.doAddActorExtra = function(actor){
+    const id = actor._actorId;
+    if(!SynrecMC.NO_RENAMES.includes(id))this.callRenameScene(actor);
+}
+
+Game_Party.prototype.callRenameScene = function(actor){
+    const scene = Scene_Rename;
+    const max_name_chars = SynrecMC.MaxNameChars;
+    const sceneToBoot = {scene,prep:[actor, max_name_chars]};
+    $gameTemp.reserveBootScene(sceneToBoot);
+}
+
+Game_Party.prototype.addToReserve = function(actor){
+    for(let i = 0; i < this._reserveBoxes.length; i++){
+        let box = this._reserveBoxes[i]['box'];
+        for(j = 0; j < box.length; j++){
+            if(!box[j]){
+                box[j] = actor;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+Game_Party.prototype.removeActor = function(actorId) {
+    for(let i = 0; i < this._actors.length; i++){
+        if(this._actors[i].actorId() == actorId){
+            let actor = this._actors.splice(i, 1);
+            if(this.inBattle())actor.onBattleEnd();
+        }
+        $gamePlayer.refresh();
+        $gameMap.requestRefresh();
+        $gameTemp.requestBattleRefresh();
+    }
+}
+
+Game_Party.prototype.removeDeadMembers = function(){
+    for(let i = 0; i < this._actors.length; i++){
+        if(i < 0) i = 0;
+        this._actors[i].refresh();
+        if(this._actors[i].isDead() && this._actors.length > 0){
+            this._actors.splice(i, 1);
+            i--;
+            if (this._actors.length <= 0 && this.inBattle()){
+                SceneManager.goto(Scene_Gameover);
+            }
+        }else if (this._actors.length <= 0 && this.inBattle()){
+            SceneManager.goto(Scene_Gameover);
+        }
+    }
+}
+
+Game_Party.prototype.menuActor = function() {
+    let actor = this._menuActorId;
+    return actor;
+}
+
+Game_Party.prototype.setMenuActor = function(actor) {
+    this._menuActorId = actor;
+}
+
+Game_Party.prototype.charactersForSavefile = function() {
+    return this.battleMembers().forEach(actor => [
+        actor.characterName(),
+        actor.characterIndex()
+    ]);
+}
+
+
+Game_Party.prototype.facesForSavefile = function() {
+    return this.battleMembers().forEach(actor => [
+        actor.faceName(),
+        actor.faceIndex()
+    ]);
+}
+
+Game_Party.prototype.refresh = function(){
+    this.removeInvalidMembers();
+    if(SynrecMC.permaDeath)$gameParty.removeDeadMembers();
+    $gamePlayer.refresh();
+    $gameMap.refresh();
+    if(!MONSTER_CAPTURE_MV)$gameTemp.requestBattleRefresh();
+}
+
+Game_Party.prototype.addBreed = function(data){
+    const obj = {};
+    obj['Result Actor'] = data['Result Actor'];
+    obj['Step Progress'] = 0;
+    obj['Step Complete'] = data['Max Steps'];
+    obj['Fusion Params'] = data['Fusion Params'];
+    this._breederArray.push(obj);
+    this.progressBreed();
+    this.progressPreBreed();
+    $gameMap.updateHatch();
+}
+
+Game_Party.prototype.progressBreed = function(){
+    if(!this._breederArray)this.initBreeder();
+    this._breederArray.forEach((breed)=>{
+        breed['Step Progress']++;
+        if(breed['Step Progress'] > breed['Step Complete']){
+            breed['Step Progress'] = breed['Step Complete']
+        }
+    })
+}
+
+Game_Party.prototype.progressPreBreed = function(){
+    const map_breeder = this._map_breeder;
+    const map_ids = Object.keys(map_breeder);
+    if(map_ids.length > 0){
+        map_ids.forEach((id_key)=>{
+            const map_id = eval(id_key);
+            const map_config = Syn_MC.MAP_CONFIGURATIONS.find((config)=>{
+                return eval(config['Map']) == map_id;
+            })
+            const data = this.grabValidData(map_id);
+            if(data){
+                const result_actor_id = eval(data['Result Actor']);
+                const rngSteps = Math.randomInt(eval(data['Random Steps']));
+                const reqSteps = eval(data['Required Steps']);
+                const steps = Math.max(1, reqSteps - rngSteps);
+                const breeder_obj = map_breeder[id_key];
+                const steps_taken = breeder_obj['Steps'];
+                if(steps_taken >= steps){
+                    const delete_parents = eval(data['Delete Parents']);
+                    const percGlobal = ((data['Stat Transfer Global Value'] / 100) || 0)
+                    const percAppHp = ((data['HP Transfer'] / 100) || 0) + percGlobal;
+                    const percAppMp = ((data['MP Transfer'] / 100) || 0) + percGlobal;
+                    const percAppAtk = ((data['ATK Transfer'] / 100) || 0) + percGlobal;
+                    const percAppDef = ((data['DEF Transfer'] / 100) || 0) + percGlobal;
+                    const percAppMat = ((data['MAT Transfer'] / 100) || 0) + percGlobal;
+                    const percAppMdf = ((data['MDF Transfer'] / 100) || 0) + percGlobal;
+                    const percAppAgi = ((data['AGI Transfer'] / 100) || 0) + percGlobal;
+                    const percAppLuk = ((data['LUK Transfer'] / 100) || 0) + percGlobal;
+                    const actor_1 = breeder_obj['Actor 1'];
+                    const actor_2 = breeder_obj['Actor 2'];
+                    if(data['Fuse Stats']){
+                        const hp = ((actor_1.param(0) + actor_2.param(0)) / 2) * percAppHp;
+                        const mp = ((actor_1.param(1) + actor_2.param(1)) / 2) * percAppMp;
+                        const atk = ((actor_1.param(2) + actor_2.param(2)) / 2) * percAppAtk;
+                        const def = ((actor_1.param(3) + actor_2.param(3)) / 2) * percAppDef;
+                        const mat = ((actor_1.param(4) + actor_2.param(4)) / 2) * percAppMat;
+                        const mdf = ((actor_1.param(5) + actor_2.param(5)) / 2) * percAppMdf;
+                        const agi = ((actor_1.param(6) + actor_2.param(6)) / 2) * percAppAgi;
+                        const luk = ((actor_1.param(7) + actor_2.param(7)) / 2) * percAppLuk;
+                        obj['Fusion Params'] = [hp, mp, atk, def, mat, mdf, agi, luk];
+                    }
+                    obj['Fusion Params Only'] = eval(data['Fuse Stats Only']);
+                    if(data['Delete Parents']){
+                        breeder_obj['Actor 1'] = null;
+                        breeder_obj['Actor 2'] = null;
+                    }
+                }else{
+                    if(isNaN(breeder_obj['Steps'])){
+                        breeder_obj['Steps'] = 0;
+                        breeder_obj['Steps']++;
+                    }else{
+                        breeder_obj['Steps']++;
+                    }
+                }
+            }
+        })
+    }
+}
+
+Game_Party.prototype.grantParentBreedEXP = function(){
+    const map_breeder = this._map_breeder;
+    const map_ids = Object.keys(map_breeder);
+    if(map_ids.length > 0){
+        map_ids.forEach((id_key)=>{
+            const map_id = eval(id_key);
+            const map_config = Syn_MC.MAP_CONFIGURATIONS.find((config)=>{
+                return eval(config['Map']) == map_id;
+            })
+            const exp_growth = eval(map_config['Breeder EXP Growth']) || 0;
+            const breeder_obj = map_breeder[id_key];
+            if(breeder_obj){
+                const actor_1 = breeder_obj['Actor 1'];
+                if(actor_1){
+                    actor_1.gainExpBreed(exp_growth);
+                }
+                const actor_2 = breeder_obj['Actor 2'];
+                if(actor_2){
+                    actor_2.gainExpBreed(exp_growth);
+                }
+            }
+        })
+    }
+}
+
+Game_Party.prototype.grabValidData = function(map_id){
+    const combArr = Syn_MC.BREEDER_COMBINATIONS;
+    const free_combines = combArr.filter((combination)=>{
+        return (
+            !combination['Actor 1 Required'] &&
+            !combination['Actor 2 Required']
+        )
+    });
+    const set_combines = combArr.filter((combination)=>{
+        return (
+            combination['Actor 1 Required'] &&
+            combination['Actor 2 Required']
+        )
+    });
+    const map_breeder = this._map_breeder;
+    const breeder_obj = map_breeder[map_id];
+    if(breeder_obj){
+        const p1 = breeder_obj['Actor 1'];
+        const p2 = breeder_obj['Actor 2'];
+        if(p1 && p2){
+            const p1_gender = p1.gender();
+            const p2_gender = p2.gender();
+            const combination = set_combines.find((combine)=>{
+                const a1_data = combine['Actor 1 Required'];
+                const p1_a1_match = (
+                    p1._actorId == eval(a1_data['Actor']) &&
+                    p1_gender == a1_data['Gender']
+                )
+                const p2_a1_match = (
+                    p2._actorId == eval(a1_data['Actor']) &&
+                    p2_gender == a1_data['Gender']
+                )
+                const a2_data = combine['Actor 2 Required'];
+                const p1_a2_match = (
+                    p1._actorId == eval(a2_data['Actor']) &&
+                    p1_gender == a2_data['Gender']
+                )
+                const p2_a2_match = (
+                    p2._actorId == eval(a2_data['Actor']) &&
+                    p2_gender == a2_data['Gender']
+                )
+                return(
+                    (
+                        p1_a1_match &&
+                        p2_a2_match
+                    ) ||
+                    (
+                        p2_a1_match &&
+                        p1_a2_match
+                    )
+                )
+            })
+            const random_index = Math.randomInt(free_combines.length);
+            const free_combine = free_combines[random_index];
+            return combination || free_combine
+        }
+    }
 }
 
 function SpriteMenu_CharacterMonster(){
@@ -1849,6 +3351,529 @@ function WindowMC_GameData(){
     this.initialize(...arguments);
 }
 
+WindowMC_GameData.prototype = Object.create(Window_Base.prototype);
+WindowMC_GameData.prototype.constructor = WindowMC_GameData;
+
+WindowMC_GameData.prototype.initialize = function(data){
+    const mz_mode = Utils.RPGMAKER_NAME == "MZ";
+    const rect = this.createRect(data);
+    this._window_data = data;
+    this._style_data = data['Window Font and Style Configuration'];
+    if(mz_mode){
+        Window_Base.prototype.initialize.call(this, rect);
+    }else{
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }
+    this.setOpacityAndDimmer();
+    this.createCharacterSprite();
+}
+
+WindowMC_GameData.prototype.createCharacterSprite = function(){
+    const chara = $gamePlayer;
+    const sprite = new SpriteMenu_CharacterMonster(chara);
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._chara = chara;
+    this._character_sprite = sprite;
+}
+
+WindowMC_GameData.prototype.createRect = function(data){
+    const dimension_config = data['Dimension Configuration'];
+    const x = dimension_config['X'];
+    const y = dimension_config['Y'];
+    const w = dimension_config['Width'];
+    const h = dimension_config['Height'];
+    return new Rectangle(x,y,w,h);
+}
+
+WindowMC_GameData.prototype.standardPadding = function() {
+    return 8;
+}
+
+WindowMC_GameData.prototype.loadWindowskin = function(){
+    const base = Window_Base.prototype.loadWindowskin.call(this);
+    const custom_config = this._style_data;
+    if(!custom_config)return base;
+    const skin_name = custom_config['Window Skin'];
+    if(!skin_name)return base;
+    this.windowskin = ImageManager.loadSystem(skin_name);
+}
+
+WindowMC_GameData.prototype.resetFontSettings = function() {
+    const base = Window_Base.prototype.resetFontSettings;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const font_face = custom_config['Font Face'] || "sans-serif";
+    const font_size = custom_config['Font Size'] || 16;
+    const font_outline_size = custom_config['Font Outline Thickness'] || 3;
+    this.contents.fontFace = font_face;
+    this.contents.fontSize = font_size;
+    this.contents.outlineWidth = font_outline_size;
+    this.resetTextColor();
+}
+
+WindowMC_GameData.prototype.resetTextColor = function() {
+    const base = Window_Base.prototype.resetTextColor;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const text_color = custom_config['Base Font Color'] || "#ffffff";
+    const outline_color = custom_config['Font Outline Color'] || "rgba(0, 0, 0, 0.5)";
+    this.changeTextColor(text_color);
+    this.contents.outlineColor = outline_color;
+}
+
+WindowMC_GameData.prototype.setOpacityAndDimmer = function(){
+    const custom_config = this._style_data;
+    if(!custom_config)return;
+    const show_dimmer = custom_config['Show Window Dimmer'] || false;
+    const win_opacity = custom_config['Window Opacity'] || 0;
+    this.opacity = win_opacity;
+    show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
+}
+
+WindowMC_GameData.prototype.update = function(){
+    Window_Base.prototype.update.call(this);
+    this.updateDisplay();
+}
+
+WindowMC_GameData.prototype.updateDisplay = function(){
+    const window_data = this._window_data;
+    const sw_id = eval(window_data['Display Switch']);
+    if(!sw_id){
+        this.hide();
+    }
+    const sw_on = $gameSwitches.value(sw_id);
+    if(sw_on){
+        this.show();
+    }else{
+        this.hide();
+    }
+}
+
+WindowMC_GameData.prototype.drawData = function(){
+    this.drawGraphic();
+    this.drawGauges();
+    this.drawPlayerName();
+    this.drawPlayerFace();
+    this.drawPlayerFrontGraphic();
+    this.drawPlayerBackGraphic();
+    this.drawPlayTime();
+    this.drawSaveCount();
+    this.drawCaptureCount();
+    this.displayMapCharacter();
+}
+
+WindowMC_GameData.prototype.drawGraphic = function(){
+    const window = this;
+    const window_data = this._window_data;
+    const gauges = window_data['Gauges'];
+    gauges.forEach((config)=>{
+        const label = config['Label'];
+        const lx = eval(config['Label X']);
+        const ly = eval(config['Label Y']);
+        window.drawTextEx(label, lx, ly);
+        const cur_val = eval(config['Gauge Current Value']) || 0;
+        const max_val = eval(config['Gauge Max Value']) || 1;
+        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
+        const gx = eval(config['Gauge X']);
+        const gy = eval(config['Gauge Y']);
+        const gw = eval(config['Gauge Width']);
+        const gh = eval(config['Gauge Height']);
+        const gb = eval(config['Gauge Border']);
+        const border_color = config['Gauge Border Color'];
+        const background_color = config['Gauge Background Color'];
+        const fill_color = config['Gauge Color'];
+        window.contents.fillRect(gx,gy,gw,gh,border_color);
+        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
+        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
+    })
+}
+
+WindowMC_GameData.prototype.drawGauges = function(){
+    const window = this;
+    const player = $gamePlayer;
+    const window_data = this._window_data;
+    const gauges = window_data['Gauges'];
+    gauges.forEach((config)=>{
+        const label = config['Label'];
+        const lx = eval(config['Label X']);
+        const ly = eval(config['Label Y']);
+        window.drawTextEx(label, lx, ly);
+        const cur_val = eval(config['Gauge Current Value']) || 0;
+        const max_val = eval(config['Gauge Max Value']) || 1;
+        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
+        const gx = eval(config['Gauge X']);
+        const gy = eval(config['Gauge Y']);
+        const gw = eval(config['Gauge Width']);
+        const gh = eval(config['Gauge Height']);
+        const gb = eval(config['Gauge Border']);
+        const border_color = config['Gauge Border Color'];
+        const background_color = config['Gauge Background Color'];
+        const fill_color = config['Gauge Color'];
+        window.contents.fillRect(gx,gy,gw,gh,border_color);
+        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
+        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
+    })
+}
+
+WindowMC_GameData.prototype.drawPlayerName = function(){
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.drawPlayerFace = function(){
+    const custom_data = $gamePlayer._custom_data;
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.drawPlayerFrontGraphic = function(){
+    const custom_data = $gamePlayer._custom_data;
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.drawPlayerBackGraphic = function(){
+    const custom_data = $gamePlayer._custom_data;
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.drawPlayTime = function(){
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.drawSaveCount = function(){
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.drawCaptureCount = function(){
+    const window_data = this._window_data;
+}
+
+WindowMC_GameData.prototype.displayMapCharacter = function(){
+    const window_data = this._window_data;
+    if(!eval(window_data['Display Map Character'])){
+        this._character_sprite.visible = false;
+        return;
+    }else{
+        this._chara.setDirection(eval(window_data['Character Direction']) || 2);
+        this._chara._screenX = eval(window_data['Character X']) || 0;
+        this._chara._screenY = eval(window_data['Character Y']) || 0;
+        this._character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
+        this._character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
+        this._character_sprite.visible = true;
+    }
+}
+
 function WindowMC_ActorData(){
     this.initialize(...arguments);
+}
+
+WindowMC_ActorData.prototype = Object.create(Window_Base.prototype);
+WindowMC_ActorData.prototype.constructor = WindowMC_ActorData;
+
+WindowMC_ActorData.prototype.initialize = function(data){
+    const mz_mode = Utils.RPGMAKER_NAME == "MZ";
+    const rect = this.createRect(data);
+    this._window_data = data;
+    this._style_data = data['Window Font and Style Configuration'];
+    if(mz_mode){
+        Window_Base.prototype.initialize.call(this, rect);
+    }else{
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }
+    this.setOpacityAndDimmer();
+    this.createCharacterSprite();
+    this.createBattlerSprite();
+}
+
+WindowMC_ActorData.prototype.createCharacterSprite = function(){
+    const chara = new Game_MonsterCharacter();
+    const sprite = new SpriteMenu_CharacterMonster(chara);
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._chara = chara;
+    this._character_sprite = sprite;
+}
+
+WindowMC_ActorData.prototype.createBattlerSprite = function(){
+    const sprite = new SpriteMenu_BattlerMonster();
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._battler_sprite = sprite;
+}
+
+WindowMC_ActorData.prototype.createRect = function(data){
+    const dimension_config = data['Dimension Configuration'];
+    const x = dimension_config['X'];
+    const y = dimension_config['Y'];
+    const w = dimension_config['Width'];
+    const h = dimension_config['Height'];
+    return new Rectangle(x,y,w,h);
+}
+
+WindowMC_ActorData.prototype.standardPadding = function() {
+    return 8;
+}
+
+WindowMC_ActorData.prototype.loadWindowskin = function(){
+    const base = Window_Base.prototype.loadWindowskin.call(this);
+    const custom_config = this._style_data;
+    if(!custom_config)return base;
+    const skin_name = custom_config['Window Skin'];
+    if(!skin_name)return base;
+    this.windowskin = ImageManager.loadSystem(skin_name);
+}
+
+WindowMC_ActorData.prototype.resetFontSettings = function() {
+    const base = Window_Base.prototype.resetFontSettings;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const font_face = custom_config['Font Face'] || "sans-serif";
+    const font_size = custom_config['Font Size'] || 16;
+    const font_outline_size = custom_config['Font Outline Thickness'] || 3;
+    this.contents.fontFace = font_face;
+    this.contents.fontSize = font_size;
+    this.contents.outlineWidth = font_outline_size;
+    this.resetTextColor();
+}
+
+WindowMC_ActorData.prototype.resetTextColor = function() {
+    const base = Window_Base.prototype.resetTextColor;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const text_color = custom_config['Base Font Color'] || "#ffffff";
+    const outline_color = custom_config['Font Outline Color'] || "rgba(0, 0, 0, 0.5)";
+    this.changeTextColor(text_color);
+    this.contents.outlineColor = outline_color;
+}
+
+WindowMC_ActorData.prototype.setOpacityAndDimmer = function(){
+    const custom_config = this._style_data;
+    if(!custom_config)return;
+    const show_dimmer = custom_config['Show Window Dimmer'] || false;
+    const win_opacity = custom_config['Window Opacity'] || 0;
+    this.opacity = win_opacity;
+    show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
+}
+
+WindowMC_ActorData.prototype.update = function(){
+    Window_Base.prototype.update.call(this);
+    this.updateActor();
+}
+
+WindowMC_ActorData.prototype.updateActor = function(){
+    if(this._actor){
+        const window_data = this._window_data;
+    }
+}
+
+WindowMC_ActorData.prototype.setActor = function(actor){
+    this.contents.clear();
+    this._actor = actor;
+    if(actor){
+        this.drawData();
+    }else{
+        this.hide();
+    }
+}
+
+WindowMC_ActorData.prototype.drawData = function(){
+    this.drawGauges();
+    this.drawName();
+    this.drawProfile();
+    this.drawClassLevel();
+    this.drawResHP();
+    this.drawResMP();
+    this.drawResTP();
+    this.drawBaseParams();
+    this.drawExParams();
+    this.drawSpParams();
+    this.displayMapCharacter();
+    this.displayBattler();
+}
+
+WindowMC_ActorData.prototype.drawGauges = function(){
+    const window = this;
+    const actor = this._actor;
+    const window_data = this._window_data;
+    const gauges = window_data['Gauges'];
+    gauges.forEach((config)=>{
+        const label = config['Label'];
+        const lx = eval(config['Label X']);
+        const ly = eval(config['Label Y']);
+        window.drawTextEx(label, lx, ly);
+        const cur_val = eval(config['Gauge Current Value']) || 0;
+        const max_val = eval(config['Gauge Max Value']) || 1;
+        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
+        const gx = eval(config['Gauge X']);
+        const gy = eval(config['Gauge Y']);
+        const gw = eval(config['Gauge Width']);
+        const gh = eval(config['Gauge Height']);
+        const gb = eval(config['Gauge Border']);
+        const border_color = config['Gauge Border Color'];
+        const background_color = config['Gauge Background Color'];
+        const fill_color = config['Gauge Color'];
+        window.contents.fillRect(gx,gy,gw,gh,border_color);
+        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
+        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
+    })
+}
+
+WindowMC_ActorData.prototype.drawName = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Name']))return;
+    const name = actor.name();
+    const nickname = actor.nickname();
+    const text = (window_data['Name Text'] || "").format(name, nickname);
+    const tx = eval(window_data['Name X']) || 0;
+    const ty = eval(window_data['Name Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorData.prototype.drawProfile = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Profile']))return;
+    const text = actor.profile();
+    const tx = eval(window_data['Profile X']) || 0;
+    const ty = eval(window_data['Profile Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorData.prototype.drawClassLevel = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Class Level']))return;
+    const class_id = actor._classId;
+    const class_data = $dataClasses[class_id] || {};
+    const class_name = class_data ? class_data.name : "";
+    const level = actor.level;
+    const text = (window_data['Class Level Text'] || "").format(class_name, level);
+    const tx = eval(window_data['Class Level X']) || 0;
+    const ty = eval(window_data['Class Level Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorData.prototype.drawResHP = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw HP Resource']))return;
+    const cur = actor.hp;
+    const max = actor.mhp;
+    const text = (window_data['HP Text'] || "").format(cur, max);
+    const tx = eval(window_data['HP X']) || 0;
+    const ty = eval(window_data['HP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorData.prototype.drawResMP = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw MP Resource']))return;
+    const cur = actor.mp;
+    const max = actor.mmp;
+    const text = (window_data['MP Text'] || "").format(cur, max);
+    const tx = eval(window_data['MP X']) || 0;
+    const ty = eval(window_data['MP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorData.prototype.drawResTP = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw TP Resource']))return;
+    const cur = actor.tp;
+    const max = actor.maxTp();
+    const text = (window_data['TP Text'] || "").format(cur, max);
+    const tx = eval(window_data['TP X']) || 0;
+    const ty = eval(window_data['TP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorData.prototype.drawBaseParams = function(){
+    const window = this;
+    const actor = this._actor;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Base Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Base Param']);
+        const param_value = actor.param(param_id) || 0;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = eval(param_draw['X']) || 0;
+        const ty = eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_ActorData.prototype.drawExParams = function(){
+    const window = this;
+    const actor = this._actor;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Ex Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Ex Param']);
+        const param_value = (actor.xparam(param_id) || 0) * 100;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = eval(param_draw['X']) || 0;
+        const ty = eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_ActorData.prototype.drawSpParams = function(){
+    const window = this;
+    const actor = this._actor;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Sp Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Ex Param']);
+        const param_value = (actor.sparam(param_id) || 0) * 100;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = eval(param_draw['X']) || 0;
+        const ty = eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_ActorData.prototype.displayMapCharacter = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Display Map Character'])){
+        this._character_sprite.visible = false;
+        return;
+    }else{
+        const char_name = actor.characterName();
+        const char_indx = actor.characterIndex();
+        this._chara.setImage(char_name, char_indx);
+        this._chara.setDirection(eval(window_data['Character Direction']) || 2);
+        this._chara._screenX = eval(window_data['Character X']) || 0;
+        this._chara._screenY = eval(window_data['Character Y']) || 0;
+        this._character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
+        this._character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
+        this._character_sprite.visible = true;
+    }
+}
+
+WindowMC_ActorData.prototype.displayBattler = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Display Battler'])){
+        this._battler_sprite.visible = false;
+        return;
+    }else{
+        const hx = eval(window_data['Battler X']);
+        const hy = eval(window_data['Battler y']);
+        this._battler_sprite.setHome(hx, hy);
+        this._battler_sprite.setBattler(actor);
+        this._battler_sprite.scale.x = eval(window_data['Battler Scale X']);
+        this._battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
+        this._battler_sprite.visible = true;
+    }
 }

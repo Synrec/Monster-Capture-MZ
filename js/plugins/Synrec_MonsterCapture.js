@@ -3183,7 +3183,7 @@ Game_Party.prototype.progressPreBreed = function(){
                         obj['Fusion Params'] = [hp, mp, atk, def, mat, mdf, agi, luk];
                     }
                     obj['Fusion Params Only'] = eval(data['Fuse Stats Only']);
-                    if(data['Delete Parents']){
+                    if(delete_parents){
                         breeder_obj['Actor 1'] = null;
                         breeder_obj['Actor 2'] = null;
                     }

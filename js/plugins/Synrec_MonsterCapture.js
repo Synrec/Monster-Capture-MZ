@@ -200,6 +200,11 @@
  * @type actor
  * @default 0
  * 
+ * @param Required Switch
+ * @desc Game switch must be ON for actor to evolve
+ * @type switch
+ * @default 0
+ * 
  * @param Required Level
  * @desc Level required for the actor to evolve.
  * @type text
@@ -2854,6 +2859,154 @@ Game_Actor.prototype.setup = function(actorId) {
     Syn_MC_GmActr_Setup.call(this, ...arguments);
 }
 
+Game_Actor.prototype.meetEvolutionRequirement = function(){
+    const id = this._actorId;
+    const config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
+        return eval(config['Actor']) == id;
+    })
+    if(config){
+        try{
+            const evolve_configuration = JsonEx.makeDeepCopy(config['Evolution Settings']);
+            const evolve_switch = eval(evolve_configuration['Required Switch']);
+            if(evolve_switch){
+                if(!$gameSwitches(evolve_switch))return false;
+            }
+            const evolve_level = eval(evolve_configuration['Required Level']);
+            if(isNaN(evolve_level))return false;
+            if(this._level < evolve_level)return false;
+            const equips = this._equips;
+            const equip_weapons = evolve_configuration['Equip Weapons'];
+            if(Array.isArray(equip_weapons)){
+                for(let i = 0; i < equips.length; i++){
+                    if(equip_weapons.length <= 0)break;
+                    const data = equips[i];
+                    const type = data._dataClass;
+                    const id = data._itemId;
+                    if(type == 'weapon'){
+                        const index = equip_weapons.indexOf(id);
+                        if(index >= 0){
+                            equip_weapons.splice(index, 1);
+                        }
+                    }
+                }
+                if(equip_weapons.length > 0)return false;
+            }
+            const equip_armors = evolve_configuration['Equip Armors'];
+            if(Array.isArray(equip_armors)){
+                for(let i = 0; i < equips.length; i++){
+                    if(equip_armors.length <= 0)break;
+                    const data = equips[i];
+                    const type = data._dataClass;
+                    const id = data._itemId;
+                    if(type == 'armor'){
+                        const index = equip_armors.indexOf(id);
+                        if(index >= 0){
+                            equip_armors.splice(index, 1);
+                        }
+                    }
+                }
+                if(equip_armors.length > 0)return false;
+            }
+            const req_items = evolve_configuration['Items'];
+            if(Array.isArray(req_items)){
+                if(
+                    req_items.some((iId)=>{
+                        return !$gameParty.hasItem(eval(iId));
+                    })
+                )return false;
+            }
+            const gold = $gameParty.gold();
+            const req_gold = eval(evolve_configuration['Gold']);
+            if(gold < req_gold)return false;
+            return !!$dataActors[eval(evolve_configuration['Evolution Actor'])];
+        }catch(e){
+            return false;
+        }
+    }
+    return false
+}
+
+Game_Actor.prototype.evolve = function(force_actor){
+    const id = this._actorId;
+    const config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
+        return eval(config['Actor']) == id;
+    })
+    if(config){
+        try{
+            const evolve_configuration = JsonEx.makeDeepCopy(config['Evolution Settings']);
+            const evolve_target = force_actor || eval(evolve_configuration['Evolution Actor']);
+            if(!evolve_target || isNaN(evolve_target))return false;
+            const equips = this._equips;
+            const equip_weapons = evolve_configuration['Equip Weapons'];
+            const consume_weapons = eval(evolve_configuration['Consume Weapons'])
+            if(Array.isArray(equip_weapons) && consume_weapons){
+                for(let i = 0; i < equips.length; i++){
+                    if(equip_weapons.length <= 0)break;
+                    const data = equips[i];
+                    const type = data._dataClass;
+                    const id = data._itemId;
+                    if(type == 'weapon'){
+                        const index = equip_weapons.indexOf(id);
+                        if(index >= 0){
+                            equip_weapons.splice(index, 1);
+                            this._equips[i]._itemId = 0;
+                        }
+                    }
+                }
+                if(equip_weapons.length > 0)return false;
+            }
+            const equip_armors = evolve_configuration['Equip Armors'];
+            if(Array.isArray(equip_armors)){
+                for(let i = 0; i < equips.length; i++){
+                    if(equip_armors.length <= 0)break;
+                    const data = equips[i];
+                    const type = data._dataClass;
+                    const id = data._itemId;
+                    if(type == 'armor'){
+                        const index = equip_armors.indexOf(id);
+                        if(index >= 0){
+                            equip_armors.splice(index, 1);
+                        }
+                    }
+                }
+                if(equip_armors.length > 0)return false;
+            }
+            const req_items = evolve_configuration['Items'];
+            if(Array.isArray(req_items)){
+                if(
+                    req_items.some((iId)=>{
+                        return !$gameParty.hasItem(eval(iId));
+                    })
+                )return false;
+            }
+            const req_gold = eval(evolve_configuration['Gold']);
+            if(req_gold > 0 && !isNaN(req_gold)){
+                $gameParty.loseGold(req_gold)
+            };
+            const actor = $dataActors[evolve_target];
+            this._actorId = evolve_target;
+            this._name = actor.name;
+            this._nickname = actor.nickname;
+            this._profile = actor.profile;
+            this._classId = actor.classId;
+            if(SynrecMC.EvolutionCore.EvolveReset){
+                this._level = actor.initialLevel;
+                this.initExp();
+            }
+            if(SynrecMC.EvolutionCore.EvolveHeal)this.recoverAll();
+            this.initImages();
+            if(evolveSwitchId && SynrecMC.EvolutionCore.EvolSwtchReset){
+                $gameSwitches.setValue(evolveSwitchId, false);
+            }
+            this.refresh();
+            $gameParty.refresh();
+            return true;
+        }catch(e){
+            return false;
+        }
+    }
+}
+
 Game_Actor.prototype.gainExpBreed = function(exp) {
     const newExp = this.currentExp() + Math.round(exp);
     if(newExp >= this.nextLevelExp() && this.isMaxLevel())return;
@@ -3501,6 +3654,27 @@ SpriteMenu_BattlerMonster.prototype.setMotion = function(motion_name){
 SpriteMenu_BattlerMonster.prototype.refreshMotion = function(){
     if(!this._setMotion)this._setMotion = 'walk';
     this.startMotion(this._setMotion);
+}
+
+Syn_MC_SprtsetBatt_Updt = Spriteset_Battle.prototype.update;
+Spriteset_Battle.prototype.update = function() {
+    Syn_MC_SprtsetBatt_Updt.call(this);
+    this.updateEnemySort();
+    this.updateActorSort();
+}
+
+Spriteset_Battle.prototype.updateEnemySort = function(){
+    this._enemySprites.sort(this.compareSprites.bind(this, true))
+    this._enemySprites.forEach((enemy)=>{
+        if(!enemy._battler)enemy._movementDuration = 0;
+    })
+}
+
+Spriteset_Battle.prototype.updateActorSort = function(){
+    this._actorSprites.sort(this.compareSprites.bind(this, false))
+    this._actorSprites.forEach((actor)=>{
+        if(!actor._battler)actor._movementDuration = 0;
+    })
 }
 
 function WindowMC_GameData(){

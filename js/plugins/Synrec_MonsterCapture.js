@@ -2341,6 +2341,85 @@ Game_Action.prototype.playCaptureFail = function(target){
     }
 }
 
+Syn_MC_GmMap_Updt = Game_Map.prototype.update;
+Game_Map.prototype.update = function(sceneActive) {
+    Syn_MC_GmMap_Updt.call(this, sceneActive);
+    if(sceneActive){
+        this.updateHatch();
+    }
+}
+
+Game_Map.prototype.updateHatch = function(){
+    if(!$gameParty._breederArray)$gameParty.initBreeder();
+    const validHatches = $gameParty._breederArray.filter((item)=>{
+        return item['Step Progress'] >= item['Step Complete']
+    })
+    if(validHatches.length <= 0)return;
+    if(SynrecMC.Breeder.CharImg && !isNaN(SynrecMC.Breeder.CharIdx) && !isNaN(SynrecMC.Breeder.AnimHatch)){
+        SceneManager.push(Scene_Hatch);
+    }else{
+        for(let i = 0; i < $gameParty._breederArray.length; i++){
+            const item = $gameParty._breederArray[i];
+            const progress = item['Step Progress'];
+            const complete = item['Step Complete'];
+            const averageStats = item['Fusion Params'];
+            const fuse_stats_only = eval(item['Fusion Params Only']);
+            if(progress >= complete){
+                if(averageStats){
+                    const actorId = item['Result Actor'];
+                    const actor = new Game_Actor(actorId);
+                    const hp = actor.param(0);
+                    const mp = actor.param(1);
+                    const atk = actor.param(2);
+                    const def = actor.param(3);
+                    const mat = actor.param(4);
+                    const mdf = actor.param(5);
+                    const agi = actor.param(6);
+                    const luk = actor.param(7);
+                    const parAvgs = item['Fusion Params'];
+                    if(!actor._breed_bonus){
+                        actor.initBreederBonus();
+                    }
+                    if(fuse_stats_only){
+                        actor._breed_bonus[0] += parAvgs[0];          
+                        actor._breed_bonus[1] += parAvgs[1];            
+                        actor._breed_bonus[2] += parAvgs[2];
+                        actor._breed_bonus[3] += parAvgs[3];
+                        actor._breed_bonus[4] += parAvgs[4];
+                        actor._breed_bonus[5] += parAvgs[5];
+                        actor._breed_bonus[6] += parAvgs[6];
+                        actor._breed_bonus[7] += parAvgs[7];
+                    }else{
+                        actor._breed_bonus[0] += parAvgs[0] - hp;
+                        actor._breed_bonus[1] += parAvgs[1] - mp;
+                        actor._breed_bonus[2] += parAvgs[2] - atk;
+                        actor._breed_bonus[3] += parAvgs[3] - def;
+                        actor._breed_bonus[4] += parAvgs[4] - mat;
+                        actor._breed_bonus[5] += parAvgs[5] - mdf;
+                        actor._breed_bonus[6] += parAvgs[6] - agi;
+                        actor._breed_bonus[7] += parAvgs[7] - luk;
+                    }
+                    actor._fuse_only_params = fuse_stats_only;
+                    actor.setTp(0);
+                    actor.setGender();
+                    if($gameParty._actors.length >= $gameParty.maxBattleMembers()){
+                        actor.onBattleEnd();
+                        $gameParty.addToReserve(actor);
+                    }else{
+                        actor.onBattleStart();
+                        $gameParty._actors.push(actor);
+                    }
+                }else{
+                    const actorId = item['Result Actor'];
+                    $gameParty.addActor(actorId);
+                    $gameParty._breederArray.splice(i, 1);
+                    i--
+                }
+            }
+        }
+    }
+}
+
 Game_Player.prototype.customData = function(){
     return this._custom_data;
 }
@@ -2526,7 +2605,27 @@ Game_MonsterCharacter.prototype.setScreenY = function(num){
 Syn_MC_GmBattBse_InitMems = Game_BattlerBase.prototype.initMembers;
 Game_BattlerBase.prototype.initMembers = function() {
     Syn_MC_GmBattBse_InitMems.call(this);
+    this.initBreederBonus();
     this.initPowerPoints();
+}
+
+Game_BattlerBase.prototype.initBreederBonus = function(){
+    this._breed_bonus = [0,0,0,0,0,0,0,0];
+}
+
+Game_BattlerBase.prototype.breederStat = function(id){
+    if(!Array.isArray(this._breed_bonus))this._breed_bonus = [];
+    return this._breed_bonus[id];
+}
+
+Syn_MC_GmBattBse_Param = Game_BattlerBase.prototype.param;
+Game_BattlerBase.prototype.param = function(paramId) {
+    const base = Syn_MC_GmBattBse_Param.call(this, ...arguments);
+    const breeder_bonus = this.breederStat(paramId) || 0;
+    const value = base + breeder_bonus;
+    const maxValue = this.paramMax(paramId);
+    const minValue = this.paramMin(paramId);
+    return Math.round(value.clamp(minValue, maxValue));
 }
 
 Game_BattlerBase.prototype.initPowerPoints = function(){
@@ -2695,11 +2794,6 @@ Game_Actor.prototype.setup = function(actorId) {
         throw new Error(`Actor Id ${actorId} is invalid. It is either greater than the number of actors or less than or completely invalid. Please check database setup.`)
     }
     Syn_MC_GmActr_Setup.call(this, ...arguments);
-    this.initBreederBonus();
-}
-
-Game_Actor.prototype.initBreederBonus = function(){
-    this._breed_bonus = [0,0,0,0,0,0,0,0];
 }
 
 Game_Actor.prototype.gainExpBreed = function(exp) {
@@ -3159,6 +3253,9 @@ Game_Party.prototype.progressPreBreed = function(){
                 const breeder_obj = map_breeder[id_key];
                 const steps_taken = breeder_obj['Steps'];
                 if(steps_taken >= steps){
+                    const obj = {};
+                    obj['Result Actor'] = result_actor_id;
+                    obj['Max Steps'] = steps;
                     const delete_parents = eval(data['Delete Parents']);
                     const percGlobal = ((data['Stat Transfer Global Value'] / 100) || 0)
                     const percAppHp = ((data['HP Transfer'] / 100) || 0) + percGlobal;
@@ -3187,6 +3284,7 @@ Game_Party.prototype.progressPreBreed = function(){
                         breeder_obj['Actor 1'] = null;
                         breeder_obj['Actor 2'] = null;
                     }
+                    breeder_obj['Child'] = obj;
                 }else{
                     if(isNaN(breeder_obj['Steps'])){
                         breeder_obj['Steps'] = 0;

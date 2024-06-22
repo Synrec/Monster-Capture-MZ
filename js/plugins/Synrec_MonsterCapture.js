@@ -40,10 +40,30 @@
  * @type struct<genderConfig>[]
  * @default []
  * 
- * @param Breeder Combination Array
+ * @param Breeder Combinations
  * @desc Create valid actor combinations here
  * @type struct<actorCombine>[]
  * @default []
+ * 
+ * @param Breeder Hatcher Graphic
+ * @parent Breeder Combinations
+ * @desc Character graphic used for breeder graphic
+ * @type file
+ * @dir img/characters/
+ * 
+ * @param Breeder Hatcher Graphic Index
+ * @parent Breeder Combinations
+ * @desc Character graphic index used for breeder graphic
+ * @type number
+ * @min 0
+ * @max 7
+ * @default 0
+ * 
+ * @param Breeder Hatcher Animation
+ * @parent Breeder Combinations
+ * @desc Animation to play for hatching
+ * @type animation
+ * @default 0
  * 
  * @param Map Configurations
  * @desc Setup maps and specific regions/terrain
@@ -2027,6 +2047,38 @@ try{
     Syn_MC.GENDER_CONFIGURATIONS = [];
 }
 
+function BREEDER_ACTOR_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+function BREEDER_COMBINATION_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Actor 1 Required'] = BREEDER_ACTOR_PARSER_MONSTERCAPTURE(obj['Actor 1 Required']);
+        obj['Actor 2 Required'] = BREEDER_ACTOR_PARSER_MONSTERCAPTURE(obj['Actor 2 Required']);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+try{
+    Syn_MC.BREEDER_COMBINATIONS = JSON.parse(Syn_MC.Plugin['Breeder Combinations']).map((config)=>{
+        return BREEDER_COMBINATION_PARSER_MONSTERCAPTURE(config);
+    }).filter(Boolean)
+}catch(e){
+    Syn_MC.BREEDER_COMBINATIONS = [];
+}
+
+Syn_MC.BREEDER_HATCH_GFX = Syn_MC.Plugin['Breeder Hatcher Graphic'];
+Syn_MC.BREEDER_HATCH_GFX_INDEX = Syn_MC.Plugin['Breeder Hatcher Graphic Index'];
+Syn_MC.BREEDER_HATCH_GFX_ANIM = Syn_MC.Plugin['Breeder Hatcher Animation'];
+
 function REGION_DATA_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -2357,7 +2409,11 @@ Game_Map.prototype.updateHatch = function(){
         return item['Step Progress'] >= item['Step Complete']
     })
     if(validHatches.length <= 0)return;
-    if(SynrecMC.Breeder.CharImg && !isNaN(SynrecMC.Breeder.CharIdx) && !isNaN(SynrecMC.Breeder.AnimHatch)){
+    if(
+        Syn_MC.BREEDER_HATCH_GFX && 
+        !isNaN(Syn_MC.BREEDER_HATCH_GFX_INDEX) && 
+        !isNaN(Syn_MC.BREEDER_HATCH_GFX_ANIM)
+    ){
         SceneManager.push(Scene_Hatch);
     }else{
         for(let i = 0; i < $gameParty._breederArray.length; i++){

@@ -78,6 +78,18 @@
  * @desc Configure UI settings for battle
  * @type struct<battleUI>
  * 
+ * @param Default Actor Battlers
+ * @parent Battle UI Configuration
+ * @desc The default limit of actor battlers during battle
+ * @type text
+ * @default 1
+ * 
+ * @param Default Enemy Battlers
+ * @parent Battle UI Configuration
+ * @desc The default limit of enemy battlers during battle
+ * @type text
+ * @default 1
+ * 
  * @param Beastiary UI Configuration
  * @desc Configure UI settings for battle
  * @type struct<beastiaryUI>
@@ -2283,6 +2295,47 @@ function ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
         return;
     }
 }
+BattleManager.setTeamMenu = function(teamMenu){
+    this._teamMenu = teamMenu;
+}
+
+synrecBMstartBattle = BattleManager.startBattle;
+BattleManager.startBattle = function() {
+    synrecBMstartBattle.call(this);
+    this.processActiveMembers();
+}
+
+BattleManager.processActiveMembers = function(){
+    this._hasActor = true;
+    this._hasEnemy = true;
+    const setActors = $gameTemp._numBattleActors;
+    const setEnemies = $gameTemp._numBattleEnemies;
+    this._numActors = setActors ? setActors : SynrecMC.Battle.MaxActorBattler;
+    this._numEnemies = setEnemies ? setEnemies : SynrecMC.Battle.MaxEnemyBattler;
+    let partyLength = $gameParty._actors.length;
+    let enemyLength = $gameTroop._enemies.length;
+    $gameParty._actors.forEach(actor => actor.appear());
+    if(this._numActors <= partyLength){
+        for(i = partyLength - 1; i >= 0; i--){
+            if(i >= this._numActors){
+                $gameParty._actors[i].hide();
+            }else{
+                i = 0;
+            }
+        }
+    }
+    if(this._numEnemies <= enemyLength){
+        for(i = enemyLength - 1; i >= 0; i--){
+            if(i >= this._numEnemies){
+                $gameTroop._enemies[i].hide();
+            }else{
+                i = 0;
+            }
+        }
+    }
+    $gameTemp._numBattleActors = undefined;
+    $gameTemp._numBattleEnemies = undefined;
+}
 
 Syn_MC_GmSys_Init = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function(){
@@ -3673,6 +3726,203 @@ SpriteMenu_BattlerMonster.prototype.refreshMotion = function(){
     this.startMotion(this._setMotion);
 }
 
+Syn_MC_SprtBatt_SetBatt = Sprite_Battler.prototype.setBattler;
+Sprite_Battler.prototype.setBattler = function(battler) {
+    Syn_MC_SprtBatt_SetBatt.call(this, battler);
+    if(battler)this.setGendHex(battler);
+    if(battler)this.setGendFilter(battler);
+}
+
+Sprite_Battler.prototype.setGendHex = function(battler){
+    if(battler.isActor() && this._mainSprite){
+        const gender = battler._gender;
+        if(gender){
+            const color = this.getGenderConfiguration(gender);
+            if(color){
+                const value = color['Hex Color'];
+                const alpha = color['Color Alpha'];
+                const redVal = parseInt(`${value[1]}${value[2]}`, 16);
+                const grnVal = parseInt(`${value[3]}${value[4]}`, 16);
+                const bluVal = parseInt(`${value[5]}${value[6]}`, 16);
+                const alphaVal = 255 * alpha;
+                this._mainSprite._blendColorGend = [redVal, grnVal, bluVal, alphaVal];
+                this._mainSprite._blendColor = this._blendColorGend;
+                this._updateColorFilter();
+            }
+        }
+    }else if(battler.isEnemy()){
+        const gender = battler._gender;
+        if(gender){
+            const color = this.getGenderConfiguration(gender);
+            if(color){
+                const value = color['Hex Color'];
+                const alpha = color['Color Alpha'];
+                const redVal = parseInt(`${value[1]}${value[2]}`, 16);
+                const grnVal = parseInt(`${value[3]}${value[4]}`, 16);
+                const bluVal = parseInt(`${value[5]}${value[6]}`, 16);
+                const alphaVal = 255 * alpha;
+                this._blendColorGend = [redVal, grnVal, bluVal, alphaVal];
+                this._blendColor = this._blendColorGend;
+                this._updateColorFilter();
+            }
+        }
+    }
+}
+
+Sprite_Battler.prototype.setGendFilter = function(battler){
+    if(battler.isActor() && this._mainSprite){
+        if(this._mainSprite.filters){
+            if(this._mainSprite.filters.length > 1){
+                this._mainSprite.filters = [];
+            }
+        }else this._mainSprite.filters = [];
+        const gender = battler._gender;
+        if(gender){
+            const filters = this.getGenderConfiguration(gender);
+            if(!filters)return;
+            const applyFilters = filters['Apply Filter'];
+            const blurStr = filters['Blur Strength'];
+            const blurQty = filters['Blur Quality'];
+            const noiseInt = filters['Noise Intensity'];
+            const noiseSed = filters['Noise Seed'];
+            if(applyFilters){
+                for(filt = 0; filt < applyFilters.length; filt++){
+                    var filterSelc = applyFilters[filt];
+                    switch(filterSelc){
+                        case 'blur':
+                            this._mainSprite.filters.push(new PIXI.filters.BlurFilter(blurStr, blurQty));
+                            break;
+                        case 'noise':
+                            this._mainSprite.filters.push(new PIXI.filters.NoiseFilter(noiseInt, noiseSed));
+                            break;
+                        case 'color':
+                            this._mainSprite.filters.push(new PIXI.filters.ColorMatrixFilter());
+                            var index = this.filters.length - 1;
+                            this.applyColorMatrixMethod(index, filters);
+                    }
+                }
+            }else{
+                this._mainSprite.filters = [];
+            }
+        }
+    }else if(battler.isEnemy()){
+        if(this.filters){
+            if(this.filters.length > 1){
+                this.filters = [this.filters[0]];
+            }
+        }
+        const gender = battler._gender;
+        if(gender){
+            const filters = this.getGenderConfiguration(gender);
+            const applyFilters = filters['Apply Filter'];
+            const blurStr = filters['Blur Strength'];
+            const blurQty = filters['Blur Quality'];
+            const noiseInt = filters['Noise Intensity'];
+            const noiseSed = filters['Noise Seed'];
+            if(applyFilters){
+                for(filt = 0; filt < applyFilters.length; filt++){
+                    var filterSelc = applyFilters[filt];
+                    switch(filterSelc){
+                        case 'blur':
+                            this.filters.push(new PIXI.filters.BlurFilter(blurStr, blurQty));
+                            break;
+                        case 'noise':
+                            this.filters.push(new PIXI.filters.NoiseFilter(noiseInt, noiseSed));
+                            break;
+                        case 'color':
+                            this.filters.push(new PIXI.filters.ColorMatrixFilter());
+                            var index = this.filters.length - 1;
+                            this.applyColorMatrixMethod(index, filters);
+                    }
+                }
+            }else{
+                this.filters = [this.filters[0]];
+            }
+        }
+    }
+}
+
+Sprite_Battler.prototype.applyColorMatrixMethod = function(index, filterData){
+    let filter =this._battler.isActor() ? this._mainSprite.filters[index] : this.filters[index];
+    const method = filterData['Color Method'];
+    switch(method){
+        case 'BlackAndWhite':
+            filter.blackAndWhite();
+            break;
+        case 'Brightness':
+            filter.brightness(filterData['Color Brightness']);
+            break;
+        case 'Contrast':
+            filter.contrast(filterData['Color Contrast']);
+            break;
+        case 'Hue':
+            filter.hue(filterData['Color Hue']);
+            break;
+        case 'LSD':
+            filter.lsd();
+            break;
+        case 'Negative':
+            filter.negative();
+            break;
+        case 'Night':
+            filter.night(filterData['Color Night']);
+            break;
+        case 'Predator':
+            filter.predator(filterData['Color Predator']);
+            break;
+        case 'Saturate':
+            filter.predator(filterData['Color Saturate']);
+            break;
+        case 'Sepia':
+            filter.sepia();
+            break;
+        case 'Tint':
+            filter.sepia(filterData['Color Tint']);
+            break;
+        case 'ToBGR':
+            filter.toBGR();
+            break;
+    }
+    filter.alpha = !isNaN(filterData['Method Alpha']) ? eval(filterData['Method Alpha']) : 1;
+}
+
+Sprite_Battler.prototype.getGenderConfiguration = function(gender){
+    const configs = Syn_MC.GENDER_CONFIGURATIONS;
+    return configs.find((config)=>{
+        const name = config['Gender Name'];
+        return name == gender;
+    })
+}
+
+Syn_MC_SprtBatt_UpdtSelcEfct = Sprite_Battler.prototype.updateSelectionEffect;
+Sprite_Battler.prototype.updateSelectionEffect = function() {
+    Syn_MC_SprtBatt_UpdtSelcEfct.call(this)
+    const target = this.mainSprite ? this.mainSprite() : this;
+    if(this._blendColorGend){
+        if (this._battler.isSelected()) {
+            this._selectionEffectCount++;
+            if (this._selectionEffectCount % 30 < 15) {
+                target.setBlendColor([255, 255, 255, 255]);
+            } else {
+                target.setBlendColor(this._blendColorGend);
+            }
+        } else if (this._selectionEffectCount > 0) {
+            this._selectionEffectCount = 0;
+            target.setBlendColor(this._blendColorGend);
+        }
+        this._updateColorFilter();
+    }
+}
+
+Syn_MC_SprtEnem_RvrtNrm = Sprite_Enemy.prototype.revertToNormal;
+Sprite_Enemy.prototype.revertToNormal = function() {
+    Syn_MC_SprtEnem_RvrtNrm.call(this);
+    if(this._blendColorGend){
+        this.setBlendColor(this._blendColorGend);
+        this._updateColorFilter();
+    }
+}
+
 Syn_MC_SprtsetBatt_Updt = Spriteset_Battle.prototype.update;
 Spriteset_Battle.prototype.update = function() {
     Syn_MC_SprtsetBatt_Updt.call(this);
@@ -3692,6 +3942,26 @@ Spriteset_Battle.prototype.updateActorSort = function(){
     this._actorSprites.forEach((actor)=>{
         if(!actor._battler)actor._movementDuration = 0;
     })
+}
+Syn_MC_WinSklList_DrwSklCost = Window_SkillList.prototype.drawSkillCost;
+Window_SkillList.prototype.drawSkillCost = function(skill, x, y, width) {
+    const actor = this._actor;
+    const skill_id = skill.id;
+    const power_skill_data = actor.powerSkills(skill_id)[skill_id];
+    if (power_skill_data) {
+        const pp = power_skill_data['PP'];
+        const max_pp = power_skill_data['Max PP'];
+        if(pp > 0){
+            this.changeTextColor(`#aaffaa`);
+        }else if(pp == 1 && pp != max_pp){
+            this.changeTextColor(`#ffffaa`);
+        }else if(pp == 0){
+            this.changeTextColor(`#ffaaaa`);
+        }
+        this.drawText(`${pp}/${max_pp}`, x, y, width, "right");
+    } else{
+        Syn_MC_WinSklList_DrwSklCost.call(this, ...arguments);
+    }
 }
 
 function WindowMC_GameData(){

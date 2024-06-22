@@ -2350,7 +2350,9 @@ Game_Map.prototype.update = function(sceneActive) {
 }
 
 Game_Map.prototype.updateHatch = function(){
-    if(!$gameParty._breederArray)$gameParty.initBreeder();
+    if(!Array.isArray($gameParty._breederArray)){
+        $gameParty.initBreeder();
+    }
     const validHatches = $gameParty._breederArray.filter((item)=>{
         return item['Step Progress'] >= item['Step Complete']
     })

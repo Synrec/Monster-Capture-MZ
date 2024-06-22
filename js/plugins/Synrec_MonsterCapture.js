@@ -205,6 +205,12 @@
  * @type switch
  * @default 0
  * 
+ * @param Reset Switch
+ * @parent Required Switch
+ * @desc Set switch to false on evolve
+ * @type boolean
+ * @default false
+ * 
  * @param Required Level
  * @desc Level required for the actor to evolve.
  * @type text
@@ -248,6 +254,16 @@
  * Consumed if required
  * @type text
  * @default 0
+ * 
+ * @param Reset Level
+ * @desc Reset level on evolve
+ * @type boolean
+ * @default false
+ * 
+ * @param Evolve Healing
+ * @desc Recoverall on evolve
+ * @type boolean
+ * @default false
  * 
  */
 /*~struct~captureSettings:
@@ -2989,14 +3005,15 @@ Game_Actor.prototype.evolve = function(force_actor){
             this._nickname = actor.nickname;
             this._profile = actor.profile;
             this._classId = actor.classId;
-            if(SynrecMC.EvolutionCore.EvolveReset){
+            if(eval(evolve_configuration['Reset Level'])){
                 this._level = actor.initialLevel;
                 this.initExp();
             }
-            if(SynrecMC.EvolutionCore.EvolveHeal)this.recoverAll();
+            if(eval(evolve_configuration['Evolve Healing']))this.recoverAll();
             this.initImages();
-            if(evolveSwitchId && SynrecMC.EvolutionCore.EvolSwtchReset){
-                $gameSwitches.setValue(evolveSwitchId, false);
+            const ev_sw_id = eval(evolve_configuration['Required Switch']);
+            if(ev_sw_id && eval(evolve_configuration['Reset Switch'])){
+                $gameSwitches.setValue(ev_sw_id, false);
             }
             this.refresh();
             $gameParty.refresh();

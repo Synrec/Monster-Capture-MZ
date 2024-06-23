@@ -3310,7 +3310,7 @@ Game_Enemy.prototype.setupActorEnemy = function(){
     if(config){
         const actor_id = eval(config['Capture Actor'])
         if(actor_id > 0 && !isNaN(actor_id)){
-            this._actor = new Game_Actor(actorId);
+            this._actor = new Game_Actor(actor_id);
             this.setLevel();
             this.recoverAll();
         }else return false;

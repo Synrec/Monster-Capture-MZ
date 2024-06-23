@@ -1937,7 +1937,7 @@
  */
 
 const Syn_MC = {};
-Syn_MC.Plugin = PluginManager.Parameters(`Synrec_MonsterCapture`);
+Syn_MC.Plugin = PluginManager.parameters(`Synrec_MonsterCapture`);
 
 function GAMEOVER_CONFIGURATION_PARSER_MONSTERCAPTURE(obj){
     try{

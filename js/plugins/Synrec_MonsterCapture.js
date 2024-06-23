@@ -3076,7 +3076,7 @@ Game_BattlerBase.prototype.revive = function() {
 }
 
 Game_BattlerBase.prototype.setGender = function(gender){
-    if(SynrecMC.genders.length <= 0)return this._gender = undefined;
+    if(Syn_MC.GENDER_CONFIGURATIONS.length <= 0)return this._gender = undefined;
     if(this._gender)return true;
 	if(gender){
         gender = (gender || "").toLowerCase().replace(/\s/g, '');

@@ -2964,7 +2964,21 @@ Game_Temp.prototype.bootRequiredSceneMC = function(scene){
 Syn_MC_GmSys_Init = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function(){
     Syn_MC_GmSys_Init.call(this, ...arguments);
+    this.initializeCapturedActors();
     this._player_name = "";
+}
+
+Game_System.prototype.initializeCapturedActors = function(){
+    this._captured_actors = [];
+}
+
+Game_System.prototype.captureActor = function(actor){
+    if(!actor)return;
+    if(actor instanceof Game_Actor){
+        this._captureId = !isNaN(this._captureId) ? this._captureId + 1 : 0;
+        actor._captureId = JsonEx.makeDeepCopy(this._captureId);
+        this._obtained_actors.push(actor._actorId);
+    }
 }
 
 Syn_MC_GmActn_SetSub = Game_Action.prototype.setSubject;
@@ -4094,11 +4108,6 @@ Game_Party.prototype.createReserveBoxes = function(){
 Game_Party.prototype.initBreeder = function(){
     this._map_breeder = {};
     this._breederArray = [];
-    // this._breederParent1 = undefined;
-    // this._breederParent2 = undefined;
-    // this._breederChild = undefined;
-    // this._preBreedSteps = 0;
-    // this._preBreedMaxSteps = SynrecMC.Breeder.MaxSteps;
 }
 
 Game_Party.prototype.allMembers = function() {
@@ -4121,13 +4130,12 @@ Game_Party.prototype.removeInvalidMembers = function() {
 }
 
 Game_Party.prototype.setupStartingMembers = function() { //Hard Overwrite
-    $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     this._actors = [];
     for (let i = 0; i < $dataSystem.partyMembers.length; i++) {
         const actor = new Game_Actor($dataSystem.partyMembers[i]);
-        actor._captureId = JsonEx.makeDeepCopy($gameSystem._captureId);
         actor.setGender();
         this._actors.push(actor);
+        $gameSystem.captureActor(actor);
     }
 }
 
@@ -4152,6 +4160,7 @@ Game_Party.prototype.addCaptureActor = function(enemy, hp, mp){
         $gameTemp.requestBattleRefresh();
     }
     this.doAddActorExtra(actor);
+    $gameSystem.captureActor(actor);
 }
 
 Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {

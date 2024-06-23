@@ -4167,6 +4167,17 @@ Spriteset_Battle.prototype.updateActorSort = function(){
         if(!actor._battler)actor._movementDuration = 0;
     })
 }
+
+Spriteset_Battle.prototype.compareSprites = function(a, b, reverse){
+    var ySizeA = a.y + a.height;
+    var ySizeB = b.y + b.height;
+    if(ySizeA != ySizeB){
+        return reverse ? ySizeA - ySizeB : ySizeB - ySizeA;
+    }else{
+        return b.spriteId - a.spriteId
+    }
+}
+
 Syn_MC_WinSklList_DrwSklCost = Window_SkillList.prototype.drawSkillCost;
 Window_SkillList.prototype.drawSkillCost = function(skill, x, y, width) {
     const actor = this._actor;

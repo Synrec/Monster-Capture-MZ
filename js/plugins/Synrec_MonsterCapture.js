@@ -2568,14 +2568,14 @@ Game_Action.prototype.playCaptureSuccess = function(target){
     $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     const hpSet = target._hp;
     const mpSet = target._mp;
-    const anim = this.item().animationId;
-    if(anim){
-        if(Utils.RPGMAKER_NAME == 'MV'){
-            target.startAnimation(anim);
-        }else{
-            $gameTemp.requestAnimation([target], anim);
-        }
-    }
+    // const anim = this.item().animationId;
+    // if(anim){
+    //     if(Utils.RPGMAKER_NAME == 'MV'){
+    //         target.startAnimation(anim);
+    //     }else{
+    //         $gameTemp.requestAnimation([target], anim);
+    //     }
+    // }
     const capture_actor = target._actor;
     capture_actor._captureId = JsonEx.makeDeepCopy($gameSystem._captureId);
     target._isCaptured = true;

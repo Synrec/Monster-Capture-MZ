@@ -3676,7 +3676,7 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
     }
     $gamePlayer.refresh();
     $gameMap.requestRefresh();
-    if(!MONSTER_CAPTURE_MV)$gameTemp.requestBattleRefresh();
+    if(Utils.RPGMAKER_NAME == 'MZ')$gameTemp.requestBattleRefresh();
     if(actor)this.doAddActorExtra(actor);
 }
 

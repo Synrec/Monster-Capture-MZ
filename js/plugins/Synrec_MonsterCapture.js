@@ -2552,7 +2552,7 @@ Game_Action.prototype.performCapture = function(target){
                         !target.hasAntiCaptureState() &&
                         target.hasCaptureState()
                     ){
-                        this.playCaptureSuccess(target, capture_actor_id);
+                        this.playCaptureSuccess(target);
                     }else{
                         this.playCaptureFail(target);
                     }
@@ -2564,7 +2564,7 @@ Game_Action.prototype.performCapture = function(target){
     }
 }
 
-Game_Action.prototype.playCaptureSuccess = function(target, actor){
+Game_Action.prototype.playCaptureSuccess = function(target){
     $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     const hpSet = target._hp;
     const mpSet = target._mp;
@@ -2576,10 +2576,12 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
             $gameTemp.requestAnimation([target], anim);
         }
     }
+    const capture_actor = target._actor;
+    capture_actor._captureId = JsonEx.makeDeepCopy($gameSystem._captureId);
     target._isCaptured = true;
     target.die();
     target.refresh();
-    $gameParty.addCaptureActor(actor, hpSet, mpSet);
+    $gameParty.addCaptureActor(capture_actor, hpSet, mpSet);
     target._actor = null;
 }
 
@@ -3613,10 +3615,12 @@ Game_Party.prototype.removeInvalidMembers = function() {
     }
 }
 
-Game_Party.prototype.setupStartingMembers = function() {
+Game_Party.prototype.setupStartingMembers = function() { //Hard Overwrite
+    $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     this._actors = [];
     for (let i = 0; i < $dataSystem.partyMembers.length; i++) {
-        let actor = new Game_Actor($dataSystem.partyMembers[i]);
+        const actor = new Game_Actor($dataSystem.partyMembers[i]);
+        actor._captureId = JsonEx.makeDeepCopy($gameSystem._captureId);
         actor.setGender();
         this._actors.push(actor);
     }

@@ -2501,10 +2501,13 @@ Game_Action.prototype.applyItemUserEffect = function(target) {
 }
 
 Game_Action.prototype.checkCapture = function(target){
-    const item = this.item();
-    const itemCaptureRate = !isNaN(eval(item.meta.captureRate))? eval(item.meta.captureRate) / captureDivisor : SynrecMC.baseCapture / captureDivisor;
-    if(!itemCaptureRate)return;
-    if(this.subject().isActor())this.performCapture(target);
+    const skill_configs = Syn_MC.SKILL_CONFIGURATIONS;
+    const item_configs = Syn_MC.ITEM_CONFIGURATIONS;
+    const data = this.item();
+    const config = DataManager.isSkill(data) ? skill_configs.find(config => eval(config['Skill']) == data.id) : DataManager.isItem(data) ? item_configs.find(config => eval(config['Item']) == data.id) : null;
+    if(config && this.subject().isActor()){
+        this.performCapture(target);
+    }
 }
 
 Game_Action.prototype.performCapture = function(target){

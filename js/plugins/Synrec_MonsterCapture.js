@@ -2552,7 +2552,8 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
     target._isCaptured = true;
     target.die();
     target.refresh();
-    $gameParty.addActor(actor, captureLevel, hpSet, mpSet, gender);
+    $gameParty.addCaptureActor(actor, hpSet, mpSet);
+    target._actor = null;
 }
 
 Game_Action.prototype.playCaptureFail = function(target){
@@ -3570,6 +3571,29 @@ Game_Party.prototype.setupStartingMembers = function() {
         }
         this._actors.push(actor);
     }
+}
+
+Game_Party.prototype.addCaptureActor = function(enemy, hp, mp){
+    const actor = enemy._actor;
+    if(!actor)return;
+    hp = isNaN(hp) ? actor.hp : hp;
+    mp = isNaN(mp) ? actor.mp : mp;
+    actor.setHp(hp);
+    actor.setMp(mp);
+    actor.setTp(0);
+    if(this._actors.length >= this.maxBattleMembers()){
+        actor.onBattleEnd();
+        this.addToReserve(actor);
+    }else{
+        actor.onBattleStart();
+        this._actors.push(actor);
+    }
+    $gamePlayer.refresh();
+    $gameMap.requestRefresh();
+    if(Utils.RPGMAKER_NAME == 'MZ'){
+        $gameTemp.requestBattleRefresh();
+    }
+    this.doAddActorExtra(actor);
 }
 
 Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {

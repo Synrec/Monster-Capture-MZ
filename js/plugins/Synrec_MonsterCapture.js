@@ -19,6 +19,11 @@
  * @type struct<enemyPlayer>[]
  * @default []
  * 
+ * @param Capture Fail Animation
+ * @desc The animation to play when capture fails
+ * @type animation
+ * @default 0
+ * 
  * @param Actor Configurations
  * @desc Setup actors for the project.
  * @type struct<actorData>[]
@@ -2554,13 +2559,13 @@ Game_Action.prototype.performCapture = function(target){
     }
 }
 
+Syn_MC.CAPTURE_FAIL_ANIMATION = eval(Syn_MC.Plugin['Capture Fail Animation']);
+
 Game_Action.prototype.playCaptureSuccess = function(target, actor){
     $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
-    const captureLevel = isNaN(target._level) ? 1 : target._level;
     const hpSet = target._hp;
     const mpSet = target._mp;
-    const gender = target._gender;
-    const anim = eval(SynrecMC.successCaptureAnim);
+    const anim = this.item().animationId;
     if(anim){
         if(MONSTER_CAPTURE_MV){
             target.startAnimation(anim);
@@ -2576,7 +2581,7 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
 }
 
 Game_Action.prototype.playCaptureFail = function(target){
-    const anim = eval(SynrecMC.failCaptureAnim);
+    const anim = Syn_MC.CAPTURE_FAIL_ANIMATION;
     if(anim){
         if(MONSTER_CAPTURE_MV){
             target.startAnimation(anim);

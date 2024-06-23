@@ -2213,6 +2213,9 @@ try{
     Syn_MC.MAP_CONFIGURATIONS = [];
 }
 
+Syn_MC.DEFAULT_MAX_BATTLE_ACTORS = eval(Syn_MC.Plugin['Default Actor Battlers']) || 1;
+Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES = eval(Syn_MC.Plugin['Default Enemy Battlers']) || 1;
+
 function ANIM_IMAGE_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -2367,9 +2370,9 @@ BattleManager.setTeamMenu = function(teamMenu){
     this._teamMenu = teamMenu;
 }
 
-synrecBMstartBattle = BattleManager.startBattle;
+Syn_MC_BattMngr_StrtBatt = BattleManager.startBattle;
 BattleManager.startBattle = function() {
-    synrecBMstartBattle.call(this);
+    Syn_MC_BattMngr_StrtBatt.call(this);
     this.processActiveMembers();
 }
 
@@ -2378,8 +2381,8 @@ BattleManager.processActiveMembers = function(){
     this._hasEnemy = true;
     const setActors = $gameTemp._numBattleActors;
     const setEnemies = $gameTemp._numBattleEnemies;
-    this._numActors = setActors ? setActors : SynrecMC.Battle.MaxActorBattler;
-    this._numEnemies = setEnemies ? setEnemies : SynrecMC.Battle.MaxEnemyBattler;
+    this._numActors = !isNaN(setActors) ? setActors : Syn_MC.DEFAULT_MAX_BATTLE_ACTORS;
+    this._numEnemies = !isNaN(setEnemies) ? setEnemies : Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES;
     let partyLength = $gameParty._actors.length;
     let enemyLength = $gameTroop._enemies.length;
     $gameParty._actors.forEach(actor => actor.appear());
@@ -2403,6 +2406,34 @@ BattleManager.processActiveMembers = function(){
     }
     $gameTemp._numBattleActors = undefined;
     $gameTemp._numBattleEnemies = undefined;
+}
+
+Game_Temp.prototype.setMaxBattlers = function(actors, enemies){
+    this._numBattleActors = actors || Syn_MC.DEFAULT_MAX_BATTLE_ACTORS;
+    this._numBattleEnemies = enemies || Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES;
+}
+
+Game_Temp.prototype.reserveBootScene = function(data){
+    if(!Array.isArray(this._rsvpScenesMC))this._rsvpScenesMC = [];
+    this._rsvpScenesMC.push(data);
+}
+
+Game_Temp.prototype.updateReserveScene = function(){
+    if(!Array.isArray(this._rsvpScenesMC))this._rsvpScenesMC = [];
+    if(SceneManager.isSceneChanging())return;
+    const data = this._rsvpScenesMC.pop();
+    if(data){
+        this.bootRequiredSceneMC(data)
+    }
+}
+
+Game_Temp.prototype.bootRequiredSceneMC = function(scene){
+    if(scene){
+        const name = scene.scene;
+        const prep = scene.prep;
+        SceneManager.push(name);
+        SceneManager.prepareNextScene(...prep);
+    }
 }
 
 Syn_MC_GmSys_Init = Game_System.prototype.initialize;
@@ -2620,14 +2651,92 @@ Game_Map.prototype.updateHatch = function(){
     }
 }
 
+Syn_MC_GmPlyr_Init = Game_Player.prototype.initMembers;
+Game_Player.prototype.initMembers = function() {
+    Syn_MC_GmPlyr_Init.call(this, ...arguments);
+    this._equipData = [];
+    this._equipInventory = [];
+    this.createEquipSlots();
+}
+
+Game_Player.prototype.createEquipSlots = function(){
+    for (let i = 0; i < SynrecMC.PlayerSetup.PlayerInvTypes.length; i++) {
+        let index = i;
+        let name = SynrecMC.PlayerSetup.PlayerInvTypes[i];
+        this._equipInventory.push({index:index, name:name, inventory:[]});
+        this._equipData.push({index:index, name:name, equip:undefined})
+    }
+    this._equipInventory.push({index:this._equipInventory.length, name:"UNDEFINED", inventory:[]});
+    this._equipData.push({index:this._equipData.length, name:"UNDEFINED", equip:undefined})
+}
+
+Game_Player.prototype.equipChange = function(armorId){
+    const armor = $dataArmors[armorId];
+    let category = undefined;
+    if(armor){
+        const catName = armor.meta['Player Equip'];
+        category = catName ? catName.replace(/\s+/g, '') : "UNDEFINED";
+        if(!category)category = "UNDEFINED";
+        if(armorId){
+            for(let i = 0; i < this._equipInventory.length; i++){
+                let invType = this._equipInventory[i];
+                if(invType["name"] == category){
+                    if(!invType["inventory"].includes(armorId)){
+                        SoundManager.playBuzzer();
+                        return;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    for(let j = 0; j < this._equipData.length; j++){
+        let eqType = this._equipData[j];
+        if(eqType['name'] == category){
+            eqType["equip"] = armorId ? armorId : undefined;
+            return;
+        }
+    }
+}
+
+Game_Player.prototype.gainEquip = function(armorId){
+    const armor = $dataArmors[armorId];
+    const catName = armor.meta['Player Equip'];
+    let category = catName ? catName.replace(/\s+/g, '') : "UNDEFINED";
+    for(let i = 0; i < this._equipInventory.length; i++){
+        let invType = this._equipInventory[i];
+        if(invType["name"] == category){
+            if(invType["inventory"].includes(armorId)){
+                SoundManager.playBuzzer();
+                return;
+            }
+            invType["inventory"].push(armorId);
+        }
+    }
+}
+
+Game_Player.prototype.loseEquip = function(armorId){
+    const armor = $dataArmors[armorId];
+    let category = armor.meta['Player Equip'].replace(/\s+/g, '');
+    if(!category)category = "UNDEFINED";
+    for(let i = 0; i < this._equipInventory.length; i++){
+        let invType = this._equipInventory[i];
+        if(invType["name"] == category){
+            if(invType["inventory"].includes(armorId)){
+                const index = invType["inventory"].indexOf(armorId);
+                invType["inventory"].splice(index, 1);
+                return;
+            }
+        }
+    }
+}
+
 Syn_MC_GmPlyr_MvStrt = Game_Player.prototype.moveStraight;
 Game_Player.prototype.moveStraight = function(d) {
     if (this.canPass(this.x, this.y, d)){
         $gameParty.progressBreed();
         $gameParty.progressPreBreed();
-        if(SynrecMC.Breeder.ParentEXP){
-            $gameParty.grantParentBreedEXP();
-        }
+        $gameParty.grantParentBreedEXP();
     }
     Syn_MC_GmPlyr_MvStrt.call(this, d);
 }
@@ -4575,6 +4684,16 @@ WindowMC_ActorData.prototype.displayBattler = function(){
     }
 }
 
+Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    Syn_MC_ScnMap_Updt.call(this);
+    this.updateRsvpScenes();
+}
+
+Scene_Map.prototype.updateRsvpScenes = function(){
+    $gameTemp.updateReserveScene();
+}
+
 Syn_MC_ScnGmOver_Updt = Scene_Gameover.prototype.update;
 Scene_Gameover.prototype.update = function() {
     if (this.isActive() && !this.isBusy() && this.isTriggered()) {
@@ -4615,4 +4734,27 @@ Scene_Gameover.prototype.processPenalty = function(gameover_config){
     });
     const event = eval(gameover_config['Event']) || 0;
     if(event)$gameTemp.reserveCommonEvent(event);
+}
+
+function Scene_Rename(){
+    this.initialize(...arguments);
+}
+
+Scene_Rename.prototype = Object.create(Scene_Name.prototype);
+Scene_Rename.prototype.constructor = Scene_Rename;
+
+Scene_Rename.prototype.prepare = function(actorId, maxLength) {
+    this._actor = actorId;
+    this._maxLength = maxLength;
+}
+
+Scene_Rename.prototype.create = function() {
+    Scene_Base.prototype.create.call(this);
+    this.createBackground();
+    this.createWindowLayer();
+    if(Utils.RPGMAKER_NAME == 'MZ'){
+        this.createButtons();
+    }
+    this.createEditWindow();
+    this.createInputWindow();
 }

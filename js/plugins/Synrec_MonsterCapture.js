@@ -2961,6 +2961,10 @@ Game_Temp.prototype.bootRequiredSceneMC = function(scene){
     }
 }
 
+Game_Temp.prototype.renamePlayer = function(){
+    SceneManager.push(SceneMC_PlayerRename);
+}
+
 Syn_MC_GmSys_Init = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function(){
     Syn_MC_GmSys_Init.call(this, ...arguments);
@@ -2973,6 +2977,7 @@ Game_System.prototype.initializeCapturedActors = function(){
 }
 
 Game_System.prototype.captureActor = function(actor){
+    if(!Array.isArray(this._obtained_actors))this._obtained_actors = [];
     if(!actor)return;
     if(actor instanceof Game_Actor){
         this._captureId = !isNaN(this._captureId) ? this._captureId + 1 : 0;
@@ -3079,11 +3084,8 @@ Game_Action.prototype.performCapture = function(target){
 }
 
 Game_Action.prototype.playCaptureSuccess = function(target){
-    $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     const hpSet = target._hp;
     const mpSet = target._mp;
-    const capture_actor = target._actor;
-    capture_actor._captureId = JsonEx.makeDeepCopy($gameSystem._captureId);
     target._isCaptured = true;
     target.die();
     target.refresh();
@@ -4187,6 +4189,7 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
     $gameMap.requestRefresh();
     if(Utils.RPGMAKER_NAME == 'MZ')$gameTemp.requestBattleRefresh();
     if(actor)this.doAddActorExtra(actor);
+    $gameSystem.captureActor(actor);
 }
 
 Game_Party.prototype.doAddActorExtra = function(actor){
@@ -6063,6 +6066,127 @@ WindowMC_BoxActorSelector.prototype.displayBattler = function(rect, index, actor
     }
 }
 
+function WindowMC_PlayerNameEdit(){
+    this.initialize(...arguments);
+}
+
+WindowMC_PlayerNameEdit.prototype = Object.create(Window_NameEdit.prototype);
+WindowMC_PlayerNameEdit.prototype.constructor = WindowMC_PlayerNameEdit;
+
+WindowMC_PlayerNameEdit.prototype.setup = function() {
+    const player = $gamePlayer;
+    const custom_data = player.customData();
+    this._face_name = custom_data ? custom_data['Face File'] : "";
+    this._face_index = custom_data ? eval(custom_data['Face File']) : 0;
+    this._maxLength = 32;
+    this._name = $gameSystem._player_name.slice(0, this._maxLength);
+    this._index = this._name.length;
+    this._defaultName = this._name;
+    ImageManager.loadFace(this._face_name);
+}
+
+WindowMC_PlayerNameEdit.prototype.name = function() {
+    return this._name;
+}
+
+WindowMC_PlayerNameEdit.prototype.restoreDefault = function() {
+    this._name = this._defaultName;
+    this._index = this._name.length;
+    this.refresh();
+    return this._name.length > 0;
+}
+
+WindowMC_PlayerNameEdit.prototype.add = function(ch) {
+    if (this._index < this._maxLength) {
+        this._name += ch;
+        this._index++;
+        this.refresh();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+WindowMC_PlayerNameEdit.prototype.back = function() {
+    if (this._index > 0) {
+        this._index--;
+        this._name = this._name.slice(0, this._index);
+        this.refresh();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+WindowMC_PlayerNameEdit.prototype.faceWidth = function() {
+    return 144;
+}
+
+WindowMC_PlayerNameEdit.prototype.charWidth = function() {
+    const text = $gameSystem.isJapanese() ? "\uff21" : "A";
+    return this.textWidth(text);
+}
+
+WindowMC_PlayerNameEdit.prototype.left = function() {
+    const nameCenter = (this.innerWidth + this.faceWidth()) / 2;
+    const nameWidth = (this._maxLength + 1) * this.charWidth();
+    return Math.min(nameCenter - nameWidth / 2, this.innerWidth - nameWidth);
+}
+
+WindowMC_PlayerNameEdit.prototype.itemRect = function(index) {
+    const x = this.left() + index * this.charWidth();
+    const y = 54;
+    const width = this.charWidth();
+    const height = this.lineHeight();
+    return new Rectangle(x, y, width, height);
+}
+
+WindowMC_PlayerNameEdit.prototype.underlineRect = function(index) {
+    const rect = this.itemRect(index);
+    rect.x++;
+    rect.y += rect.height - 4;
+    rect.width -= 2;
+    rect.height = 2;
+    return rect;
+}
+
+WindowMC_PlayerNameEdit.prototype.underlineColor = function() {
+    return '#aaffaa';
+}
+
+WindowMC_PlayerNameEdit.prototype.drawUnderline = function(index) {
+    const rect = this.underlineRect(index);
+    const color = this.underlineColor();
+    this.contents.paintOpacity = 48;
+    this.contents.fillRect(rect.x, rect.y, rect.width, rect.height, color);
+    this.contents.paintOpacity = 255;
+}
+
+WindowMC_PlayerNameEdit.prototype.drawChar = function(index) {
+    const rect = this.itemRect(index);
+    this.resetTextColor();
+    this.drawText(this._name[index] || "", rect.x, rect.y);
+}
+
+WindowMC_PlayerNameEdit.prototype.refresh = function() {
+    this.contents.clear();
+    this.drawPlayerFace(this._actor, 0, 0);
+    for (let i = 0; i < this._maxLength; i++) {
+        this.drawUnderline(i);
+    }
+    for (let j = 0; j < this._name.length; j++) {
+        this.drawChar(j);
+    }
+    const rect = this.itemRect(this._index);
+    this.setCursorRect(rect.x, rect.y, rect.width, rect.height);
+}
+
+WindowMC_PlayerNameEdit.prototype.drawPlayerFace = function(){
+    const face_name = this._face_name;
+    const face_index = this._face_index;
+    this.drawFace(face_name, face_index, 0, 0, 144, 144);
+}
+
 Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     Syn_MC_ScnMap_Updt.call(this);
@@ -6140,6 +6264,36 @@ SceneMC_Rename.prototype.create = function() {
 
 SceneMC_Rename.prototype.onInputOk = function() {
     this._actor.setNickname(this._editWindow.name());
+    this.popScene();
+}
+
+function SceneMC_PlayerRename(){
+    this.initialize(...arguments);
+}
+
+SceneMC_PlayerRename.prototype = Object.create(Scene_Name.prototype);
+SceneMC_PlayerRename.prototype.constructor = SceneMC_PlayerRename;
+
+SceneMC_PlayerRename.prototype.create = function() {
+    Scene_Base.prototype.create.call(this);
+    this.createBackground();
+    this.createWindowLayer();
+    if(Utils.RPGMAKER_NAME == 'MZ'){
+        this.createButtons();
+    }
+    this.createEditWindow();
+    this.createInputWindow();
+}
+
+Scene_Name.prototype.createEditWindow = function() {
+    const rect = this.editWindowRect();
+    this._editWindow = new WindowMC_PlayerNameEdit(rect);
+    this._editWindow.setup();
+    this.addWindow(this._editWindow);
+}
+
+SceneMC_PlayerRename.prototype.onInputOk = function() {
+    $gameSystem._player_name = this._editWindow.name();
     this.popScene();
 }
 

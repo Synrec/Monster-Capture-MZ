@@ -3382,7 +3382,7 @@ Game_Enemy.prototype.setLevel = function(force_level, recover){
     const py = $gamePlayer.y;
     const map_id = $gameMap._mapId;
     if(!map_id){
-        this._actor._level = this._level || force_level || $dataActors[this._actor._actorId].initialLevel;
+        this._actor._level = force_level || this._level || $dataActors[this._actor._actorId].initialLevel;
         this._actor.initExp();
         this._actor.initSkills();
         this._level = this._actor._level;
@@ -3397,7 +3397,7 @@ Game_Enemy.prototype.setLevel = function(force_level, recover){
         return eval(config['Map']) == map_id;
     })
     if(!map_config){
-        this._actor._level = this._level || force_level || $dataActors[this._actor._actorId].initialLevel;
+        this._actor._level = force_level || this._level || $dataActors[this._actor._actorId].initialLevel;
         this._actor.initExp();
         this._actor.initSkills();
         this._level = this._actor._level;
@@ -3420,7 +3420,7 @@ Game_Enemy.prototype.setLevel = function(force_level, recover){
     if(maxLevel < minLevel)throw new Error("Max level is set less than min level. Please check plugin / map settings.");
     const bandWidth = Math.abs(Math.floor(maxLevel - minLevel));
     if(minLevel + bandWidth > actorMaxLevel)throw new Error("Actor maximum level set too low with current settings.");
-    this._actor._level = this._level || force_level || Math.min($dataActors[this._actor._actorId].maxLevel, (minLevel + Math.randomInt(bandWidth)));
+    this._actor._level = force_level || this._level || Math.min($dataActors[this._actor._actorId].maxLevel, (minLevel + Math.randomInt(bandWidth)));
     this._actor.initExp();
     this._actor.initSkills();
     this._level = this._actor._level;

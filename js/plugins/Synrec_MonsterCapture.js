@@ -3458,8 +3458,8 @@ Game_Enemy.prototype.performSwap = function(){
     this.hide();
     $gameTroop.members()[this._swapId].appear();
     const animTarget = $gameTroop.members()[this._swapId];
-    const anim = !isNaN(SynrecMC.Battle.SwapAnim) ? SynrecMC.Battle.SwapAnim : 4;
-    if(MONSTER_CAPTURE_MV){
+    const anim = 0;
+    if(Utils.RPGMAKER_NAME == 'MV'){
         this.startAnimation(anim);
     }else{
         $gameTemp.requestAnimation([animTarget], anim);
@@ -4256,7 +4256,7 @@ Window_BattleLog.prototype.endAction = function(subject) {
 }
 
 Window_BattleLog.prototype.checkForDeathSwap = function(){
-    const anim = !isNaN(SynrecMC.Battle.SwapAnim) ? SynrecMC.Battle.SwapAnim : 4;
+    const anim = 0;
     $gameParty.allMembers().forEach((member)=>{
         if(!member._hidden && member._hp <= 0){
             for(let i = 0; i < $gameParty.allMembers().length; i++){

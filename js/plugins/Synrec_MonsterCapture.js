@@ -19,11 +19,6 @@
  * @type struct<enemyPlayer>[]
  * @default []
  * 
- * @param Capture Fail Animation
- * @desc The animation to play when capture fails
- * @type animation
- * @default 0
- * 
  * @param Actor Configurations
  * @desc Setup actors for the project.
  * @type struct<actorData>[]
@@ -45,6 +40,12 @@
  * @desc Setup enemies for the project.
  * @type struct<enemyData>[]
  * @default []
+ * 
+ * @param Capture Fail Animation
+ * @parent Enemy Configurations
+ * @desc The animation to play when capture fails
+ * @type animation
+ * @default 0
  * 
  * @param Skill Configurations
  * @desc Setup skill data
@@ -441,7 +442,8 @@
  * @default 0.7
  * 
  * @param Allow Capture States
- * @desc States that allow enemy to be captured
+ * @desc States that allow enemy to be captured. 
+ * Leave empty to ignore.
  * @type state[]
  * @default []
  * 
@@ -2107,6 +2109,8 @@ try{
     Syn_MC.ENEMY_CONFIGURATIONS = [];
 }
 
+Syn_MC.CAPTURE_FAIL_ANIMATION = eval(Syn_MC.Plugin['Capture Fail Animation']);
+
 function SKILL_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -2532,6 +2536,7 @@ Game_Action.prototype.performCapture = function(target){
                 const actor_config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
                     return eval(config['Actor']) == capture_actor_id;
                 })
+                console.log(actor_config)
                 if(actor_config){
                     const capture_settings = actor_config['Capture Settings'] || {};
                     const hp_rate = target.hpRate();
@@ -2559,15 +2564,13 @@ Game_Action.prototype.performCapture = function(target){
     }
 }
 
-Syn_MC.CAPTURE_FAIL_ANIMATION = eval(Syn_MC.Plugin['Capture Fail Animation']);
-
 Game_Action.prototype.playCaptureSuccess = function(target, actor){
     $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     const hpSet = target._hp;
     const mpSet = target._mp;
     const anim = this.item().animationId;
     if(anim){
-        if(MONSTER_CAPTURE_MV){
+        if(Utils.RPGMAKER_NAME == 'MV'){
             target.startAnimation(anim);
         }else{
             $gameTemp.requestAnimation([target], anim);
@@ -2583,7 +2586,7 @@ Game_Action.prototype.playCaptureSuccess = function(target, actor){
 Game_Action.prototype.playCaptureFail = function(target){
     const anim = Syn_MC.CAPTURE_FAIL_ANIMATION;
     if(anim){
-        if(MONSTER_CAPTURE_MV){
+        if(Utils.RPGMAKER_NAME == 'MV'){
             target.startAnimation(anim);
         }else{
             $gameTemp.requestAnimation([target], anim);
@@ -3305,6 +3308,32 @@ Game_Enemy.prototype.initialize = function(enemyId, x, y) {
     Syn_MC_GmEnem_Init.call(this, ...arguments);
     this.setupActorEnemy();
     this.refresh();
+}
+
+Game_Enemy.prototype.hasAntiCaptureState = function(){
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id;
+    })
+    if(!config)return;
+    const prevent_states = config['Block Capture States'] ? config['Block Capture States'].map(id => eval(id)) : [];
+    const states = this._states;
+    return states.some((state)=>{
+        return prevent_states.includes(state);
+    })
+}
+
+Game_Enemy.prototype.hasCaptureState = function(){
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id;
+    })
+    if(!config)return;
+    const allow_states = config['Allow Capture States'] ? config['Allow Capture States'].map(id => eval(id)) : [];
+    const states = this._states;
+    return states.some((state)=>{
+        return allow_states.includes(state);
+    }) || allow_states.length < 0
 }
 
 Game_Enemy.prototype.setupActorEnemy = function(){

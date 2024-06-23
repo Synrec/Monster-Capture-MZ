@@ -3578,9 +3578,6 @@ Game_Party.prototype.setupStartingMembers = function() {
     for (let i = 0; i < $dataSystem.partyMembers.length; i++) {
         let actor = new Game_Actor($dataSystem.partyMembers[i]);
         actor.setGender();
-        if(SynrecMC.lockActors){
-            actor._teamLock = true;
-        }
         this._actors.push(actor);
     }
 }

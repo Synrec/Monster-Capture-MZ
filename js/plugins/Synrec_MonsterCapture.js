@@ -4854,3 +4854,8 @@ Scene_Rename.prototype.create = function() {
     this.createEditWindow();
     this.createInputWindow();
 }
+
+Scene_Rename.prototype.onInputOk = function() {
+    this._actor.setNickname(this._editWindow.name());
+    this.popScene();
+}

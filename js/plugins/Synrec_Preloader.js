@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.0.9 Preloads image and audio for the game on start
+ * @plugindesc v1.1.0 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -518,6 +518,9 @@ Scene_Boot.prototype.hasSaveFile = function(){
 Syn_Preload_ScnBse_IsBsy = Scene_Base.prototype.isBusy;
 Scene_Base.prototype.isBusy = function() {
     const base = Syn_Preload_ScnBse_IsBsy.call(this, ...arguments);
+    if(!$gameTemp)return base;
+    const need_preload = $gameTemp._need_preload;
+    if(!need_preload)return base;
     return (
         base || 
         SceneManager._running_preloader || 

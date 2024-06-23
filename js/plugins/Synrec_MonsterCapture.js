@@ -4249,6 +4249,47 @@ Window_SkillList.prototype.drawSkillCost = function(skill, x, y, width) {
     }
 }
 
+Syn_MC_WinBattLog_EndActn = Window_BattleLog.prototype.endAction;
+Window_BattleLog.prototype.endAction = function(subject) {
+    Syn_MC_WinBattLog_EndActn.call(this, subject);
+    this.push("checkForDeathSwap");
+}
+
+Window_BattleLog.prototype.checkForDeathSwap = function(){
+    const anim = !isNaN(SynrecMC.Battle.SwapAnim) ? SynrecMC.Battle.SwapAnim : 4;
+    $gameParty.allMembers().forEach((member)=>{
+        if(!member._hidden && member._hp <= 0){
+            for(let i = 0; i < $gameParty.allMembers().length; i++){
+                let mem = $gameParty.allMembers()[i];
+                if(member != mem){
+                    if(mem._hp > 0){
+                        member._swapId = i;
+                        member.performSwap();
+                        this.push("showAnimation", member, [mem], anim);
+                        member._swapId = undefined;
+                        break;
+                    }
+                }
+            }
+        }
+    })
+    $gameTroop.members().forEach((member)=>{
+        if(member._hp <= 0 && !member._hidden){
+            for(let i = 0; i < $gameTroop.members().length; i++){
+                let mem = $gameTroop.members()[i];
+                if(member != mem){
+                    if(mem._hp > 0){
+                        member._swapId = i;
+                        member.performSwap();
+                        member._swapId = undefined;
+                        break;
+                    }
+                }
+            }
+        }
+    })
+}
+
 function WindowMC_GameData(){
     this.initialize(...arguments);
 }

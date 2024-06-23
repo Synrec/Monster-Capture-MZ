@@ -2620,6 +2620,18 @@ Game_Map.prototype.updateHatch = function(){
     }
 }
 
+Syn_MC_GmPlyr_MvStrt = Game_Player.prototype.moveStraight;
+Game_Player.prototype.moveStraight = function(d) {
+    if (this.canPass(this.x, this.y, d)){
+        $gameParty.progressBreed();
+        $gameParty.progressPreBreed();
+        if(SynrecMC.Breeder.ParentEXP){
+            $gameParty.grantParentBreedEXP();
+        }
+    }
+    Syn_MC_GmPlyr_MvStrt.call(this, d);
+}
+
 Game_Player.prototype.customData = function(){
     return this._custom_data;
 }

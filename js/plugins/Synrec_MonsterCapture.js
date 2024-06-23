@@ -2581,7 +2581,7 @@ Game_Action.prototype.playCaptureSuccess = function(target){
     target._isCaptured = true;
     target.die();
     target.refresh();
-    $gameParty.addCaptureActor(capture_actor, hpSet, mpSet);
+    $gameParty.addCaptureActor(target, hpSet, mpSet);
     target._actor = null;
 }
 

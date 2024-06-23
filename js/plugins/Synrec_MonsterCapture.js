@@ -2536,7 +2536,6 @@ Game_Action.prototype.performCapture = function(target){
                 const actor_config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
                     return eval(config['Actor']) == capture_actor_id;
                 })
-                console.log(actor_config)
                 if(actor_config){
                     const capture_settings = actor_config['Capture Settings'] || {};
                     const hp_rate = target.hpRate();
@@ -2547,8 +2546,9 @@ Game_Action.prototype.performCapture = function(target){
                     const tp_bonus = (eval(capture_settings['TP Bonus']) || 0) * tp_rate;
                     const total_bonus = hp_bonus + mp_bonus + tp_bonus;
                     const capture_chance = capture_rate + total_bonus;
+                    const is_captured = Math.random();
                     if(
-                        Math.random() > capture_chance &&
+                        is_captured < capture_chance &&
                         !target.hasAntiCaptureState() &&
                         target.hasCaptureState()
                     ){
@@ -3315,12 +3315,12 @@ Game_Enemy.prototype.hasAntiCaptureState = function(){
     const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
         return eval(config['Enemy']) == id;
     })
-    if(!config)return;
+    if(!config)return false;
     const prevent_states = config['Block Capture States'] ? config['Block Capture States'].map(id => eval(id)) : [];
     const states = this._states;
     return states.some((state)=>{
         return prevent_states.includes(state);
-    })
+    });
 }
 
 Game_Enemy.prototype.hasCaptureState = function(){
@@ -3328,12 +3328,12 @@ Game_Enemy.prototype.hasCaptureState = function(){
     const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
         return eval(config['Enemy']) == id;
     })
-    if(!config)return;
+    if(!config)return false;
     const allow_states = config['Allow Capture States'] ? config['Allow Capture States'].map(id => eval(id)) : [];
     const states = this._states;
     return states.some((state)=>{
         return allow_states.includes(state);
-    }) || allow_states.length < 0
+    }) || allow_states.length <= 0;
 }
 
 Game_Enemy.prototype.setupActorEnemy = function(){

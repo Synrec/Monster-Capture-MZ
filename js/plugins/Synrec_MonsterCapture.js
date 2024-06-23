@@ -2514,7 +2514,7 @@ Game_Action.prototype.checkCapture = function(target){
 Game_Action.prototype.performCapture = function(target){
     if(target.isEnemy()){
         const data_obj = this.item();
-        const data_config = DataManager.isItem(item_obj) ? Syn_MC.ITEM_CONFIGURATIONS.find(config => eval(config['Item']) == data_obj.id) : DataManager.isSkill(item_obj) ? Syn_MC.SKILL_CONFIGURATIONS.find(config => eval(config['Skill']) == data_obj.id) : null;
+        const data_config = DataManager.isItem(data_obj) ? Syn_MC.ITEM_CONFIGURATIONS.find(config => eval(config['Item']) == data_obj.id) : DataManager.isSkill(data_obj) ? Syn_MC.SKILL_CONFIGURATIONS.find(config => eval(config['Skill']) == data_obj.id) : null;
         if(!data_config)return;
         const capture_rate = eval(data_config['Capture Rate']);
         if(capture_rate > 0 && !isNaN(capture_rate)){

@@ -3380,8 +3380,19 @@ Game_Enemy.prototype.setupActorEnemy = function(){
 Game_Enemy.prototype.setLevel = function(force_level, recover){
     const px = $gamePlayer.x;
     const py = $gamePlayer.y;
-    const region = $gameMap.regionId(px,py);
     const map_id = $gameMap._mapId;
+    if(!map_id){
+        this._actor._level = this._level || force_level || $dataActors[this._actor._actorId].initialLevel;
+        this._actor.initExp();
+        this._actor.initSkills();
+        this._level = this._actor._level;
+        this._skills = this._actor._skills;
+        this._classId = this._actor._classId;
+        this._equips = this._actor._equips;
+        if(recover)this.recoverAll();
+        return;
+    }
+    const region = $gameMap.regionId(px,py);
     const map_config = Syn_MC.MAP_CONFIGURATIONS.find((config)=>{
         return eval(config['Map']) == map_id;
     })
@@ -3703,7 +3714,9 @@ Game_Party.prototype.doAddActorExtra = function(actor){
     const config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
         return eval(config['Actor']) == id;
     })
-    if(!eval(config['Prevent Rename']))this.callRenameScene(actor);
+    if(config){
+        if(!eval(config['Prevent Rename']))this.callRenameScene(actor);
+    }
 }
 
 Game_Party.prototype.callRenameScene = function(actor){

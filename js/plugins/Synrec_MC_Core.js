@@ -1328,7 +1328,7 @@ Game_Party.prototype.doAddActorExtra = function(actor){
 }
 
 Game_Party.prototype.callRenameScene = function(actor){
-    const scene = Scene_Rename;
+    const scene = SceneMC_Rename;
     const max_name_chars = SynrecMC.MaxNameChars;
     const sceneToBoot = {scene,prep:[actor, max_name_chars]};
     $gameTemp.reserveBootScene(sceneToBoot);
@@ -2327,19 +2327,19 @@ Scene_RsvpBox.prototype.cancelSwap = function(){
     this._teamWindow.activate();
 }
 
-function Scene_Rename(){
+function SceneMC_Rename(){
     this.initialize(...arguments);
 }
 
-Scene_Rename.prototype = Object.create(Scene_Name.prototype);
-Scene_Rename.prototype.constructor = Scene_Rename;
+SceneMC_Rename.prototype = Object.create(Scene_Name.prototype);
+SceneMC_Rename.prototype.constructor = SceneMC_Rename;
 
-Scene_Rename.prototype.prepare = function(actorId, maxLength) {
+SceneMC_Rename.prototype.prepare = function(actorId, maxLength) {
     this._actor = actorId;
     this._maxLength = maxLength;
 }
 
-Scene_Rename.prototype.create = function() {
+SceneMC_Rename.prototype.create = function() {
     Scene_Base.prototype.create.call(this);
     this.createBackground();
     this.createWindowLayer();

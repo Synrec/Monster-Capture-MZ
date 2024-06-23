@@ -92,12 +92,26 @@
  * @type struct<mapData>[]
  * @default []
  * 
+ * @param Main Menu UI Configuration
+ * @desc Configure UI settings for menu scene
+ * Leave empty for default. Default maybe bugged.
+ * @type struct<menuUI>
+ * 
  * @param Player UI Configuration
  * @desc Configure UI settings for player scene
  * @type struct<playerUI>
  * 
+ * @param Breeder UI Configuration
+ * @desc Configure UI settings for breeder
+ * @type struct<breederUI>
+ * 
+ * @param Beastiary UI Configuration
+ * @desc Configure UI settings for beastiary
+ * @type struct<beastiaryUI>
+ * 
  * @param Battle UI Configuration
  * @desc Configure UI settings for battle
+ * Adds specific windows to battle scene
  * @type struct<battleUI>
  * 
  * @param Default Actor Battlers
@@ -111,10 +125,6 @@
  * @desc The default limit of enemy battlers during battle
  * @type text
  * @default 1
- * 
- * @param Beastiary UI Configuration
- * @desc Configure UI settings for battle
- * @type struct<beastiaryUI>
  * 
  */
 /*~struct~gameoverConfig:
@@ -1936,6 +1946,387 @@
  * @default 1
  * 
  */
+/*~struct~actorSelcWindow:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default Window
+ * 
+ * @param Dimension Configuration
+ * @desc Setup position and width of the window
+ * @type struct<locSize>
+ * @default {"X":"0","Y":"0","Width":"1","Height":"1"}
+ * 
+ * @param Window Font and Style Configuration
+ * @desc Custom style the window
+ * @type struct<windowStyle>
+ * @default {"Font Settings":"","Font Size":"16","Font Face":"sans-serif","Base Font Color":"#ffffff","Font Outline Color":"rgba(0, 0, 0, 0.5)","Font Outline Thickness":"3","Window Skin":"Window","Window Opacity":"255","Show Window Dimmer":"false"}
+ * 
+ * @param Max Columns
+ * @desc Max columns the window will use
+ * @type number
+ * @default 1
+ * 
+ * @param Item Width
+ * @desc Max width of window items. 0 = Default
+ * @type number
+ * @default 0
+ * 
+ * @param Item Height
+ * @desc Max Item height of window items. 0 = Default
+ * @type number
+ * @default 0
+ * 
+ * @param Gauges
+ * @desc Setup gauges for the window
+ * @type struct<gaugeDraw>[]
+ * @default []
+ * 
+ * @param Draw Actor Name
+ * @desc Draw actor name
+ * @type boolean
+ * @default false
+ * 
+ * @param Name Text
+ * @parent Draw Actor Name
+ * @desc Text used for the name
+ * %1 = Name, %2 = Nickname
+ * @type text
+ * @default %1
+ * 
+ * @param Name X
+ * @parent Draw Actor Name
+ * @desc Position of name in window
+ * @type text
+ * @default 0
+ * 
+ * @param Name Y
+ * @parent Draw Actor Name
+ * @desc Position of name in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw Actor Profile
+ * @desc Draw actor profile
+ * @type boolean
+ * @default false
+ * 
+ * @param Profile X
+ * @parent Draw Actor Profile
+ * @desc Position of profile in window
+ * @type text
+ * @default 0
+ * 
+ * @param Profile Y
+ * @parent Draw Actor Profile
+ * @desc Position of profile in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw Class Level
+ * @desc Draw actor class name and level
+ * @type boolean
+ * @default false
+ * 
+ * @param Class Level Text
+ * @parent Draw Class Level
+ * @desc Draw class name and level
+ * %1 = class name, %2 = level
+ * @type text
+ * @default Class: %1 <%2>
+ * 
+ * @param Class Level X
+ * @parent Draw Class Level
+ * @desc Position of class level in window.
+ * @type text
+ * @default 0
+ * 
+ * @param Class Level Y
+ * @parent Draw Class Level
+ * @desc Position of class level in window.
+ * @type text
+ * @default 0
+ * 
+ * @param Draw HP Resource
+ * @desc Draw actor current and max HP
+ * @type boolean
+ * @default false
+ * 
+ * @param HP Text
+ * @parent Draw HP Resource
+ * @desc Text for HP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[84]%1 / %2
+ * 
+ * @param HP X
+ * @parent Draw HP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param HP Y
+ * @parent Draw HP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw MP Resource
+ * @desc Draw actor current and max MP
+ * @type boolean
+ * @default false
+ * 
+ * @param MP Text
+ * @parent Draw MP Resource
+ * @desc Text for MP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[79]%1 / %2
+ * 
+ * @param MP X
+ * @parent Draw MP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param MP Y
+ * @parent Draw MP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw TP Resource
+ * @desc Draw actor current and max TP
+ * @type boolean
+ * @default false
+ * 
+ * @param TP Text
+ * @parent Draw TP Resource
+ * @desc Text for TP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[79]%1 / %2
+ * 
+ * @param TP X
+ * @parent Draw TP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param TP Y
+ * @parent Draw TP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw Base Params
+ * @desc Draw actor base params
+ * @type struct<actorBaseParamWindow>[]
+ * @default []
+ * 
+ * @param Draw Ex Params
+ * @desc Draw actor extra params
+ * @type struct<actorExParamWindow>[]
+ * @default []
+ * 
+ * @param Draw Sp Params
+ * @desc Draw actor special params
+ * @type struct<actorSpParamWindow>[]
+ * @default []
+ * 
+ * @param Display Map Character
+ * @desc Display actor map character
+ * @type boolean
+ * @default false
+ * 
+ * @param Character Direction
+ * @parent Display Map Character
+ * @desc Facing direction of the character.
+ * @type select
+ * @option down
+ * @value 2
+ * @option left
+ * @value 4
+ * @option right
+ * @value 6
+ * @option up
+ * @value 8
+ * @default 2
+ * 
+ * @param Character X
+ * @parent Display Map Character
+ * @desc Position relative to window
+ * @type text
+ * @default 0
+ * 
+ * @param Character Y
+ * @parent Display Map Character
+ * @desc Position relative to window
+ * @type text
+ * @default 0
+ * 
+ * @param Character Scale X
+ * @parent Display Map Character
+ * @desc Size of the character
+ * @type text
+ * @default 1
+ * 
+ * @param Character Scale Y
+ * @parent Display Map Character
+ * @desc Size of the character
+ * @type text
+ * @default 1
+ * 
+ * @param Display Battler
+ * @desc Display actor battler
+ * @type boolean
+ * @default false
+ * 
+ * @param Battler Motion
+ * @parent Display Battler
+ * @desc Battler motion to refresh to
+ * @type select
+ * @option walk
+ * @option wait
+ * @option chant
+ * @option guard
+ * @option damage
+ * @option evade
+ * @option thrust
+ * @option swing
+ * @option missile
+ * @option skill
+ * @option spell
+ * @option item
+ * @option escape
+ * @option victory
+ * @option dying
+ * @option abnormal
+ * @option sleep
+ * @option dead
+ * @default wait
+ * 
+ * @param Battler X
+ * @parent Display Battler
+ * @desc Position relative to window
+ * @type text
+ * @default 0
+ * 
+ * @param Battler Y
+ * @parent Display Battler
+ * @desc Position relative to window
+ * @type text
+ * @default 0
+ * 
+ * @param Battler Scale X
+ * @parent Display Battler
+ * @desc Size of the battler
+ * @type text
+ * @default 1
+ * 
+ * @param Battler Scale Y
+ * @parent Display Battler
+ * @desc Size of the battler
+ * @type text
+ * @default 1
+ * 
+ */
+/*~struct~commandOption:
+ * 
+ * @param Identifier
+ * @desc The name of the command
+ * @type text
+ * @default command
+ * 
+ * @param Require Actor Select
+ * @desc If actor select window, start actor selection.
+ * @type boolean
+ * @default false;
+ * 
+ * @param Execute Script
+ * @desc What code the command will run
+ * @type note
+ * @default ""
+ * 
+ * @param Execute Event
+ * @desc What event the command will run
+ * Closes menu scene.
+ * @type common_event
+ * @default 0
+ * 
+ */
+/*~struct~cmdWindow:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default Window
+ * 
+ * @param Dimension Configuration
+ * @desc Setup position and width of the window
+ * @type struct<locSize>
+ * @default {"X":"0","Y":"0","Width":"1","Height":"1"}
+ * 
+ * @param Window Font and Style Configuration
+ * @desc Custom style the window
+ * @type struct<windowStyle>
+ * @default {"Font Settings":"","Font Size":"16","Font Face":"sans-serif","Base Font Color":"#ffffff","Font Outline Color":"rgba(0, 0, 0, 0.5)","Font Outline Thickness":"3","Window Skin":"Window","Window Opacity":"255","Show Window Dimmer":"false"}
+ * 
+ * @param Max Columns
+ * @desc Max columns the window will use
+ * @type number
+ * @default 1
+ * 
+ * @param Item Width
+ * @desc Max width of window items. 0 = Default
+ * @type number
+ * @default 0
+ * 
+ * @param Item Height
+ * @desc Max Item height of window items. 0 = Default
+ * @type number
+ * @default 0
+ * 
+ * @param Commands
+ * @desc Setup gauges for the window
+ * @type struct<commandOption>[]
+ * @default []
+ * 
+ */
+/*~struct~menuUI:
+ * 
+ * @param Backgrounds
+ * @desc Lowest graphic layer for the scene.
+ * @type struct<staticPic>[]
+ * @default []
+ * 
+ * @param Back Graphics
+ * @desc Graphic layer just above background.
+ * @type struct<animPic>[]
+ * @default []
+ * 
+ * @param Game Data Window
+ * @desc Windows to display game data.
+ * @type struct<gameDataWindow>[]
+ * @default []
+ * 
+ * @param Actor Data Window
+ * @desc Windows to display leader actor data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Actor Select Window
+ * @desc Windows to display leader actor data.
+ * @type struct<actorSelcWindow>[]
+ * @default []
+ * 
+ * @param Command Window
+ * @desc Setup command window for the scene.
+ * Required setup
+ * @type struct<cmdWindow>
+ * 
+ */
 /*~struct~playerUI:
  * 
  * @param Backgrounds
@@ -2395,6 +2786,86 @@ function ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
         return;
     }
 }
+
+function ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
+        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
+        try{
+            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
+                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Gauges'] = [];
+        }
+        try{
+            obj['Draw Base Params'] = JSON.parse(obj['Draw Base Params']).map((data)=>{
+                return ACTOR_BASE_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
+            }).filter(Boolean);
+        }catch(e){
+            obj['Draw Base Params'] = [];
+        }
+        try{
+            obj['Draw Ex Params'] = JSON.parse(obj['Draw Ex Params']).map((data)=>{
+                return ACTOR_EX_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
+            }).filter(Boolean);
+        }catch(e){
+            obj['Draw Ex Params'] = [];
+        }
+        try{
+            obj['Draw Sp Params'] = JSON.parse(obj['Draw Sp Params']).map((data)=>{
+                return ACTOR_SP_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
+            }).filter(Boolean);
+        }catch(e){
+            obj['Draw Sp Params'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+function COMMAND_OPTION_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Execute Script'] = JSON.parse(obj['Execute Script']);
+        }catch(e){
+            obj['Execute Script'] = "";
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+function COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
+        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
+        try{
+            obj['Commands'] = JSON.parse(obj['Commands']).map((opt_config)=>{
+                return COMMAND_OPTION_PARSER_MONSTERCAPTURE(opt_config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Commands'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC_ScnMngr_Push = SceneManager.push;
+SceneManager.push = function(sceneClass) {
+    if(Syn_MC.MENU_CONFIGURATION){
+        sceneClass = SceneMC_MainMenu;
+    }
+    Syn_MC_ScnMngr_Push.call(this, ...arguments);
+}
+
 BattleManager.setTeamMenu = function(teamMenu){
     this._teamMenu = teamMenu;
 }
@@ -3720,7 +4191,7 @@ Game_Party.prototype.doAddActorExtra = function(actor){
 }
 
 Game_Party.prototype.callRenameScene = function(actor){
-    const scene = Scene_Rename;
+    const scene = SceneMC_Rename;
     const max_name_chars = 32;
     const sceneToBoot = {scene,prep:[actor, max_name_chars]};
     $gameTemp.reserveBootScene(sceneToBoot);
@@ -4864,6 +5335,725 @@ WindowMC_ActorData.prototype.displayBattler = function(){
     }
 }
 
+function WindowMC_ActorSelector(){
+    this.initialize(...arguments);
+}
+
+WindowMC_ActorSelector.prototype = Object.create(Window_Selectable.prototype);
+WindowMC_ActorSelector.prototype.constructor = WindowMC_ActorData;
+
+WindowMC_ActorSelector.prototype.initialize = function(data){
+    const mz_mode = Utils.RPGMAKER_NAME == "MZ";
+    const rect = this.createRect(data);
+    this._window_data = data;
+    this._style_data = data['Window Font and Style Configuration'];
+    if(mz_mode){
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }else{
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }
+    this.setOpacityAndDimmer();
+    this.createCharacterSprites();
+    this.createBattlerSprites();
+}
+
+WindowMC_ActorSelector.prototype.createCharacterSprite = function(){
+    this._character_sprites = [];
+}
+
+WindowMC_ActorSelector.prototype.createCharacterSprite = function(){
+    this._battler_sprites = [];
+}
+
+WindowMC_ActorSelector.prototype.createCharacterSprite = function(i){
+    const rect = this.itemRect(i);
+    const chara = new Game_MonsterCharacter();
+    const sprite = new SpriteMenu_CharacterMonster(chara);
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._chara = chara;
+    this._character_sprites[i] = sprite;
+}
+
+WindowMC_ActorSelector.prototype.createBattlerSprite = function(i){
+    const rect = this.itemRect(i);
+    const sprite = new SpriteMenu_BattlerMonster();
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._battler_sprites[i] = sprite;
+}
+
+WindowMC_ActorSelector.prototype.maxItems = function(){
+    return $gameParty._actors.length;
+}
+
+WindowMC_ActorSelector.prototype.maxCols = function(){
+    const window_data = this._window_data;
+    return eval(window_data['Max Columns']) || 1;
+}
+
+WindowMC_ActorSelector.prototype.itemWidth = function(){
+    const base = Window_Selectable.prototype.itemWidth.call(this);
+    const window_data = this._window_data;
+    return eval(window_data['Item Width']) || base;
+}
+
+WindowMC_ActorSelector.prototype.itemHeight = function(){
+    const base = Window_Selectable.prototype.itemHeight.call(this);
+    const window_data = this._window_data;
+    return eval(window_data['Item Height']) || base;
+}
+
+WindowMC_ActorSelector.prototype.createRect = function(data){
+    const dimension_config = data['Dimension Configuration'];
+    const x = dimension_config['X'];
+    const y = dimension_config['Y'];
+    const w = dimension_config['Width'];
+    const h = dimension_config['Height'];
+    return new Rectangle(x,y,w,h);
+}
+
+WindowMC_ActorSelector.prototype.standardPadding = function() {
+    return 8;
+}
+
+WindowMC_ActorSelector.prototype.loadWindowskin = function(){
+    const base = Window_Base.prototype.loadWindowskin.call(this);
+    const custom_config = this._style_data;
+    if(!custom_config)return base;
+    const skin_name = custom_config['Window Skin'];
+    if(!skin_name)return base;
+    this.windowskin = ImageManager.loadSystem(skin_name);
+}
+
+WindowMC_ActorSelector.prototype.resetFontSettings = function() {
+    const base = Window_Base.prototype.resetFontSettings;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const font_face = custom_config['Font Face'] || "sans-serif";
+    const font_size = custom_config['Font Size'] || 16;
+    const font_outline_size = custom_config['Font Outline Thickness'] || 3;
+    this.contents.fontFace = font_face;
+    this.contents.fontSize = font_size;
+    this.contents.outlineWidth = font_outline_size;
+    this.resetTextColor();
+}
+
+WindowMC_ActorSelector.prototype.resetTextColor = function() {
+    const base = Window_Base.prototype.resetTextColor;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const text_color = custom_config['Base Font Color'] || "#ffffff";
+    const outline_color = custom_config['Font Outline Color'] || "rgba(0, 0, 0, 0.5)";
+    this.changeTextColor(text_color);
+    this.contents.outlineColor = outline_color;
+}
+
+WindowMC_ActorSelector.prototype.setOpacityAndDimmer = function(){
+    const custom_config = this._style_data;
+    if(!custom_config)return;
+    const show_dimmer = custom_config['Show Window Dimmer'] || false;
+    const win_opacity = custom_config['Window Opacity'] || 0;
+    this.opacity = win_opacity;
+    show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
+}
+
+WindowMC_ActorSelector.prototype.update = function(){
+    Window_Base.prototype.update.call(this);
+    this.updateActor();
+}
+
+WindowMC_ActorSelector.prototype.updateActor = function(){
+    if(this._actor){
+        const window_data = this._window_data;
+    }
+}
+
+WindowMC_ActorSelector.prototype.setActor = function(actor){
+    this.contents.clear();
+    this._actor = actor;
+    if(actor){
+        this.drawData();
+    }else{
+        this.hide();
+    }
+}
+
+WindowMC_ActorSelector.prototype.drawItem = function(i){
+    const rect = this.itemRect(i);
+    const actor = $gameParty._actors[i];
+    this.drawGauges(rect, actor);
+    this.drawName(rect, actor);
+    this.drawProfile(rect, actor);
+    this.drawClassLevel(rect, actor);
+    this.drawResHP(rect, actor);
+    this.drawResMP(rect, actor);
+    this.drawResTP(rect, actor);
+    this.drawBaseParams(rect, actor);
+    this.drawExParams(rect, actor);
+    this.drawSpParams(rect, actor);
+    this.displayMapCharacter(rect, i, actor);
+    this.displayBattler(rect, i, actor);
+}
+
+WindowMC_ActorSelector.prototype.drawGauges = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const gauges = window_data['Gauges'];
+    gauges.forEach((config)=>{
+        const label = config['Label'];
+        const lx = eval(config['Label X']);
+        const ly = eval(config['Label Y']);
+        window.drawTextEx(label, lx, ly);
+        const cur_val = eval(config['Gauge Current Value']) || 0;
+        const max_val = eval(config['Gauge Max Value']) || 1;
+        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
+        const gx = rx + eval(config['Gauge X']);
+        const gy = ry + eval(config['Gauge Y']);
+        const gw = eval(config['Gauge Width']);
+        const gh = eval(config['Gauge Height']);
+        const gb = eval(config['Gauge Border']);
+        const border_color = config['Gauge Border Color'];
+        const background_color = config['Gauge Background Color'];
+        const fill_color = config['Gauge Color'];
+        window.contents.fillRect(gx,gy,gw,gh,border_color);
+        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
+        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
+    })
+}
+
+WindowMC_ActorSelector.prototype.drawName = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Name']))return;
+    const name = actor.name();
+    const nickname = actor.nickname();
+    const text = (window_data['Name Text'] || "").format(name, nickname);
+    const tx = rx + eval(window_data['Name X']) || 0;
+    const ty = ry + eval(window_data['Name Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorSelector.prototype.drawProfile = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Profile']))return;
+    const text = actor.profile();
+    const tx = rx + eval(window_data['Profile X']) || 0;
+    const ty = ry + eval(window_data['Profile Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorSelector.prototype.drawClassLevel = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Class Level']))return;
+    const class_id = actor._classId;
+    const class_data = $dataClasses[class_id] || {};
+    const class_name = class_data ? class_data.name : "";
+    const level = actor.level;
+    const text = (window_data['Class Level Text'] || "").format(class_name, level);
+    const tx = rx + eval(window_data['Class Level X']) || 0;
+    const ty = ry + eval(window_data['Class Level Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorSelector.prototype.drawResHP = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw HP Resource']))return;
+    const cur = actor.hp;
+    const max = actor.mhp;
+    const text = (window_data['HP Text'] || "").format(cur, max);
+    const tx = rx + eval(window_data['HP X']) || 0;
+    const ty = ry + eval(window_data['HP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorSelector.prototype.drawResMP = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw MP Resource']))return;
+    const cur = actor.mp;
+    const max = actor.mmp;
+    const text = (window_data['MP Text'] || "").format(cur, max);
+    const tx = rx + eval(window_data['MP X']) || 0;
+    const ty = ry + eval(window_data['MP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorSelector.prototype.drawResTP = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw TP Resource']))return;
+    const cur = actor.tp;
+    const max = actor.maxTp();
+    const text = (window_data['TP Text'] || "").format(cur, max);
+    const tx = rx + eval(window_data['TP X']) || 0;
+    const ty = ry + eval(window_data['TP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_ActorSelector.prototype.drawBaseParams = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Base Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Base Param']);
+        const param_value = actor.param(param_id) || 0;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = rx + eval(param_draw['X']) || 0;
+        const ty = ry + eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_ActorSelector.prototype.drawExParams = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Ex Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Ex Param']);
+        const param_value = (actor.xparam(param_id) || 0) * 100;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = rx + eval(param_draw['X']) || 0;
+        const ty = ry + eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_ActorSelector.prototype.drawSpParams = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Sp Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Ex Param']);
+        const param_value = (actor.sparam(param_id) || 0) * 100;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = rx + eval(param_draw['X']) || 0;
+        const ty = ry + eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    const character_sprite = this._character_sprites[index];
+    if(!eval(window_data['Display Map Character'])){
+        character_sprite.visible = false;
+        return;
+    }else{
+        const char_name = actor.characterName();
+        const char_indx = actor.characterIndex();
+        this._chara.setImage(char_name, char_indx);
+        this._chara.setDirection(eval(window_data['Character Direction']) || 2);
+        this._chara._screenX = rx + eval(window_data['Character X']) || 0;
+        this._chara._screenY = ry + eval(window_data['Character Y']) || 0;
+        character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
+        character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
+        character_sprite.visible = true;
+    }
+}
+
+WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    const battler_sprite = this._battler_sprites[index];
+    if(!eval(window_data['Display Battler'])){
+        battler_sprite.visible = false;
+        return;
+    }else{
+        const hx = rx + eval(window_data['Battler X']);
+        const hy = ry + eval(window_data['Battler y']);
+        battler_sprite.setHome(hx, hy);
+        battler_sprite.setBattler(actor);
+        battler_sprite.scale.x = eval(window_data['Battler Scale X']);
+        battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
+        battler_sprite.visible = true;
+    }
+}
+
+function WindowMC_BoxActorSelector(){
+    this.initialize(...arguments);
+}
+
+WindowMC_BoxActorSelector.prototype = Object.create(Window_Selectable.prototype);
+WindowMC_BoxActorSelector.prototype.constructor = WindowMC_BoxActorSelector;
+
+WindowMC_BoxActorSelector.prototype.initialize = function(data, boxId){
+    const mz_mode = Utils.RPGMAKER_NAME == "MZ";
+    const rect = this.createRect(data);
+    this._box_id = boxId;
+    this._window_data = data;
+    this._style_data = data['Window Font and Style Configuration'];
+    if(mz_mode){
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }else{
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }
+    this.setOpacityAndDimmer();
+    this.createCharacterSprites();
+    this.createBattlerSprites();
+}
+
+WindowMC_BoxActorSelector.prototype.createCharacterSprite = function(){
+    this._character_sprites = [];
+}
+
+WindowMC_BoxActorSelector.prototype.createCharacterSprite = function(){
+    this._battler_sprites = [];
+}
+
+WindowMC_BoxActorSelector.prototype.createCharacterSprite = function(i){
+    const rect = this.itemRect(i);
+    const chara = new Game_MonsterCharacter();
+    const sprite = new SpriteMenu_CharacterMonster(chara);
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._chara = chara;
+    this._character_sprites[i] = sprite;
+}
+
+WindowMC_BoxActorSelector.prototype.createBattlerSprite = function(i){
+    const rect = this.itemRect(i);
+    const sprite = new SpriteMenu_BattlerMonster();
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._battler_sprites[i] = sprite;
+}
+
+WindowMC_BoxActorSelector.prototype.maxItems = function(){
+    return Syn_MC.RESERVE_BOX_SIZE;
+}
+
+WindowMC_BoxActorSelector.prototype.maxCols = function(){
+    const window_data = this._window_data;
+    return eval(window_data['Max Columns']) || 1;
+}
+
+WindowMC_BoxActorSelector.prototype.itemWidth = function(){
+    const base = Window_Selectable.prototype.itemWidth.call(this);
+    const window_data = this._window_data;
+    return eval(window_data['Item Width']) || base;
+}
+
+WindowMC_BoxActorSelector.prototype.itemHeight = function(){
+    const base = Window_Selectable.prototype.itemHeight.call(this);
+    const window_data = this._window_data;
+    return eval(window_data['Item Height']) || base;
+}
+
+WindowMC_BoxActorSelector.prototype.createRect = function(data){
+    const dimension_config = data['Dimension Configuration'];
+    const x = dimension_config['X'];
+    const y = dimension_config['Y'];
+    const w = dimension_config['Width'];
+    const h = dimension_config['Height'];
+    return new Rectangle(x,y,w,h);
+}
+
+WindowMC_BoxActorSelector.prototype.standardPadding = function() {
+    return 8;
+}
+
+WindowMC_BoxActorSelector.prototype.loadWindowskin = function(){
+    const base = Window_Base.prototype.loadWindowskin.call(this);
+    const custom_config = this._style_data;
+    if(!custom_config)return base;
+    const skin_name = custom_config['Window Skin'];
+    if(!skin_name)return base;
+    this.windowskin = ImageManager.loadSystem(skin_name);
+}
+
+WindowMC_BoxActorSelector.prototype.resetFontSettings = function() {
+    const base = Window_Base.prototype.resetFontSettings;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const font_face = custom_config['Font Face'] || "sans-serif";
+    const font_size = custom_config['Font Size'] || 16;
+    const font_outline_size = custom_config['Font Outline Thickness'] || 3;
+    this.contents.fontFace = font_face;
+    this.contents.fontSize = font_size;
+    this.contents.outlineWidth = font_outline_size;
+    this.resetTextColor();
+}
+
+WindowMC_BoxActorSelector.prototype.resetTextColor = function() {
+    const base = Window_Base.prototype.resetTextColor;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const text_color = custom_config['Base Font Color'] || "#ffffff";
+    const outline_color = custom_config['Font Outline Color'] || "rgba(0, 0, 0, 0.5)";
+    this.changeTextColor(text_color);
+    this.contents.outlineColor = outline_color;
+}
+
+WindowMC_BoxActorSelector.prototype.setOpacityAndDimmer = function(){
+    const custom_config = this._style_data;
+    if(!custom_config)return;
+    const show_dimmer = custom_config['Show Window Dimmer'] || false;
+    const win_opacity = custom_config['Window Opacity'] || 0;
+    this.opacity = win_opacity;
+    show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
+}
+
+WindowMC_BoxActorSelector.prototype.update = function(){
+    Window_Base.prototype.update.call(this);
+    this.updateActor();
+}
+
+WindowMC_BoxActorSelector.prototype.updateActor = function(){
+    if(this._actor){
+        const window_data = this._window_data;
+    }
+}
+
+WindowMC_BoxActorSelector.prototype.setActor = function(actor){
+    this.contents.clear();
+    this._actor = actor;
+    if(actor){
+        this.drawData();
+    }else{
+        this.hide();
+    }
+}
+
+WindowMC_BoxActorSelector.prototype.drawItem = function(i){
+    const rect = this.itemRect(i);
+    const actor = $gameParty._actors[i];
+    this.drawGauges(rect, actor);
+    this.drawName(rect, actor);
+    this.drawProfile(rect, actor);
+    this.drawClassLevel(rect, actor);
+    this.drawResHP(rect, actor);
+    this.drawResMP(rect, actor);
+    this.drawResTP(rect, actor);
+    this.drawBaseParams(rect, actor);
+    this.drawExParams(rect, actor);
+    this.drawSpParams(rect, actor);
+    this.displayMapCharacter(rect, i, actor);
+    this.displayBattler(rect, i, actor);
+}
+
+WindowMC_BoxActorSelector.prototype.drawGauges = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const gauges = window_data['Gauges'];
+    gauges.forEach((config)=>{
+        const label = config['Label'];
+        const lx = eval(config['Label X']);
+        const ly = eval(config['Label Y']);
+        window.drawTextEx(label, lx, ly);
+        const cur_val = eval(config['Gauge Current Value']) || 0;
+        const max_val = eval(config['Gauge Max Value']) || 1;
+        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
+        const gx = rx + eval(config['Gauge X']);
+        const gy = ry + eval(config['Gauge Y']);
+        const gw = eval(config['Gauge Width']);
+        const gh = eval(config['Gauge Height']);
+        const gb = eval(config['Gauge Border']);
+        const border_color = config['Gauge Border Color'];
+        const background_color = config['Gauge Background Color'];
+        const fill_color = config['Gauge Color'];
+        window.contents.fillRect(gx,gy,gw,gh,border_color);
+        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
+        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
+    })
+}
+
+WindowMC_BoxActorSelector.prototype.drawName = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Name']))return;
+    const name = actor.name();
+    const nickname = actor.nickname();
+    const text = (window_data['Name Text'] || "").format(name, nickname);
+    const tx = rx + eval(window_data['Name X']) || 0;
+    const ty = ry + eval(window_data['Name Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BoxActorSelector.prototype.drawProfile = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Profile']))return;
+    const text = actor.profile();
+    const tx = rx + eval(window_data['Profile X']) || 0;
+    const ty = ry + eval(window_data['Profile Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BoxActorSelector.prototype.drawClassLevel = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Class Level']))return;
+    const class_id = actor._classId;
+    const class_data = $dataClasses[class_id] || {};
+    const class_name = class_data ? class_data.name : "";
+    const level = actor.level;
+    const text = (window_data['Class Level Text'] || "").format(class_name, level);
+    const tx = rx + eval(window_data['Class Level X']) || 0;
+    const ty = ry + eval(window_data['Class Level Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BoxActorSelector.prototype.drawResHP = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw HP Resource']))return;
+    const cur = actor.hp;
+    const max = actor.mhp;
+    const text = (window_data['HP Text'] || "").format(cur, max);
+    const tx = rx + eval(window_data['HP X']) || 0;
+    const ty = ry + eval(window_data['HP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BoxActorSelector.prototype.drawResMP = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw MP Resource']))return;
+    const cur = actor.mp;
+    const max = actor.mmp;
+    const text = (window_data['MP Text'] || "").format(cur, max);
+    const tx = rx + eval(window_data['MP X']) || 0;
+    const ty = ry + eval(window_data['MP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BoxActorSelector.prototype.drawResTP = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw TP Resource']))return;
+    const cur = actor.tp;
+    const max = actor.maxTp();
+    const text = (window_data['TP Text'] || "").format(cur, max);
+    const tx = rx + eval(window_data['TP X']) || 0;
+    const ty = ry + eval(window_data['TP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BoxActorSelector.prototype.drawBaseParams = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Base Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Base Param']);
+        const param_value = actor.param(param_id) || 0;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = rx + eval(param_draw['X']) || 0;
+        const ty = ry + eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_BoxActorSelector.prototype.drawExParams = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Ex Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Ex Param']);
+        const param_value = (actor.xparam(param_id) || 0) * 100;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = rx + eval(param_draw['X']) || 0;
+        const ty = ry + eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_BoxActorSelector.prototype.drawSpParams = function(rect, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window = this;
+    const window_data = this._window_data;
+    const draw_params = window_data['Draw Sp Params'] || [];
+    draw_params.forEach((param_draw)=>{
+        const param_id = eval(param_draw['Ex Param']);
+        const param_value = (actor.sparam(param_id) || 0) * 100;
+        const text = (param_draw['Param Text'] || "").format(param_value);
+        const tx = rx + eval(param_draw['X']) || 0;
+        const ty = ry + eval(param_draw['Y']) || 0;
+        window.drawTextEx(text, tx, ty);
+    })
+}
+
+WindowMC_BoxActorSelector.prototype.displayMapCharacter = function(rect, index, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    const character_sprite = this._character_sprites[index];
+    if(!eval(window_data['Display Map Character'])){
+        character_sprite.visible = false;
+        return;
+    }else{
+        const char_name = actor.characterName();
+        const char_indx = actor.characterIndex();
+        this._chara.setImage(char_name, char_indx);
+        this._chara.setDirection(eval(window_data['Character Direction']) || 2);
+        this._chara._screenX = rx + eval(window_data['Character X']) || 0;
+        this._chara._screenY = ry + eval(window_data['Character Y']) || 0;
+        character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
+        character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
+        character_sprite.visible = true;
+    }
+}
+
+WindowMC_BoxActorSelector.prototype.displayBattler = function(rect, index, actor){
+    const rx = rect.x;
+    const ry = rect.y;
+    const window_data = this._window_data;
+    const battler_sprite = this._battler_sprites[index];
+    if(!eval(window_data['Display Battler'])){
+        battler_sprite.visible = false;
+        return;
+    }else{
+        const hx = rx + eval(window_data['Battler X']);
+        const hy = ry + eval(window_data['Battler y']);
+        battler_sprite.setHome(hx, hy);
+        battler_sprite.setBattler(actor);
+        battler_sprite.scale.x = eval(window_data['Battler Scale X']);
+        battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
+        battler_sprite.visible = true;
+    }
+}
+
 Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     Syn_MC_ScnMap_Updt.call(this);
@@ -4916,19 +6106,19 @@ Scene_Gameover.prototype.processPenalty = function(gameover_config){
     if(event)$gameTemp.reserveCommonEvent(event);
 }
 
-function Scene_Rename(){
+function SceneMC_Rename(){
     this.initialize(...arguments);
 }
 
-Scene_Rename.prototype = Object.create(Scene_Name.prototype);
-Scene_Rename.prototype.constructor = Scene_Rename;
+SceneMC_Rename.prototype = Object.create(Scene_Name.prototype);
+SceneMC_Rename.prototype.constructor = SceneMC_Rename;
 
-Scene_Rename.prototype.prepare = function(actorId, maxLength) {
+SceneMC_Rename.prototype.prepare = function(actorId, maxLength) {
     this._actor = actorId;
     this._maxLength = maxLength;
 }
 
-Scene_Rename.prototype.create = function() {
+SceneMC_Rename.prototype.create = function() {
     Scene_Base.prototype.create.call(this);
     this.createBackground();
     this.createWindowLayer();
@@ -4939,7 +6129,49 @@ Scene_Rename.prototype.create = function() {
     this.createInputWindow();
 }
 
-Scene_Rename.prototype.onInputOk = function() {
+SceneMC_Rename.prototype.onInputOk = function() {
     this._actor.setNickname(this._editWindow.name());
     this.popScene();
 }
+
+function SceneMC_Beastiary(){
+    this.initialize(...arguments);
+}
+
+SceneMC_Beastiary.prototype = Object.create(Scene_Base.prototype);
+SceneMC_Beastiary.prototype.constructor = SceneMC_Beastiary;
+
+function SceneMC_Breeder(){
+    this.initialize(...arguments);
+}
+
+SceneMC_Breeder.prototype = Object.create(Scene_Base.prototype);
+SceneMC_Breeder.prototype.constructor = SceneMC_Breeder;
+
+function SceneMC_ReserveBoxes(){
+    this.initialize(...arguments);
+}
+
+SceneMC_ReserveBoxes.prototype = Object.create(Scene_Base.prototype);
+SceneMC_ReserveBoxes.prototype.constructor = SceneMC_ReserveBoxes;
+
+function SceneMC_Player(){
+    this.initialize(...arguments);
+}
+
+SceneMC_Player.prototype = Object.create(Scene_Base.prototype);
+SceneMC_Player.prototype.constructor = SceneMC_Player;
+
+function SceneMC_Evolution(){
+    this.initialize(...arguments);
+}
+
+SceneMC_Evolution.prototype = Object.create(Scene_Base.prototype);
+SceneMC_Evolution.prototype.constructor = SceneMC_Evolution;
+
+function SceneMC_MainMenu(){
+    this.initialize(...arguments);
+}
+
+SceneMC_MainMenu.prototype = Object.create(Scene_Base.prototype);
+SceneMC_MainMenu.prototype.constructor = SceneMC_MainMenu;

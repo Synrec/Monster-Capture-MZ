@@ -2437,6 +2437,31 @@ BattleManager.processActiveMembers = function(){
     $gameTemp._numBattleEnemies = undefined;
 }
 
+Syn_MC_BattMngr_StrtActn = BattleManager.startAction;
+BattleManager.startAction = function() {
+    Syn_MC_BattMngr_StrtActn.call(this, ...arguments);
+    const action = this._action;
+    const targets = this._targets;
+    this.hideTargetsForCapture(action, targets);
+}
+
+BattleManager.hideTargetsForCapture = function(action, targets){
+    if(!action)return;
+    const skill_configs = Syn_MC.SKILL_CONFIGURATIONS;
+    const item_configs = Syn_MC.ITEM_CONFIGURATIONS;
+    const data = action.item();
+    const config = DataManager.isSkill(data) ? skill_configs.find(config => eval(config['Skill']) == data.id) : DataManager.isItem(data) ? item_configs.find(config => eval(config['Item']) == data.id) : null;
+    if(config && action.subject().isActor()){
+        const capture_rate = eval(config['Capture Rate']);
+        if(capture_rate > 0){
+            targets.forEach((target)=>{
+                target.requestEffect("collapse");
+                target._captureEffect = true;
+            })
+        }
+    }
+}
+
 Game_Temp.prototype.setMaxBattlers = function(actors, enemies){
     this._numBattleActors = actors || Syn_MC.DEFAULT_MAX_BATTLE_ACTORS;
     this._numBattleEnemies = enemies || Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES;
@@ -2491,7 +2516,6 @@ Game_Action.prototype.subject = function() { //Overwritten Func
         return $gameTroop.members()[this._subjectEnemyIndex];
     }
 }
-
 Syn_MC_GmActn_App = Game_Action.prototype.apply;
 Game_Action.prototype.apply = function(target) {
     Syn_MC_GmActn_App.call(this, ...arguments);
@@ -2573,14 +2597,6 @@ Game_Action.prototype.playCaptureSuccess = function(target){
     $gameSystem._captureId = !isNaN($gameSystem._captureId) ? $gameSystem._captureId + 1 : 0;
     const hpSet = target._hp;
     const mpSet = target._mp;
-    // const anim = this.item().animationId;
-    // if(anim){
-    //     if(Utils.RPGMAKER_NAME == 'MV'){
-    //         target.startAnimation(anim);
-    //     }else{
-    //         $gameTemp.requestAnimation([target], anim);
-    //     }
-    // }
     const capture_actor = target._actor;
     capture_actor._captureId = JsonEx.makeDeepCopy($gameSystem._captureId);
     target._isCaptured = true;
@@ -2599,6 +2615,8 @@ Game_Action.prototype.playCaptureFail = function(target){
             $gameTemp.requestAnimation([target], anim);
         }
     }
+    target._isCapturing = false;
+    target.requestEffect("whiten");
 }
 
 Syn_MC_GmMap_Updt = Game_Map.prototype.update;
@@ -4194,6 +4212,18 @@ Sprite_Enemy.prototype.revertToNormal = function() {
     if(this._blendColorGend){
         this.setBlendColor(this._blendColorGend);
         this._updateColorFilter();
+    }
+}
+
+Syn_MC_SprtEnem_StrtEfct = Sprite_Enemy.prototype.startEffect;
+Sprite_Enemy.prototype.startEffect = function(effectType) {
+    const battler = this._battler;
+    if(!battler)return Syn_MC_SprtEnem_StrtEfct.call(this, ...arguments);
+    if(battler._isCapturing)return;
+    Syn_MC_SprtEnem_StrtEfct.call(this, ...arguments);
+    if(battler._captureEffect){
+        delete battler._captureEffect;
+        battler._isCapturing = true;
     }
 }
 

@@ -399,6 +399,11 @@
  * @desc Setup capture modifier settings
  * @type struct<captureSettings>
  * 
+ * @param Prevent Rename
+ * @desc Prevents actor from being renamed
+ * @type boolean
+ * @default false
+ * 
  */
 /*~struct~enemyData:
  * 
@@ -3677,7 +3682,10 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
 
 Game_Party.prototype.doAddActorExtra = function(actor){
     const id = actor._actorId;
-    if(!SynrecMC.NO_RENAMES.includes(id))this.callRenameScene(actor);
+    const config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
+        return eval(config['Actor']) == id;
+    })
+    if(!eval(config['Prevent Rename']))this.callRenameScene(actor);
 }
 
 Game_Party.prototype.callRenameScene = function(actor){

@@ -6285,7 +6285,7 @@ SceneMC_PlayerRename.prototype.create = function() {
     this.createInputWindow();
 }
 
-Scene_Name.prototype.createEditWindow = function() {
+SceneMC_PlayerRename.prototype.createEditWindow = function() {
     const rect = this.editWindowRect();
     this._editWindow = new WindowMC_PlayerNameEdit(rect);
     this._editWindow.setup();

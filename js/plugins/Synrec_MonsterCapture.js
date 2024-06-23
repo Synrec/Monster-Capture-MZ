@@ -6,6 +6,10 @@
  * 
  * Plugin has been remade from the base monster capture plugins set.
  * 
+ * @param Gameover Configuration
+ * @desc Setup what to do on gameover
+ * @type struct<gameoverConfig>
+ * 
  * @param Player Configuration
  * @desc Setup the player for the game.
  * @type struct<player>
@@ -93,6 +97,59 @@
  * @param Beastiary UI Configuration
  * @desc Configure UI settings for battle
  * @type struct<beastiaryUI>
+ * 
+ */
+/*~struct~gameoverConfig:
+ * 
+ * @param Required Item
+ * @desc Require this item in player inventory
+ * @type item
+ * @default 0
+ * 
+ * @param Gameover Map
+ * @desc Map to use for gameover
+ * If not set or is zero, use default gameover.
+ * @type text
+ * @default 0
+ * 
+ * @param Map X
+ * @desc Set the player X-position to this
+ * @type text
+ * @default 0
+ * 
+ * @param Map Y
+ * @desc Set the player Y-position to this
+ * @type text
+ * @default 0
+ * 
+ * @param Direction
+ * @desc Set player facing direction to this
+ * @type select
+ * @option down
+ * @value 2
+ * @option left
+ * @value 4
+ * @option right
+ * @value 6
+ * @option up
+ * @value 8
+ * @default 2
+ * 
+ * @param Gold Penalty
+ * @desc Reduce player gold by value
+ * @type text
+ * @default 0
+ * 
+ * @param EXP Penalty
+ * @desc Reduce exp by rate.
+ * 1 = 100% current level EXP
+ * @type text
+ * @default 0
+ * 
+ * @param Event
+ * @desc Reserve common event on gameover
+ * @type common_event
+ * @default 0
  * 
  */
 /*~struct~playerConfig:
@@ -1881,6 +1938,17 @@
 
 const Syn_MC = {};
 Syn_MC.Plugin = PluginManager.Parameters(`Synrec_MonsterCapture`);
+
+function GAMEOVER_CONFIGURATION_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.GAMEOVER_CONFIGURATION = GAMEOVER_CONFIGURATION_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Gameover Configuration']);
 
 function PLAYER_CONFIGURATION_PARSER_MONSTERCAPTURE(obj){
     try{
@@ -4493,4 +4561,46 @@ WindowMC_ActorData.prototype.displayBattler = function(){
         this._battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
         this._battler_sprite.visible = true;
     }
+}
+
+Syn_MC_ScnGmOver_Updt = Scene_Gameover.prototype.update;
+Scene_Gameover.prototype.update = function() {
+    if (this.isActive() && !this.isBusy() && this.isTriggered()) {
+        const gameover_config = Syn_MC.GAMEOVER_CONFIGURATION;
+        if(!gameover_config){
+            return Syn_MC_ScnGmOver_Updt.call(this, ...arguments);
+        }
+        const req_item_id = eval(gameover_config['Required Item']) || 0;
+        const map_id = eval(gameover_config['Gameover Map']);
+        if(req_item_id > 0 && !isNaN(req_item_id)){
+            const item = $dataItems[req_item_id];
+            if($gameParty.hasItem(item)){
+                $gameParty.gainItem(item, -1);
+            }else{
+                return Syn_MC_ScnGmOver_Updt.call(this, ...arguments);
+            }
+        }
+        if(map_id){
+            this.processPenalty(gameover_config);
+            const map_x = eval(gameover_config['Map X']);
+            const map_y = eval(gameover_config['Map Y']);
+            const dir = eval(gameover_config['Direction']);
+            $gameParty._actors.forEach(actor => actor.recoverAll());
+            $gamePlayer.reserveTransfer(map_id, map_x, map_y, dir, 0);
+        }else Syn_MC_ScnGmOver_Updt.call(this, ...arguments);
+    }
+    Syn_MC_ScnGmOver_Updt.call(this, ...arguments);
+}
+
+Scene_Gameover.prototype.processPenalty = function(gameover_config){
+    const gold_penalty = eval(gameover_config['Gold Penalty']) || 0;
+    $gameParty.loseGold(gold_penalty);
+    const exp_rate = eval(gameover_config['EXP Penalty']) || 0;
+    $gameParty._actors.forEach((actor)=>{
+        const exp_required = actor.nextRequiredExp();
+        const exp_penalty = exp_required * exp_rate;
+        actor.changeExp(-exp_penalty, true);
+    });
+    const event = eval(gameover_config['Event']) || 0;
+    if(event)$gameTemp.reserveCommonEvent(event);
 }

@@ -3390,7 +3390,7 @@ Game_Enemy.prototype.paramBase = function(paramId) {
         const actorParamBase = this._actor ? this.currentClass().params[paramId][this._level] : 0;
         return defParamBase + actorParamBase;
     }else{
-        Syn_MC_GmEnem_BseParam.call(this, ...arguments);
+        return Syn_MC_GmEnem_BseParam.call(this, ...arguments);
     }
 }
 

@@ -2293,6 +2293,18 @@
  * @type struct<commandOption>[]
  * @default []
  * 
+ * @param Offset X
+ * @parent Commands
+ * @desc Offset command identifier in selector
+ * @type text
+ * @default 0
+ * 
+ * @param Offset Y
+ * @parent Commands
+ * @desc Offset command identifier in selector
+ * @type text
+ * @default 0
+ * 
  */
 /*~struct~menuUI:
  * 
@@ -2306,25 +2318,25 @@
  * @type struct<animPic>[]
  * @default []
  * 
- * @param Game Data Window
- * @desc Windows to display game data.
- * @type struct<gameDataWindow>[]
- * @default []
- * 
- * @param Actor Data Window
- * @desc Windows to display leader actor data.
- * @type struct<actorDataWindow>[]
- * @default []
+ * @param Command Window
+ * @desc Setup command window for the scene.
+ * Required setup
+ * @type struct<cmdWindow>
  * 
  * @param Actor Select Window
  * @desc Windows to display leader actor data.
  * @type struct<actorSelcWindow>[]
  * @default []
  * 
- * @param Command Window
- * @desc Setup command window for the scene.
- * Required setup
- * @type struct<cmdWindow>
+ * @param Actor Data Windows
+ * @desc Windows to display leader actor data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Game Data Windows
+ * @desc Windows to display game data.
+ * @type struct<gameDataWindow>[]
+ * @default []
  * 
  */
 /*~struct~playerUI:
@@ -2339,14 +2351,69 @@
  * @type struct<animPic>[]
  * @default []
  * 
- * @param Game Data Window
+ * @param Game Data Windows
  * @desc Windows to display game data.
  * @type struct<gameDataWindow>[]
  * @default []
  * 
- * @param Actor Data Window
+ * @param Actor Data Windows
  * @desc Windows to display leader actor data.
  * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ */
+/*~struct~breederUI:
+ * 
+ * @param Backgrounds
+ * @desc Lowest graphic layer for the scene.
+ * @type struct<staticPic>[]
+ * @default []
+ * 
+ * @param Back Graphics
+ * @desc Graphic layer just above background.
+ * @type struct<animPic>[]
+ * @default []
+ * 
+ * @param Actor 1 Data Windows
+ * @desc Windows to display actor 1 data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Actor 2 Data Windows
+ * @desc Windows to display actor 2 data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Party List Window
+ * @desc Window display list of party members.
+ * @type struct<actorSelcWindow>
+ * 
+ */
+/*~struct~beastiaryUI:
+ * 
+ * @param Backgrounds
+ * @desc Lowest graphic layer for the scene.
+ * @type struct<staticPic>[]
+ * @default []
+ * 
+ * @param Back Graphics
+ * @desc Graphic layer just above background.
+ * @type struct<animPic>[]
+ * @default []
+ * 
+ * @param Actor Data Windows
+ * @desc Windows to display actor data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Actor List Window
+ * @desc Window display list of actors.
+ * @type struct<actorSelcWindow>
+ * 
+ * @param Filtered Actors
+ * @parent Actor List Window
+ * @desc Actors to not include on list
+ * @type actor[]
  * @default []
  * 
  */
@@ -2858,6 +2925,159 @@ function COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
     }
 }
 
+function MAINMENU_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
+                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Backgrounds'] = [];
+        }
+        try{
+            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
+                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Back Graphics'] = [];
+        }
+        try{
+            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
+                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Game Data Windows'] = [];
+        }
+        try{
+            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Actor Data Windows'] = [];
+        }
+        obj['Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor List Window']);
+        obj['Command Window'] = COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj['Command Window']);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.MAIN_MENU_CONFIGURATION = MAINMENU_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Main Menu UI Configuration']);
+
+function PLAYER_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
+                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Backgrounds'] = [];
+        }
+        try{
+            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
+                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Back Graphics'] = [];
+        }
+        try{
+            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
+                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Game Data Windows'] = [];
+        }
+        try{
+            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Actor Data Windows'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.PLAYER_UI_CONFIGURATION = PLAYER_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Player UI Configuration']);
+
+function BREEDER_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
+                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Backgrounds'] = [];
+        }
+        try{
+            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
+                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Back Graphics'] = [];
+        }
+        try{
+            obj['Actor 1 Data Windows'] = JSON.parse(obj['Actor 1 Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Actor 1 Data Windows'] = [];
+        }
+        try{
+            obj['Actor 2 Data Windows'] = JSON.parse(obj['Actor 2 Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Actor 2 Data Windows'] = [];
+        }
+        obj['Party List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Party List Window']);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.BREEDER_UI_CONFIGURATION = BREEDER_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Breeder UI Configuration']);
+
+function BEASTIARY_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
+                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Backgrounds'] = [];
+        }
+        try{
+            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
+                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Back Graphics'] = [];
+        }
+        try{
+            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Actor Data Windows'] = [];
+        }
+        obj['Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor List Window']);
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.BEASTIARY_UI_CONFIGURATION = BEASTIARY_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Beastiary UI Configuration']);
+
 Syn_MC_ScnMngr_Push = SceneManager.push;
 SceneManager.push = function(sceneClass) {
     if(Syn_MC.MENU_CONFIGURATION){
@@ -2982,7 +3202,9 @@ Game_System.prototype.captureActor = function(actor){
     if(actor instanceof Game_Actor){
         this._captureId = !isNaN(this._captureId) ? this._captureId + 1 : 0;
         actor._captureId = JsonEx.makeDeepCopy(this._captureId);
-        this._obtained_actors.push(actor._actorId);
+        if(!this._obtained_actors.includes(actor._actorId)){
+            this._obtained_actors.push(actor._actorId);
+        }
     }
 }
 
@@ -4451,6 +4673,118 @@ Game_Party.prototype.grabValidData = function(map_id){
     }
 }
 
+function SpriteMC_StaticGfx(){
+    this.initialize(...arguments);
+}
+
+SpriteMC_StaticGfx.prototype = Object.create(TilingSprite.prototype);
+SpriteMC_StaticGfx.prototype.constructor = SpriteMC_StaticGfx;
+
+SpriteMC_StaticGfx.prototype.initialize = function(data){
+    TilingSprite.prototype.initialize.call(this);
+    this.setData(data);
+}
+
+SpriteMC_StaticGfx.prototype.clearData = function(){
+    delete this._data;
+    delete this._scrolling_x;
+    delete this._scrolling_y;
+    delete this._rotate;
+    this.bitmap = null;
+}
+
+SpriteMC_StaticGfx.prototype.setData = function(data){
+    this.clearData();
+    if(!data)return;
+    const bitmap_name = data['File'];
+    if(!bitmap_name)return;
+    this.bitmap = ImageManager.loadPicture(bitmap_name);
+    const x = eval(data['Position X']) || 0;
+    const y = eval(data['Position Y']) || 0;
+    const w = this.bitmap.width;
+    const h = this.bitmap.height;
+    this.move(x,y,w,h);
+    this.anchor.x = eval(data['Anchor X']) || 0;
+    this.anchor.y = eval(data['Anchor Y']) || 0;
+    this._scrolling_x = eval(data['Scrolling X']) || 0;
+    this._scrolling_y = eval(data['Scrolling Y']) || 0;
+    this._rotate = eval(data['Rotation']);
+    this._data = data;
+}
+
+SpriteMC_StaticGfx.prototype.update = function(){
+    TilingSprite.prototype.update.call(this);
+    this.updateScrollRot();
+}
+
+SpriteMC_StaticGfx.prototype.updateScrollRot = function(){
+    this.origin.x += this._scrolling_x || 0;
+    this.origin.y += this._scrolling_y || 0;
+    this.rotation += this._rotate || 0;
+}
+
+function SpriteMC_AnimGfx(){
+    this.initialize(...arguments);
+}
+
+SpriteMC_AnimGfx.prototype = Object.create(Sprite.prototype);
+SpriteMC_AnimGfx.prototype.constructor = SpriteMC_AnimGfx;
+
+SpriteMC_AnimGfx.prototype.initialize = function(data){
+    Sprite.prototype.initialize.call(this);
+    this.setData(data);
+}
+
+SpriteMC_AnimGfx.prototype.clearData = function(){
+    delete this._data;
+    delete this._cur_frame;
+    delete this._max_frames;
+    delete this._frame_rate;
+    this.bitmap = null;
+}
+
+SpriteMC_AnimGfx.prototype.setData = function(data){
+    this.clearData();
+    if(!data)return;
+    const bitmap_name = data['File'];
+    if(!bitmap_name)return;
+    this.bitmap = ImageManager.loadPicture(bitmap_name);
+    const x = eval(data['Position X']) || 0;
+    const y = eval(data['Position Y']) || 0;
+    this.move(x,y);
+    this._cur_frame = 0;
+    this._max_frames = eval(data['Frames']) || 1;
+    this._frame_rate = eval(data['Frame Rate']) || 0;
+    this._frame_timer = eval(data['Frame Rate']) || 0;
+    this._data = data;
+}
+
+SpriteMC_AnimGfx.prototype.update = function(){
+    Sprite.prototype.update.call(this);
+    this.updateFrame();
+}
+
+SpriteMC_AnimGfx.prototype.updateFrame = function(){
+    const bitmap = this.bitmap;
+    if(!bitmap)return;
+    if(isNaN(this._frame_timer) || this._frame_timer <= 0){
+        this._frame_timer = JsonEx.makeDeepCopy(this._frame_rate);
+        const f = this._cur_frame;
+        const mf = this._max_frames;
+        const bw = bitmap.width;
+        const bh = bitmap.height;
+        const w = bw / mf;
+        const h = bh;
+        const y = 0;
+        const x = w * f;
+        this.setFrame(x,y,w,h);
+        this._cur_frame++;
+        if(this._cur_frame >= mf){
+            this._cur_frame = 0;
+        }
+    }
+}
+
 function SpriteMenu_CharacterMonster(){
     this.initialize(...arguments);
 }
@@ -5354,11 +5688,12 @@ function WindowMC_ActorSelector(){
 WindowMC_ActorSelector.prototype = Object.create(Window_Selectable.prototype);
 WindowMC_ActorSelector.prototype.constructor = WindowMC_ActorData;
 
-WindowMC_ActorSelector.prototype.initialize = function(data){
+WindowMC_ActorSelector.prototype.initialize = function(data, list){
     const mz_mode = Utils.RPGMAKER_NAME == "MZ";
     const rect = this.createRect(data);
     this._window_data = data;
     this._style_data = data['Window Font and Style Configuration'];
+    this._list = list;
     if(mz_mode){
         Window_Selectable.prototype.initialize.call(this, rect);
     }else{
@@ -5400,7 +5735,7 @@ WindowMC_ActorSelector.prototype.createBattlerSprite = function(i){
 }
 
 WindowMC_ActorSelector.prototype.maxItems = function(){
-    return $gameParty._actors.length;
+    return this._list ? this._list.length : 0;
 }
 
 WindowMC_ActorSelector.prototype.maxCols = function(){
@@ -5474,6 +5809,17 @@ WindowMC_ActorSelector.prototype.setOpacityAndDimmer = function(){
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
 
+WindowMC_ActorSelector.prototype.setList = function(list){
+    this._list = list;
+    this.refresh();
+}
+
+WindowMC_ActorSelector.prototype.actor = function(){
+    const index = this.index();
+    const actor = this._list[index];
+    return actor;
+}
+
 WindowMC_ActorSelector.prototype.update = function(){
     Window_Base.prototype.update.call(this);
     this.updateActor();
@@ -5485,31 +5831,28 @@ WindowMC_ActorSelector.prototype.updateActor = function(){
     }
 }
 
-WindowMC_ActorSelector.prototype.setActor = function(actor){
-    this.contents.clear();
-    this._actor = actor;
-    if(actor){
-        this.drawData();
-    }else{
-        this.hide();
-    }
-}
-
 WindowMC_ActorSelector.prototype.drawItem = function(i){
+    if(!this._list)return;
     const rect = this.itemRect(i);
-    const actor = $gameParty._actors[i];
-    this.drawGauges(rect, actor);
-    this.drawName(rect, actor);
-    this.drawProfile(rect, actor);
-    this.drawClassLevel(rect, actor);
-    this.drawResHP(rect, actor);
-    this.drawResMP(rect, actor);
-    this.drawResTP(rect, actor);
-    this.drawBaseParams(rect, actor);
-    this.drawExParams(rect, actor);
-    this.drawSpParams(rect, actor);
-    this.displayMapCharacter(rect, i, actor);
-    this.displayBattler(rect, i, actor);
+    const actor = this._list[i];
+    if(actor){
+        this.drawGauges(rect, actor);
+        this.drawName(rect, actor);
+        this.drawProfile(rect, actor);
+        this.drawClassLevel(rect, actor);
+        this.drawResHP(rect, actor);
+        this.drawResMP(rect, actor);
+        this.drawResTP(rect, actor);
+        this.drawBaseParams(rect, actor);
+        this.drawExParams(rect, actor);
+        this.drawSpParams(rect, actor);
+        this.displayMapCharacter(rect, i, actor);
+        this.displayBattler(rect, i, actor);
+    }else{
+        const text = '-';
+        const y = rect.y + (rect.height * 0.5);
+        this.drawText(text, 0, y, rect.width, 'center');
+    }
 }
 
 WindowMC_ActorSelector.prototype.drawGauges = function(rect, actor){
@@ -5706,19 +6049,19 @@ WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
     }
 }
 
-function WindowMC_BoxActorSelector(){
+function WindowMC_CustomCommand(){
     this.initialize(...arguments);
 }
 
-WindowMC_BoxActorSelector.prototype = Object.create(Window_Selectable.prototype);
-WindowMC_BoxActorSelector.prototype.constructor = WindowMC_BoxActorSelector;
+WindowMC_CustomCommand.prototype = Object.create(Window_Selectable.prototype);
+WindowMC_CustomCommand.prototype.constructor = WindowMC_CustomCommand;
 
-WindowMC_BoxActorSelector.prototype.initialize = function(data, boxId){
+WindowMC_CustomCommand.prototype.initialize = function(data){
     const mz_mode = Utils.RPGMAKER_NAME == "MZ";
     const rect = this.createRect(data);
-    this._box_id = boxId;
     this._window_data = data;
     this._style_data = data['Window Font and Style Configuration'];
+    this._list = data['Commands'];
     if(mz_mode){
         Window_Selectable.prototype.initialize.call(this, rect);
     }else{
@@ -5729,58 +6072,30 @@ WindowMC_BoxActorSelector.prototype.initialize = function(data, boxId){
         Window_Selectable.prototype.initialize.call(this,x,y,w,h);
     }
     this.setOpacityAndDimmer();
-    this.createCharacterSprites();
-    this.createBattlerSprites();
 }
 
-WindowMC_BoxActorSelector.prototype.createCharacterSprite = function(){
-    this._character_sprites = [];
+WindowMC_CustomCommand.prototype.maxItems = function(){
+    return Array.isArray(this._list) ? this._list.length : 0;
 }
 
-WindowMC_BoxActorSelector.prototype.createCharacterSprite = function(){
-    this._battler_sprites = [];
-}
-
-WindowMC_BoxActorSelector.prototype.createCharacterSprite = function(i){
-    const rect = this.itemRect(i);
-    const chara = new Game_MonsterCharacter();
-    const sprite = new SpriteMenu_CharacterMonster(chara);
-    sprite.visible = false;
-    this.addChild(sprite);
-    this._chara = chara;
-    this._character_sprites[i] = sprite;
-}
-
-WindowMC_BoxActorSelector.prototype.createBattlerSprite = function(i){
-    const rect = this.itemRect(i);
-    const sprite = new SpriteMenu_BattlerMonster();
-    sprite.visible = false;
-    this.addChild(sprite);
-    this._battler_sprites[i] = sprite;
-}
-
-WindowMC_BoxActorSelector.prototype.maxItems = function(){
-    return Syn_MC.RESERVE_BOX_SIZE;
-}
-
-WindowMC_BoxActorSelector.prototype.maxCols = function(){
+WindowMC_CustomCommand.prototype.maxCols = function(){
     const window_data = this._window_data;
     return eval(window_data['Max Columns']) || 1;
 }
 
-WindowMC_BoxActorSelector.prototype.itemWidth = function(){
+WindowMC_CustomCommand.prototype.itemWidth = function(){
     const base = Window_Selectable.prototype.itemWidth.call(this);
     const window_data = this._window_data;
     return eval(window_data['Item Width']) || base;
 }
 
-WindowMC_BoxActorSelector.prototype.itemHeight = function(){
+WindowMC_CustomCommand.prototype.itemHeight = function(){
     const base = Window_Selectable.prototype.itemHeight.call(this);
     const window_data = this._window_data;
     return eval(window_data['Item Height']) || base;
 }
 
-WindowMC_BoxActorSelector.prototype.createRect = function(data){
+WindowMC_CustomCommand.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
     const x = dimension_config['X'];
     const y = dimension_config['Y'];
@@ -5789,12 +6104,12 @@ WindowMC_BoxActorSelector.prototype.createRect = function(data){
     return new Rectangle(x,y,w,h);
 }
 
-WindowMC_BoxActorSelector.prototype.standardPadding = function() {
+WindowMC_CustomCommand.prototype.standardPadding = function() {
     return 8;
 }
 
-WindowMC_BoxActorSelector.prototype.loadWindowskin = function(){
-    const base = Window_Base.prototype.loadWindowskin.call(this);
+WindowMC_CustomCommand.prototype.loadWindowskin = function(){
+    const base = Window_Selectable.prototype.loadWindowskin.call(this);
     const custom_config = this._style_data;
     if(!custom_config)return base;
     const skin_name = custom_config['Window Skin'];
@@ -5802,8 +6117,8 @@ WindowMC_BoxActorSelector.prototype.loadWindowskin = function(){
     this.windowskin = ImageManager.loadSystem(skin_name);
 }
 
-WindowMC_BoxActorSelector.prototype.resetFontSettings = function() {
-    const base = Window_Base.prototype.resetFontSettings;
+WindowMC_CustomCommand.prototype.resetFontSettings = function() {
+    const base = Window_Selectable.prototype.resetFontSettings;
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
@@ -5815,8 +6130,8 @@ WindowMC_BoxActorSelector.prototype.resetFontSettings = function() {
     this.resetTextColor();
 }
 
-WindowMC_BoxActorSelector.prototype.resetTextColor = function() {
-    const base = Window_Base.prototype.resetTextColor;
+WindowMC_CustomCommand.prototype.resetTextColor = function() {
+    const base = Window_Selectable.prototype.resetTextColor;
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const text_color = custom_config['Base Font Color'] || "#ffffff";
@@ -5825,7 +6140,7 @@ WindowMC_BoxActorSelector.prototype.resetTextColor = function() {
     this.contents.outlineColor = outline_color;
 }
 
-WindowMC_BoxActorSelector.prototype.setOpacityAndDimmer = function(){
+WindowMC_CustomCommand.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
@@ -5834,236 +6149,19 @@ WindowMC_BoxActorSelector.prototype.setOpacityAndDimmer = function(){
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
 
-WindowMC_BoxActorSelector.prototype.update = function(){
-    Window_Base.prototype.update.call(this);
-    this.updateActor();
+WindowMC_CustomCommand.prototype.command = function(i){
+    const index = isNaN(i) ? this.index() : i;
+    const list = this._list;
+    return list[index];
 }
 
-WindowMC_BoxActorSelector.prototype.updateActor = function(){
-    if(this._actor){
-        const window_data = this._window_data;
-    }
-}
-
-WindowMC_BoxActorSelector.prototype.setActor = function(actor){
-    this.contents.clear();
-    this._actor = actor;
-    if(actor){
-        this.drawData();
-    }else{
-        this.hide();
-    }
-}
-
-WindowMC_BoxActorSelector.prototype.drawItem = function(i){
+WindowMC_CustomCommand.prototype.drawItem = function(i){
     const rect = this.itemRect(i);
-    const actor = $gameParty._actors[i];
-    this.drawGauges(rect, actor);
-    this.drawName(rect, actor);
-    this.drawProfile(rect, actor);
-    this.drawClassLevel(rect, actor);
-    this.drawResHP(rect, actor);
-    this.drawResMP(rect, actor);
-    this.drawResTP(rect, actor);
-    this.drawBaseParams(rect, actor);
-    this.drawExParams(rect, actor);
-    this.drawSpParams(rect, actor);
-    this.displayMapCharacter(rect, i, actor);
-    this.displayBattler(rect, i, actor);
-}
-
-WindowMC_BoxActorSelector.prototype.drawGauges = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window = this;
-    const window_data = this._window_data;
-    const gauges = window_data['Gauges'];
-    gauges.forEach((config)=>{
-        const label = config['Label'];
-        const lx = eval(config['Label X']);
-        const ly = eval(config['Label Y']);
-        window.drawTextEx(label, lx, ly);
-        const cur_val = eval(config['Gauge Current Value']) || 0;
-        const max_val = eval(config['Gauge Max Value']) || 1;
-        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
-        const gx = rx + eval(config['Gauge X']);
-        const gy = ry + eval(config['Gauge Y']);
-        const gw = eval(config['Gauge Width']);
-        const gh = eval(config['Gauge Height']);
-        const gb = eval(config['Gauge Border']);
-        const border_color = config['Gauge Border Color'];
-        const background_color = config['Gauge Background Color'];
-        const fill_color = config['Gauge Color'];
-        window.contents.fillRect(gx,gy,gw,gh,border_color);
-        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
-        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
-    })
-}
-
-WindowMC_BoxActorSelector.prototype.drawName = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    if(!eval(window_data['Draw Actor Name']))return;
-    const name = actor.name();
-    const nickname = actor.nickname();
-    const text = (window_data['Name Text'] || "").format(name, nickname);
-    const tx = rx + eval(window_data['Name X']) || 0;
-    const ty = ry + eval(window_data['Name Y']) || 0;
-    this.drawTextEx(text, tx, ty);
-}
-
-WindowMC_BoxActorSelector.prototype.drawProfile = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    if(!eval(window_data['Draw Actor Profile']))return;
-    const text = actor.profile();
-    const tx = rx + eval(window_data['Profile X']) || 0;
-    const ty = ry + eval(window_data['Profile Y']) || 0;
-    this.drawTextEx(text, tx, ty);
-}
-
-WindowMC_BoxActorSelector.prototype.drawClassLevel = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    if(!eval(window_data['Draw Class Level']))return;
-    const class_id = actor._classId;
-    const class_data = $dataClasses[class_id] || {};
-    const class_name = class_data ? class_data.name : "";
-    const level = actor.level;
-    const text = (window_data['Class Level Text'] || "").format(class_name, level);
-    const tx = rx + eval(window_data['Class Level X']) || 0;
-    const ty = ry + eval(window_data['Class Level Y']) || 0;
-    this.drawTextEx(text, tx, ty);
-}
-
-WindowMC_BoxActorSelector.prototype.drawResHP = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    if(!eval(window_data['Draw HP Resource']))return;
-    const cur = actor.hp;
-    const max = actor.mhp;
-    const text = (window_data['HP Text'] || "").format(cur, max);
-    const tx = rx + eval(window_data['HP X']) || 0;
-    const ty = ry + eval(window_data['HP Y']) || 0;
-    this.drawTextEx(text, tx, ty);
-}
-
-WindowMC_BoxActorSelector.prototype.drawResMP = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    if(!eval(window_data['Draw MP Resource']))return;
-    const cur = actor.mp;
-    const max = actor.mmp;
-    const text = (window_data['MP Text'] || "").format(cur, max);
-    const tx = rx + eval(window_data['MP X']) || 0;
-    const ty = ry + eval(window_data['MP Y']) || 0;
-    this.drawTextEx(text, tx, ty);
-}
-
-WindowMC_BoxActorSelector.prototype.drawResTP = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    if(!eval(window_data['Draw TP Resource']))return;
-    const cur = actor.tp;
-    const max = actor.maxTp();
-    const text = (window_data['TP Text'] || "").format(cur, max);
-    const tx = rx + eval(window_data['TP X']) || 0;
-    const ty = ry + eval(window_data['TP Y']) || 0;
-    this.drawTextEx(text, tx, ty);
-}
-
-WindowMC_BoxActorSelector.prototype.drawBaseParams = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window = this;
-    const window_data = this._window_data;
-    const draw_params = window_data['Draw Base Params'] || [];
-    draw_params.forEach((param_draw)=>{
-        const param_id = eval(param_draw['Base Param']);
-        const param_value = actor.param(param_id) || 0;
-        const text = (param_draw['Param Text'] || "").format(param_value);
-        const tx = rx + eval(param_draw['X']) || 0;
-        const ty = ry + eval(param_draw['Y']) || 0;
-        window.drawTextEx(text, tx, ty);
-    })
-}
-
-WindowMC_BoxActorSelector.prototype.drawExParams = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window = this;
-    const window_data = this._window_data;
-    const draw_params = window_data['Draw Ex Params'] || [];
-    draw_params.forEach((param_draw)=>{
-        const param_id = eval(param_draw['Ex Param']);
-        const param_value = (actor.xparam(param_id) || 0) * 100;
-        const text = (param_draw['Param Text'] || "").format(param_value);
-        const tx = rx + eval(param_draw['X']) || 0;
-        const ty = ry + eval(param_draw['Y']) || 0;
-        window.drawTextEx(text, tx, ty);
-    })
-}
-
-WindowMC_BoxActorSelector.prototype.drawSpParams = function(rect, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window = this;
-    const window_data = this._window_data;
-    const draw_params = window_data['Draw Sp Params'] || [];
-    draw_params.forEach((param_draw)=>{
-        const param_id = eval(param_draw['Ex Param']);
-        const param_value = (actor.sparam(param_id) || 0) * 100;
-        const text = (param_draw['Param Text'] || "").format(param_value);
-        const tx = rx + eval(param_draw['X']) || 0;
-        const ty = ry + eval(param_draw['Y']) || 0;
-        window.drawTextEx(text, tx, ty);
-    })
-}
-
-WindowMC_BoxActorSelector.prototype.displayMapCharacter = function(rect, index, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    const character_sprite = this._character_sprites[index];
-    if(!eval(window_data['Display Map Character'])){
-        character_sprite.visible = false;
-        return;
-    }else{
-        const char_name = actor.characterName();
-        const char_indx = actor.characterIndex();
-        this._chara.setImage(char_name, char_indx);
-        this._chara.setDirection(eval(window_data['Character Direction']) || 2);
-        this._chara._screenX = rx + eval(window_data['Character X']) || 0;
-        this._chara._screenY = ry + eval(window_data['Character Y']) || 0;
-        character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
-        character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
-        character_sprite.visible = true;
-    }
-}
-
-WindowMC_BoxActorSelector.prototype.displayBattler = function(rect, index, actor){
-    const rx = rect.x;
-    const ry = rect.y;
-    const window_data = this._window_data;
-    const battler_sprite = this._battler_sprites[index];
-    if(!eval(window_data['Display Battler'])){
-        battler_sprite.visible = false;
-        return;
-    }else{
-        const hx = rx + eval(window_data['Battler X']);
-        const hy = ry + eval(window_data['Battler y']);
-        battler_sprite.setHome(hx, hy);
-        battler_sprite.setBattler(actor);
-        battler_sprite.scale.x = eval(window_data['Battler Scale X']);
-        battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
-        battler_sprite.visible = true;
-    }
+    const ox = eval(this._window_data['Offset X']) || 0;
+    const oy = eval(this._window_data['Offset Y']) || 0;
+    const command = this.command(i);
+    const name = command['Identifier'];
+    this.drawTextEx(name, rect.x + ox, rect.y + oy);
 }
 
 function WindowMC_PlayerNameEdit(){
@@ -6304,6 +6402,92 @@ function SceneMC_Beastiary(){
 SceneMC_Beastiary.prototype = Object.create(Scene_Base.prototype);
 SceneMC_Beastiary.prototype.constructor = SceneMC_Beastiary;
 
+SceneMC_Beastiary.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createActorListWindow();
+    this.createActorDataWindows();
+}
+
+SceneMC_Beastiary.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BEASTIARY_UI_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds
+}
+
+SceneMC_Beastiary.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BEASTIARY_UI_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds
+}
+
+SceneMC_Beastiary.prototype.createActorListWindow = function(){
+    const UI_Config = Syn_MC.BEASTIARY_UI_CONFIGURATION;
+    const data = UI_Config['Actor List Window'];
+    const filtered = UI_Config['Filtered Actors'] ? UI_Config['Filtered Actors'].map(id => eval(id)) : [];
+    const obtained_actors = $gameSystem._obtained_actors;
+    const list = $dataActors.filter((actor_data)=>{
+        const id = actor_data.id;
+        return !filtered.includes(id);
+    }).map((data)=>{
+        const id = data.id;
+        if(obtained_actors.includes(id)){
+            const actor = new Game_Actor(id);
+            return actor;
+        }else return "";
+    })
+    const window = new WindowMC_ActorSelector(data, list);
+    window.refresh();
+    window.select(0);
+    window.setHandler('cancel', this.popScene.bind(this));
+    this.addWindow(window);
+    this._list_window = window;
+}
+
+SceneMC_Beastiary.prototype.createActorDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BEASTIARY_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._data_windows = windows;
+}
+
+SceneMC_Beastiary.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateDataWindows();
+}
+
+SceneMC_Beastiary.prototype.updateDataWindows = function(){
+    if(!this._list_window)return;
+    const actor = this._list_window.actor();
+    if(this._saved_actor != actor){
+        this._saved_actor = actor;
+        this._data_windows.forEach((window)=>{
+            window.setActor(actor);
+        })
+    }
+}
+
 function SceneMC_Breeder(){
     this.initialize(...arguments);
 }
@@ -6338,3 +6522,153 @@ function SceneMC_MainMenu(){
 
 SceneMC_MainMenu.prototype = Object.create(Scene_Base.prototype);
 SceneMC_MainMenu.prototype.constructor = SceneMC_MainMenu;
+
+SceneMC_MainMenu.prototype.create = function(){
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createCommandWindow();
+    this.createActorListWindow();
+    this.createActorDataWindows();
+    this.createGameDataWindows();
+}
+
+SceneMC_MainMenu.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds
+}
+
+SceneMC_MainMenu.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds
+}
+
+SceneMC_MainMenu.prototype.createCommandWindow = function(){
+    const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
+    const data = UI_Config['Command Window'];
+    const window = new WindowMC_CustomCommand(data);
+    window.setHandler('ok', this.selectCommand.bind(this));
+    window.setHandler('cancel', this.popScene.bind(this));
+    window.select(0);
+    this.addWindow(window);
+    this._command_window = window;
+}
+
+SceneMC_MainMenu.prototype.createActorListWindow = function(){
+    const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
+    const data = UI_Config['Command Window'];
+    const list = $gameParty._actors;
+    const window = new WindowMC_ActorSelector(data, list);
+    window.setHandler('ok', this.confirmActor.bind(this));
+    window.setHandler('cancel', this.cancelCommand.bind(this));
+    window.refresh();
+    window.select(0);
+    this.addWindow(window);
+    this._actor_list_window = window;
+}
+
+SceneMC_MainMenu.prototype.createActorDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
+    const actor_winodws = UI_Config['Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._actor_data_windows = windows;
+}
+
+SceneMC_MainMenu.prototype.createGameDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
+    const actor_winodws = UI_Config['Game Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_GameData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._game_data_windows = windows;
+}
+
+SceneMC_MainMenu.prototype.selectCommand = function(){
+    const command = this._command_window.command();
+    if(command){
+        const require_actor = eval(command['Require Actor Select']);
+        if(require_actor){
+            this._reserve_command = command;
+            this._command_window.deactivate();
+            this._actor_list_window.activate();
+            return;
+        }
+        const exec_evnt = eval(command['Execute Event']);
+        if(exec_evnt){
+            $gameTemp.reserveCommonEvent(exec_evnt);
+            this.popScene();
+            return;
+        }
+        const exec_code = command['Execute Script'];
+        if(exec_code)eval(exec_code);
+    }else{
+        this._command_window.activate();
+        SoundManager.playBuzzer();
+    }
+}
+
+SceneMC_MainMenu.prototype.confirmActor = function(){
+    const actor = this._actor_list_window.actor();
+    $gameParty.setMenuActor(actor);
+    const command = this._reserve_command;
+    if(command){
+        const exec_evnt = eval(command['Execute Event']);
+        if(exec_evnt){
+            $gameTemp.reserveCommonEvent(exec_evnt);
+            this.popScene();
+            return;
+        }
+        const exec_code = command['Execute Script'];
+        if(exec_code)eval(exec_code);
+    }else{
+        this._actor_list_window.activate();
+        SoundManager.playBuzzer();
+    }
+}
+
+SceneMC_MainMenu.prototype.cancelCommand = function(){
+    this._reserve_command = null;
+    this._actor_list_window.deactivate();
+    this._command_window.activate();
+}
+
+SceneMC_MainMenu.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateDataWindows();
+}
+
+SceneMC_MainMenu.prototype.updateDataWindows = function(){
+    if(!this._list_window)return;
+    const actor = this._actor_list_window.actor();
+    if(this._saved_actor != actor){
+        this._saved_actor = actor;
+        this._actor_data_windows.forEach((window)=>{
+            window.setActor(actor);
+        })
+    }
+}

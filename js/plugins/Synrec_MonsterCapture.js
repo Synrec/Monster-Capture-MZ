@@ -24,6 +24,18 @@
  * @type struct<actorData>[]
  * @default []
  * 
+ * @param Reserve Boxes
+ * @parent Actor Configuration
+ * @desc Number of reserve boxes
+ * @type text
+ * @default 10
+ * 
+ * @param Reserve Box Size
+ * @parent Reserve Boxes
+ * @desc Limit of actors per reserve box
+ * @type text
+ * @default 10
+ * 
  * @param Enemy Configurations
  * @desc Setup enemies for the project.
  * @type struct<enemyData>[]
@@ -2060,6 +2072,9 @@ try{
     Syn_MC.ACTOR_CONFIGURATIONS = [];
 }
 
+Syn_MC.RESERVE_BOX_COUNT = eval(Syn_MC.Plugin['Reserve Boxes']) || 1;
+Syn_MC.RESERVE_BOX_SIZE = eval(Syn_MC.Plugin['Reserve Box Size']) || 1;
+
 function ENEMY_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -2661,72 +2676,70 @@ Game_Player.prototype.initMembers = function() {
 }
 
 Game_Player.prototype.createEquipSlots = function(){
-    for (let i = 0; i < SynrecMC.PlayerSetup.PlayerInvTypes.length; i++) {
-        let index = i;
-        let name = SynrecMC.PlayerSetup.PlayerInvTypes[i];
-        this._equipInventory.push({index:index, name:name, inventory:[]});
-        this._equipData.push({index:index, name:name, equip:undefined})
+    const equip_slots = $dataSystem.equipTypes;
+    for (let i = 0; i < equip_slots.length; i++) {
+        const name = equip_slots[i];
+        this._equipInventory.push({index:i, name:name, inventory:[]});
+        this._equipData.push({index:i, name:name, equip:undefined})
     }
     this._equipInventory.push({index:this._equipInventory.length, name:"UNDEFINED", inventory:[]});
     this._equipData.push({index:this._equipData.length, name:"UNDEFINED", equip:undefined})
 }
 
 Game_Player.prototype.equipChange = function(armorId){
+    const equip_slots = $dataSystem.equipTypes;
     const armor = $dataArmors[armorId];
-    let category = undefined;
     if(armor){
-        const catName = armor.meta['Player Equip'];
-        category = catName ? catName.replace(/\s+/g, '') : "UNDEFINED";
-        if(!category)category = "UNDEFINED";
-        if(armorId){
-            for(let i = 0; i < this._equipInventory.length; i++){
-                let invType = this._equipInventory[i];
-                if(invType["name"] == category){
-                    if(!invType["inventory"].includes(armorId)){
-                        SoundManager.playBuzzer();
-                        return;
-                    }
-                    break;
+        const equip_type_id = armor.eTypeId;
+        const category = equip_slots[equip_type_id];
+        for(let i = 0; i < this._equipInventory.length; i++){
+            const invType = this._equipInventory[i];
+            if(invType["name"] == category){
+                if(!invType["inventory"].includes(armorId)){
+                    SoundManager.playBuzzer();
+                    return;
                 }
+                break;
             }
         }
-    }
-    for(let j = 0; j < this._equipData.length; j++){
-        let eqType = this._equipData[j];
-        if(eqType['name'] == category){
-            eqType["equip"] = armorId ? armorId : undefined;
-            return;
-        }
+        this._equipData[equip_type_id] = armorId;
     }
 }
 
 Game_Player.prototype.gainEquip = function(armorId){
+    const equip_slots = $dataSystem.equipTypes;
     const armor = $dataArmors[armorId];
-    const catName = armor.meta['Player Equip'];
-    let category = catName ? catName.replace(/\s+/g, '') : "UNDEFINED";
-    for(let i = 0; i < this._equipInventory.length; i++){
-        let invType = this._equipInventory[i];
-        if(invType["name"] == category){
-            if(invType["inventory"].includes(armorId)){
-                SoundManager.playBuzzer();
-                return;
+    if(armor){
+        const equip_type_id = armor.eTypeId;
+        const category = equip_slots[equip_type_id];
+        for(let i = 0; i < this._equipInventory.length; i++){
+            const invType = this._equipInventory[i];
+            if(invType["name"] == category){
+                if(invType["inventory"].includes(armorId)){
+                    SoundManager.playBuzzer();
+                    return;
+                }
+                invType["inventory"].push(armorId);
+                invType["inventory"].sort();
             }
-            invType["inventory"].push(armorId);
         }
     }
 }
 
 Game_Player.prototype.loseEquip = function(armorId){
+    const equip_slots = $dataSystem.equipTypes;
     const armor = $dataArmors[armorId];
-    let category = armor.meta['Player Equip'].replace(/\s+/g, '');
-    if(!category)category = "UNDEFINED";
-    for(let i = 0; i < this._equipInventory.length; i++){
-        let invType = this._equipInventory[i];
-        if(invType["name"] == category){
-            if(invType["inventory"].includes(armorId)){
-                const index = invType["inventory"].indexOf(armorId);
-                invType["inventory"].splice(index, 1);
-                return;
+    if(armor){
+        const equip_type_id = armor.eTypeId;
+        const category = equip_slots[equip_type_id];
+        for(let i = 0; i < this._equipInventory.length; i++){
+            let invType = this._equipInventory[i];
+            if(invType["name"] == category){
+                if(invType["inventory"].includes(armorId)){
+                    const index = invType["inventory"].indexOf(armorId);
+                    invType["inventory"].splice(index, 1);
+                    return;
+                }
             }
         }
     }
@@ -2836,7 +2849,6 @@ Game_Followers.prototype.initialize = function() {
     Syn_MC_GmFolws_Init.call(this);
     const player_data = Syn_MC.PLAYER_DATA;
     if(
-        $gamePlayer.customData() &&
         Utils.RPGMAKER_NAME == "MV" &&
         eval(player_data['Use Custom Player'])
     ){
@@ -3524,9 +3536,9 @@ Game_Party.prototype.initialize = function() {
 
 Game_Party.prototype.createReserveBoxes = function(){
     this._reserveBoxes = [];
-    for(ib = 0; ib < SynrecMC.numberReserveBoxes; ib++){
+    for(ib = 0; ib < Syn_MC.RESERVE_BOX_COUNT; ib++){
         this._reserveBoxes[ib] = {name:'Box ' + ib, box:[]};
-        for(jb = 0; jb < SynrecMC.sizeReserveBoxes; jb++){
+        for(jb = 0; jb < Syn_MC.RESERVE_BOX_SIZE; jb++){
             this._reserveBoxes[ib]['box'][jb] = undefined;
         }
     }
@@ -3535,11 +3547,11 @@ Game_Party.prototype.createReserveBoxes = function(){
 Game_Party.prototype.initBreeder = function(){
     this._map_breeder = {};
     this._breederArray = [];
-    this._breederParent1 = undefined;
-    this._breederParent2 = undefined;
-    this._breederChild = undefined;
-    this._preBreedSteps = 0;
-    this._preBreedMaxSteps = SynrecMC.Breeder.MaxSteps;
+    // this._breederParent1 = undefined;
+    // this._breederParent2 = undefined;
+    // this._breederChild = undefined;
+    // this._preBreedSteps = 0;
+    // this._preBreedMaxSteps = SynrecMC.Breeder.MaxSteps;
 }
 
 Game_Party.prototype.allMembers = function() {

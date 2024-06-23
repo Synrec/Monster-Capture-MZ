@@ -2465,6 +2465,7 @@ Game_Action.prototype.setSubject = function(subject) {
         this._subjectEnemyIndex = -1;
     } else {
         Syn_MC_GmActn_SetSub.call(this, subject);
+        this._subjectActorId = undefined;
     }
 }
 

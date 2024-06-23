@@ -3682,7 +3682,7 @@ Game_Party.prototype.doAddActorExtra = function(actor){
 
 Game_Party.prototype.callRenameScene = function(actor){
     const scene = Scene_Rename;
-    const max_name_chars = SynrecMC.MaxNameChars;
+    const max_name_chars = 32;
     const sceneToBoot = {scene,prep:[actor, max_name_chars]};
     $gameTemp.reserveBootScene(sceneToBoot);
 }

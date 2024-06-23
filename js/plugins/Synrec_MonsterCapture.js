@@ -3303,13 +3303,15 @@ Game_Enemy.prototype.setupActorEnemy = function(){
     const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
         return eval(config['Enemy']) == id
     })
-    const actor_id = eval(config['Capture Actor'])
-    if(actor_id > 0 && !isNaN(actor_id)){
-        this._actor = new Game_Actor(actorId);
-        this.setLevel();
+    if(config){
+        const actor_id = eval(config['Capture Actor'])
+        if(actor_id > 0 && !isNaN(actor_id)){
+            this._actor = new Game_Actor(actorId);
+            this.setLevel();
+            this.recoverAll();
+        }else return false;
         this.recoverAll();
-    }else return false;
-    this.recoverAll();
+    }
 }
 
 Game_Enemy.prototype.setLevel = function(force_level, recover){

@@ -3326,7 +3326,7 @@ Game_Enemy.prototype.setLevel = function(force_level, recover){
         return eval(config['Map']) == map_id;
     })
     if(!map_config){
-        this._actor._level = force_level || $dataActors[this._actor._actorId].initialLevel;
+        this._actor._level = this._level || force_level || $dataActors[this._actor._actorId].initialLevel;
         this._actor.initExp();
         this._actor.initSkills();
         this._level = this._actor._level;

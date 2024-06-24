@@ -6117,6 +6117,7 @@ WindowMC_ActorSelector.prototype.createCharacterSprite = function(i){
     const rect = this.itemRect(i);
     const chara = new Game_MonsterCharacter();
     chara.setStepAnime(true);
+    chara.setOpacity(0);
     const sprite = new SpriteMenu_CharacterMonster(chara);
     sprite.visible = false;
     this.addChild(sprite);
@@ -6214,8 +6215,8 @@ WindowMC_ActorSelector.prototype.setList = function(list){
     this.refresh();
 }
 
-WindowMC_ActorSelector.prototype.actor = function(){
-    const index = this.index();
+WindowMC_ActorSelector.prototype.actor = function(i){
+    const index = isNaN(i) ? this.index() : i;
     const actor = this._list[index];
     return actor;
 }
@@ -6243,6 +6244,11 @@ WindowMC_ActorSelector.prototype.updateSprites = function(){
                 const y = ry + sy + oy;
                 chara._screenX = x;
                 chara._screenY = y;
+                if(sprite._visibility){
+                    chara.setOpacity(255);
+                }else{
+                    chara.setOpacity(0);
+                }
             }
         }
     }
@@ -6251,16 +6257,20 @@ WindowMC_ActorSelector.prototype.updateSprites = function(){
         const rect = this.itemRect(i);
         const sprite = batt_sprites[i];
         if(sprite){
-            if(sprite.visible){
-                const rx = rect.x;
-                const ry = rect.y;
-                const sx = -this._scrollX;
-                const sy = -this._scrollY;
-                const ox = sprite._offset_x;
-                const oy = sprite._offset_y;
-                const x = rx + sx + ox;
-                const y = ry + sy + oy;
-                sprite.setHome(x, y);
+            const rx = rect.x;
+            const ry = rect.y;
+            const sx = -this._scrollX;
+            const sy = -this._scrollY;
+            const ox = sprite._offset_x;
+            const oy = sprite._offset_y;
+            const x = rx + sx + ox;
+            const y = ry + sy + oy;
+            sprite.setHome(x, y);
+            if(sprite._visibility){
+                const actor = this.actor(i);
+                sprite.setBattler(actor)
+            }else{
+                sprite.setBattler(null)
             }
         }
     }
@@ -6450,7 +6460,7 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
     if(!this._character_sprites[index])this.createCharacterSprite(index);
     const character_sprite = this._character_sprites[index];
     if(!eval(window_data['Display Map Character'])){
-        character_sprite.visible = false;
+        character_sprite._visibility = false;
         character_sprite._character.setOpacity(0);
         return;
     }else{
@@ -6458,13 +6468,13 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
         const char_indx = actor.characterIndex();
         this._chara.setImage(char_name, char_indx);
         this._chara.setDirection(eval(window_data['Character Direction']) || 2);
-        this._chara._screenX = rect.x;
-        this._chara._screenY = rect.y;
+        this._chara._screenX = rect.x + (eval(window_data['Character X']) || 0);
+        this._chara._screenY = rect.y + (eval(window_data['Character X']) || 0);
         this._chara._off_screenX = eval(window_data['Character X']) || 0;
         this._chara._off_screenY = eval(window_data['Character Y']) || 0;
         character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
         character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
-        character_sprite.visible = true;
+        character_sprite._visibility = true;
         character_sprite._character.setOpacity(255);
     }
 }
@@ -6474,19 +6484,17 @@ WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
     if(!this._battler_sprites[index])this.createBattlerSprite(index);
     const battler_sprite = this._battler_sprites[index];
     if(!eval(window_data['Display Battler'])){
-        battler_sprite.visible = false;
-        battler_sprite.setBattler();
+        battler_sprite._visibility = false;
         return;
     }else{
         const hx = eval(window_data['Battler X']) || 0;
         const hy = eval(window_data['Battler Y']) || 0;
-        battler_sprite.setHome(rect.x, rect.y);
+        battler_sprite.setHome(rect.x + hx, rect.y + hy);
         battler_sprite._offset_x = hx;
         battler_sprite._offset_y = hy;
-        battler_sprite.setBattler(actor);
         battler_sprite.scale.x = eval(window_data['Battler Scale X']);
         battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
-        battler_sprite.visible = true;
+        battler_sprite._visibility = true;
     }
 }
 

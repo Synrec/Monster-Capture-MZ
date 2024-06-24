@@ -5943,6 +5943,7 @@ WindowMC_ActorSelector.prototype.createBattlerSprite = function(i){
 }
 
 WindowMC_ActorSelector.prototype.maxItems = function(){
+    if(this._forceMaxItems)return this._forceMaxItems;
     return this._list ? this._list.length : 0;
 }
 
@@ -6534,7 +6535,7 @@ WindowMC_PlayerNameEdit.prototype.drawPlayerFace = function(){
 }
 
 function WindowMC_BreederCommand(){
-    this.initialzie(...arguments);
+    this.initialize(...arguments);
 }
 
 WindowMC_BreederCommand.prototype = Object.create(Window_Selectable.prototype);
@@ -6949,9 +6950,11 @@ SceneMC_Breeder.prototype.createPartyListWindow = function(){
     const data = UI_Config['Party List Window'];
     const list = $gameParty._actors;
     const window = new WindowMC_ActorSelector(data, list);
+    window._forceMaxItems = $gameParty.maxBattleMembers();
     window.setHandler('ok', this.openCommand.bind(this));
     window.setHandler('cancel', this.popScene.bind(this));
     window.refresh();
+    window.activate();
     window.select(0);
     this.addWindow(window);
     this._actor_list_window = window;
@@ -6978,6 +6981,7 @@ SceneMC_Breeder.prototype.closeCommand = function(){
     this._actor_list_window.activate();
     this._breeder_command_window.deactivate();
     this._breeder_command_window.close();
+    $gameParty._actors = $gameParty._actors.filter(Boolean);
 }
 
 SceneMC_Breeder.prototype.executeCommand = function(){
@@ -7006,6 +7010,11 @@ SceneMC_Breeder.prototype.setActor1 = function(){
     const party_index = this._actor_list_window.index();
     $gameParty._actors[party_index] = actor_1;
     breeder_obj['Actor 1'] = party_actor;
+    this._breeder_command_window.close();
+    this._breeder_command_window.deactivate();
+    this._actor_list_window.activate();
+    $gameParty._actors = $gameParty._actors.filter(Boolean);
+    this.refreshAll();
 }
 
 SceneMC_Breeder.prototype.setActor2 = function(){
@@ -7024,17 +7033,34 @@ SceneMC_Breeder.prototype.setActor2 = function(){
     const party_index = this._actor_list_window.index();
     $gameParty._actors[party_index] = actor_2;
     breeder_obj['Actor 2'] = party_actor;
+    this._breeder_command_window.close();
+    this._breeder_command_window.deactivate();
+    this._actor_list_window.activate();
+    $gameParty._actors = $gameParty._actors.filter(Boolean);
+    this.refreshAll();
 }
 
 SceneMC_Breeder.prototype.getChild = function(){
     const breeder_objs = $gameParty._map_breeder;
     const map_id = $gameMap._mapId;
     if(!breeder_objs[map_id]){
+        SoundManager.playBuzzer();
+        this._breeder_command_window.activate();
         return;
     }
     const breeder_obj = breeder_objs[map_id];
     const child = breeder_obj['Child'];
     $gameParty.addBreed(child);
+    this._breeder_command_window.close();
+    this._breeder_command_window.deactivate();
+    this._actor_list_window.activate();
+    $gameParty._actors = $gameParty._actors.filter(Boolean);
+    this.refreshAll();
+}
+
+SceneMC_Breeder.prototype.refreshAll = function(){
+    this._actor_list_window.refresh();
+    this._breeder_command_window.refresh();
 }
 
 SceneMC_Breeder.prototype.update = function(){

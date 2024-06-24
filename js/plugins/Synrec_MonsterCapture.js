@@ -1425,8 +1425,16 @@
  * 
  * @param Draw Play Time
  * @desc Draw play time
+ * Also enables constant refresh.
  * @type boolean
  * @default false
+ * 
+ * @param Play Time Text
+ * @parent Draw Play Time
+ * @desc Text for play time.
+ * %1 = value
+ * @type text
+ * @default Time: %1
  * 
  * @param Play Time X
  * @parent Draw Play Time
@@ -5263,6 +5271,7 @@ WindowMC_GameData.prototype.initialize = function(data){
     }
     this.setOpacityAndDimmer();
     this.createCharacterSprite();
+    this.drawData();
 }
 
 WindowMC_GameData.prototype.createCharacterSprite = function(){
@@ -5331,6 +5340,10 @@ WindowMC_GameData.prototype.setOpacityAndDimmer = function(){
 WindowMC_GameData.prototype.update = function(){
     Window_Base.prototype.update.call(this);
     this.updateDisplay();
+    if(this._constant_update){
+        this.contents.clear();
+        this.drawData();
+    }
 }
 
 WindowMC_GameData.prototype.updateDisplay = function(){
@@ -5364,27 +5377,16 @@ WindowMC_GameData.prototype.drawData = function(){
 WindowMC_GameData.prototype.drawGraphic = function(){
     const window = this;
     const window_data = this._window_data;
-    const gauges = window_data['Gauges'];
-    gauges.forEach((config)=>{
-        const label = config['Label'];
-        const lx = eval(config['Label X']);
-        const ly = eval(config['Label Y']);
-        window.drawTextEx(label, lx, ly);
-        const cur_val = eval(config['Gauge Current Value']) || 0;
-        const max_val = eval(config['Gauge Max Value']) || 1;
-        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
-        const gx = eval(config['Gauge X']);
-        const gy = eval(config['Gauge Y']);
-        const gw = eval(config['Gauge Width']);
-        const gh = eval(config['Gauge Height']);
-        const gb = eval(config['Gauge Border']);
-        const border_color = config['Gauge Border Color'];
-        const background_color = config['Gauge Background Color'];
-        const fill_color = config['Gauge Color'];
-        window.contents.fillRect(gx,gy,gw,gh,border_color);
-        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
-        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
-    })
+    const gfx_name = window_data['Draw Graphic'];
+    if(!gfx_name)return;
+    const bitmap = ImageManager.loadPicture(gfx_name);
+    const bw = bitmap.width;
+    const bh = bitmap.height;
+    const gx = eval(window_data['Graphic X']);
+    const gy = eval(window_data['Graphic Y']);
+    const gw = eval(window_data['Graphic Width']);
+    const gh = eval(window_data['Graphic Height']);
+    this.contents.blt(bitmap, 0, 0, bw, bh, gx, gy, gw, gh);
 }
 
 WindowMC_GameData.prototype.drawGauges = function(){
@@ -5416,33 +5418,96 @@ WindowMC_GameData.prototype.drawGauges = function(){
 
 WindowMC_GameData.prototype.drawPlayerName = function(){
     const window_data = this._window_data;
+    if(!eval(window_data['Draw Player Name']))return;
+    const text = $gameSystem._player_name;
+    const tx = eval(window_data['Name X']);
+    const ty = eval(window_data['Name Y']);
+    this.drawTextEx(text, tx, ty);
 }
 
 WindowMC_GameData.prototype.drawPlayerFace = function(){
-    const custom_data = $gamePlayer._custom_data;
+    const custom_data = $gamePlayer.customData();
     const window_data = this._window_data;
+    if(
+        !eval(window_data['Draw Player Face']) ||
+        !custom_data
+    )return;
+    const face_name = custom_data['Face File'];
+    const face_index = eval(custom_data['Face Index']);
+    const fx = eval(window_data['Face X']);
+    const fy = eval(window_data['Face Y']);
+    const fw = eval(window_data['Face Width']);
+    const fh = eval(window_data['Face Height']);
+    this.drawFace(face_name, face_index, fx, fy, fw, fh);
 }
 
 WindowMC_GameData.prototype.drawPlayerFrontGraphic = function(){
     const custom_data = $gamePlayer._custom_data;
     const window_data = this._window_data;
+    if(
+        !eval(window_data['Draw Player Front Graphic']) ||
+        !custom_data
+    )return;
+    const gfx_name = custom_data['Player Front Facing Graphic'];
+    if(!gfx_name)return;
+    const bitmap = ImageManager.loadPicture(gfx_name);
+    const bw = bitmap.width;
+    const bh = bitmap.height;
+    const gx = eval(window_data['Front Graphic X']);
+    const gy = eval(window_data['Front Graphic Y']);
+    const gw = eval(window_data['Front Graphic Width']);
+    const gh = eval(window_data['Front Graphic Height']);
+    this.contents.blt(bitmap, 0, 0, bw, bh, gx, gy, gw, gh);
 }
 
 WindowMC_GameData.prototype.drawPlayerBackGraphic = function(){
     const custom_data = $gamePlayer._custom_data;
     const window_data = this._window_data;
+    if(
+        !eval(window_data['Draw Player Back Graphic']) ||
+        !custom_data
+    )return;
+    const gfx_name = custom_data['Player Back Facing Graphic'];
+    if(!gfx_name)return;
+    const bitmap = ImageManager.loadPicture(gfx_name);
+    const bw = bitmap.width;
+    const bh = bitmap.height;
+    const gx = eval(window_data['Back Graphic X']);
+    const gy = eval(window_data['Back Graphic Y']);
+    const gw = eval(window_data['Back Graphic Width']);
+    const gh = eval(window_data['Back Graphic Height']);
+    this.contents.blt(bitmap, 0, 0, bw, bh, gx, gy, gw, gh);
 }
 
 WindowMC_GameData.prototype.drawPlayTime = function(){
     const window_data = this._window_data;
+    if(!eval(window_data['Draw Play Time']))return;
+    this._constant_update = true;
+    const time = $gameSystem.playtimeText();
+    const text = (window_data['Play Time Text'] || "").format(time);
+    const tx = eval(window_data['Play Time X']);
+    const ty = eval(window_data['Play Time Y']);
+    this.drawTextEx(text, tx, ty);
 }
 
 WindowMC_GameData.prototype.drawSaveCount = function(){
     const window_data = this._window_data;
+    if(!eval(window_data['Draw Save Count']))return;
+    const save_count = $gameSystem.saveCount();
+    const text = (window_data['Save Count Text'] || "").format(save_count);
+    const tx = eval(window_data['Save Count X']);
+    const ty = eval(window_data['Save Count Y']);
+    this.drawTextEx(text, tx, ty);
 }
 
 WindowMC_GameData.prototype.drawCaptureCount = function(){
     const window_data = this._window_data;
+    if(!eval(window_data['Draw Capture Count']))return;
+    const capture_count = $gameSystem._captureId + 1;
+    const text = (window_data['Capture Count Text'] || "").format(capture_count);
+    const tx = eval(window_data['Capture Count X']);
+    const ty = eval(window_data['Capture Count Y']);
+    this.drawTextEx(text, tx, ty);
 }
 
 WindowMC_GameData.prototype.displayMapCharacter = function(){

@@ -4720,16 +4720,18 @@ Game_Party.prototype.grantParentBreedEXP = function(){
             const map_config = Syn_MC.MAP_CONFIGURATIONS.find((config)=>{
                 return eval(config['Map']) == map_id;
             })
-            const exp_growth = eval(map_config['Breeder EXP Growth']) || 0;
-            const breeder_obj = map_breeder[id_key];
-            if(breeder_obj){
-                const actor_1 = breeder_obj['Actor 1'];
-                if(actor_1){
-                    actor_1.gainExpBreed(exp_growth);
-                }
-                const actor_2 = breeder_obj['Actor 2'];
-                if(actor_2){
-                    actor_2.gainExpBreed(exp_growth);
+            if(map_config){
+                const exp_growth = eval(map_config['Breeder EXP Growth']) || 0;
+                const breeder_obj = map_breeder[id_key];
+                if(breeder_obj){
+                    const actor_1 = breeder_obj['Actor 1'];
+                    if(actor_1){
+                        actor_1.gainExpBreed(exp_growth);
+                    }
+                    const actor_2 = breeder_obj['Actor 2'];
+                    if(actor_2){
+                        actor_2.gainExpBreed(exp_growth);
+                    }
                 }
             }
         })
@@ -5685,8 +5687,9 @@ WindowMC_ActorData.prototype.setActor = function(actor){
     this.contents.clear();
     this._actor = actor;
     if(actor){
+        this.show();
         this.drawData();
-    }else{
+    }else if(this._blank_hide){
         this.hide();
     }
 }
@@ -7009,11 +7012,12 @@ SceneMC_Breeder.prototype.setActor1 = function(){
     const party_actor = this._actor_list_window.actor();
     const party_index = this._actor_list_window.index();
     $gameParty._actors[party_index] = actor_1;
-    breeder_obj['Actor 1'] = party_actor;
+    breeder_obj['Actor 1'] = party_actor || null;
     this._breeder_command_window.close();
     this._breeder_command_window.deactivate();
     this._actor_list_window.activate();
     $gameParty._actors = $gameParty._actors.filter(Boolean);
+    $gameParty._map_breeder = breeder_objs
     this.refreshAll();
 }
 
@@ -7037,6 +7041,7 @@ SceneMC_Breeder.prototype.setActor2 = function(){
     this._breeder_command_window.deactivate();
     this._actor_list_window.activate();
     $gameParty._actors = $gameParty._actors.filter(Boolean);
+    $gameParty._map_breeder = breeder_objs
     this.refreshAll();
 }
 
@@ -7055,6 +7060,7 @@ SceneMC_Breeder.prototype.getChild = function(){
     this._breeder_command_window.deactivate();
     this._actor_list_window.activate();
     $gameParty._actors = $gameParty._actors.filter(Boolean);
+    $gameParty._map_breeder = breeder_objs
     this.refreshAll();
 }
 

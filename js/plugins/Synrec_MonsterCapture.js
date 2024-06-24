@@ -2482,6 +2482,55 @@
  * @type struct<actorDataWindow>[]
  * @default []
  * 
+ * @param Child Character Graphic
+ * @desc Graphic for child
+ * @type file
+ * @dir img/characters/
+ * 
+ * @param Child Character Graphic Index
+ * @parent Child Character Graphic
+ * @desc Graphic for child
+ * @type text
+ * @default 0
+ * 
+ * @param Child Direction
+ * @parent Child Character Graphic
+ * @desc Position in scene.
+ * @type select
+ * @option down
+ * @value 2
+ * @option left
+ * @value 4
+ * @option right
+ * @value 6
+ * @option up
+ * @value 8
+ * @default 2
+ * 
+ * @param Child X
+ * @parent Child Character Graphic
+ * @desc Position in scene.
+ * @type text
+ * @default 0
+ * 
+ * @param Child Y
+ * @parent Child Character Graphic
+ * @desc Position in scene.
+ * @type text
+ * @default 0
+ * 
+ * @param Child Scale X
+ * @parent Child Character Graphic
+ * @desc Position in scene.
+ * @type text
+ * @default 1
+ * 
+ * @param Child Scale Y
+ * @parent Child Character Graphic
+ * @desc Position in scene.
+ * @type text
+ * @default 1
+ * 
  * @param Party List Window
  * @desc Window display list of party members.
  * @type struct<actorSelcWindow>
@@ -5691,6 +5740,9 @@ WindowMC_ActorData.prototype.setActor = function(actor){
         this.drawData();
     }else if(this._blank_hide){
         this.hide();
+    }else{
+        this._battler_sprite.setBattler();
+        this._chara.setOpacity(0);
     }
 }
 
@@ -5859,7 +5911,7 @@ WindowMC_ActorData.prototype.displayMapCharacter = function(){
     if(!eval(window_data['Display Map Character'])){
         this._chara.setOpacity(0);
         return;
-    }else{
+    }else if(actor){
         this._chara.setOpacity(255);
         const char_name = actor.characterName();
         const char_indx = actor.characterIndex();
@@ -5869,7 +5921,8 @@ WindowMC_ActorData.prototype.displayMapCharacter = function(){
         this._chara._screenY = eval(window_data['Character Y']) || 0;
         this._character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
         this._character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
-        this._character_sprite.visible = true;
+    }else{
+        this._chara.setOpacity(0);
     }
 }
 
@@ -5877,17 +5930,17 @@ WindowMC_ActorData.prototype.displayBattler = function(){
     const actor = this._actor;
     const window_data = this._window_data;
     if(!eval(window_data['Display Battler'])){
-        this._battler_sprite.visible = false;
         this._battler_sprite.setBattler();
         return;
-    }else{
+    }else if(actor){
         const hx = eval(window_data['Battler X']);
         const hy = eval(window_data['Battler Y']);
         this._battler_sprite.setHome(hx, hy);
         this._battler_sprite.setBattler(actor);
         this._battler_sprite.scale.x = eval(window_data['Battler Scale X']);
         this._battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
-        this._battler_sprite.visible = true;
+    }else{
+        this._battler_sprite.setBattler();
     }
 }
 
@@ -5916,6 +5969,19 @@ WindowMC_ActorSelector.prototype.initialize = function(data, list){
     this.setOpacityAndDimmer();
     this.createCharacterSprites();
     this.createBattlerSprites();
+}
+
+WindowMC_ActorSelector.prototype.clearSprites = function(){
+    this._character_sprites.forEach((sprite)=>{
+        if(sprite.parent)sprite.parent.removeChild(sprite);
+        if(sprite.destroy)sprite.destroy();
+    })
+    this._character_sprites = [];
+    this._battler_sprites.forEach((sprite)=>{
+        if(sprite.parent)sprite.parent.removeChild(sprite);
+        if(sprite.destroy)sprite.destroy();
+    })
+    this._battler_sprites = [];
 }
 
 WindowMC_ActorSelector.prototype.createCharacterSprites = function(){
@@ -6023,6 +6089,7 @@ WindowMC_ActorSelector.prototype.setOpacityAndDimmer = function(){
 
 WindowMC_ActorSelector.prototype.setList = function(list){
     this._list = list;
+    this.clearSprites();
     this.refresh();
 }
 
@@ -6097,8 +6164,9 @@ WindowMC_ActorSelector.prototype.drawItem = function(i){
         this.displayBattler(rect, i, actor);
     }else{
         const text = '-';
+        const x = rect.x;
         const y = rect.y + (rect.height * 0.5);
-        this.drawText(text, 0, y, rect.width, 'center');
+        this.drawText(text, x, y, rect.width, 'center');
     }
 }
 
@@ -6875,6 +6943,7 @@ SceneMC_Breeder.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createBackgrounds();
     this.createBackgraphics();
+    this.createChildGraphic();
     this.createWindowLayer();
     this.createActorData1Windows();
     this.createActorData2Windows();
@@ -6907,6 +6976,30 @@ SceneMC_Breeder.prototype.createBackgraphics = function(){
         backgrounds.push(sprite);
     })
     this._backgfxs = backgrounds
+}
+
+SceneMC_Breeder.prototype.createChildGraphic = function(){
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const gfx_name = UI_Config['Child Character Graphic'];
+    const gfx_index = UI_Config['Child Character Graphic Index'];
+    const dir = eval(UI_Config['Child Direction']) || 2;
+    const px = eval(UI_Config['Child X']) || 0;
+    const py = eval(UI_Config['Child Y']) || 0;
+    const sx = eval(UI_Config['Child Scale X']) || 0;
+    const sy = eval(UI_Config['Child Scale Y']) || 0;
+    const chara = new Game_MonsterCharacter();
+    chara.setStepAnime(true);
+    chara.setDirection(dir);
+    chara.setScreenX(px);
+    chara.setScreenY(py);
+    chara.setOpacity(0);
+    chara.setImage(gfx_name, gfx_index);
+    const sprite = new SpriteMenu_CharacterMonster(chara);
+    sprite.scale.x = sx;
+    sprite.scale.y = sy;
+    this.addChild(sprite);
+    this._child_chara = chara;
+    this._child_sprite = sprite;
 }
 
 SceneMC_Breeder.prototype.createActorData1Windows = function(){
@@ -7073,6 +7166,7 @@ SceneMC_Breeder.prototype.refreshAll = function(){
 SceneMC_Breeder.prototype.update = function(){
     Scene_Base.prototype.update.call(this);
     this.updateDataWindows();
+    this.updateChildDisplay();
 }
 
 SceneMC_Breeder.prototype.updateDataWindows = function(){
@@ -7101,6 +7195,20 @@ SceneMC_Breeder.prototype.updateDataWindows = function(){
             window.setActor(party_actor);
         })
         this._saved_actor = party_actor;
+    }
+}
+
+SceneMC_Breeder.prototype.updateChildDisplay = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    const breeder_obj = breeder_objs[map_id];
+    if(breeder_obj){
+        const child = breeder_obj['Child'];
+        if(child){
+            this._child_chara.setOpacity(255);
+        }else{
+            this._child_chara.setOpacity(0);
+        }
     }
 }
 

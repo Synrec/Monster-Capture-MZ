@@ -115,6 +115,10 @@
  * @desc Configure UI settings for player scene
  * @type struct<playerUI>
  * 
+ * @param Reserve Box UI Configuration
+ * @desc Configure UI settings for breeder
+ * @type struct<reserveUI>
+ * 
  * @param Breeder UI Configuration
  * @desc Configure UI settings for breeder
  * @type struct<breederUI>
@@ -2470,6 +2474,47 @@
  * @default []
  * 
  */
+/*~struct~reserveUI:
+ * 
+ * @param Backgrounds
+ * @desc Lowest graphic layer for the scene.
+ * @type struct<staticPic>[]
+ * @default []
+ * 
+ * @param Back Graphics
+ * @desc Graphic layer just above background.
+ * @type struct<animPic>[]
+ * @default []
+ * 
+ * @param Game Data Windows
+ * @desc Windows to display game data.
+ * @type struct<gameDataWindow>[]
+ * @default []
+ * 
+ * @param Party Actor List Window
+ * @desc Window display list of party members.
+ * @type struct<actorSelcWindow>
+ * 
+ * @param Party Actor Data Windows
+ * @desc Windows to display selected party actor data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Reserve Actor List Window
+ * @desc Window display list of reserve members.
+ * @type struct<actorSelcWindow>
+ * 
+ * @param Reserve Actor Data Windows
+ * @desc Windows to display selected reserve actor data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Held Actor Data Windows
+ * @desc Windows to display data of actor being held.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ *  
+ */
 /*~struct~breederUI:
  * 
  * @param Backgrounds
@@ -3171,6 +3216,61 @@ function PLAYER_UI_PARSER_MONSTERCAPTURE(obj){
 }
 
 Syn_MC.PLAYER_UI_CONFIGURATION = PLAYER_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Player UI Configuration']);
+
+function RESERVE_BOX_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
+                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Backgrounds'] = [];
+        }
+        try{
+            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
+                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Back Graphics'] = [];
+        }
+        try{
+            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
+                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Game Data Windows'] = [];
+        }
+        obj['Party Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Party Actor List Window']);
+        try{
+            obj['Party Actor Data Windows'] = JSON.parse(obj['Party Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Party Actor Data Windows'] = [];
+        }
+        obj['Reserve Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Reserve Actor List Window']);
+        try{
+            obj['Reserve Actor Data Windows'] = JSON.parse(obj['Reserve Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Reserve Actor Data Windows'] = [];
+        }
+        try{
+            obj['Held Actor Data Windows'] = JSON.parse(obj['Held Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Held Actor Data Windows'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.RESERVE_BOX_UI_CONFIGURATION = RESERVE_BOX_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Reserve Box UI Configuration']);
 
 function BREEDER_COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
     try{
@@ -7420,13 +7520,6 @@ SceneMC_Breeder.prototype.updateChildDisplay = function(){
     }
 }
 
-function SceneMC_ReserveBoxes(){
-    this.initialize(...arguments);
-}
-
-SceneMC_ReserveBoxes.prototype = Object.create(Scene_Base.prototype);
-SceneMC_ReserveBoxes.prototype.constructor = SceneMC_ReserveBoxes;
-
 function SceneMC_Player(){
     this.initialize(...arguments);
 }
@@ -7518,6 +7611,250 @@ SceneMC_Player.prototype.updateExitScene = function(){
     ){
         SoundManager.playCancel();
         this.popScene();
+    }
+}
+
+function SceneMC_ReserveBoxes(){
+    this.initialize(...arguments);
+}
+
+SceneMC_ReserveBoxes.prototype = Object.create(Scene_Base.prototype);
+SceneMC_ReserveBoxes.prototype.constructor = SceneMC_ReserveBoxes;
+
+SceneMC_ReserveBoxes.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this._box_index = $gameTemp._open_direct_box || 0;
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createWindowLayer();
+    this.createPartyListWindow();
+    this.createReserveListWindow();
+    this.createPartyDataWindows();
+    this.createReserveDataWindows();
+    this.createHeldActorDataWindows();
+    this.createGameDataWindows();
+}
+
+SceneMC_ReserveBoxes.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds
+}
+
+SceneMC_ReserveBoxes.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds
+}
+
+SceneMC_ReserveBoxes.prototype.createPartyListWindow = function(){
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const data = UI_Config['Party Actor List Window'];
+    const list = $gameParty._actors;
+    const window = new WindowMC_ActorSelector(data, list);
+    window._forceMaxItems = $gameParty.maxBattleMembers();
+    window.setHandler('ok', this.moveActor.bind(this));
+    window.setHandler('cancel', this.cancelCommand.bind(this));
+    window.setHandler('shift', this.changeWindow.bind(this));
+    window.refresh();
+    window.activate();
+    window.select(0);
+    this.addWindow(window);
+    this._party_list_window = window;
+}
+
+SceneMC_ReserveBoxes.prototype.createReserveListWindow = function(){
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const data = UI_Config['Reserve Actor List Window'];
+    const list = $gameParty._actors;
+    const window = new WindowMC_ActorSelector(data, list);
+    window._forceMaxItems = Syn_MC.RESERVE_BOX_SIZE;
+    window.setHandler('ok', this.moveActor.bind(this));
+    window.setHandler('cancel', this.cancelCommand.bind(this));
+    window.setHandler('shift', this.changeWindow.bind(this));
+    window.refresh();
+    window.deactivate();
+    window.select(0);
+    this.addWindow(window);
+    this._reserve_list_window = window;
+}
+
+SceneMC_ReserveBoxes.prototype.createPartyDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Party Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._party_data_windows = windows;
+}
+
+SceneMC_ReserveBoxes.prototype.createReserveDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Reserve Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._reserve_data_windows = windows;
+}
+
+SceneMC_ReserveBoxes.prototype.createHeldActorDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Held Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._held_actor_data_windows = windows;
+}
+
+SceneMC_ReserveBoxes.prototype.createGameDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.RESERVE_BOX_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Game Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_GameData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._game_data_windows = windows;
+}
+
+SceneMC_ReserveBoxes.prototype.moveActor = function(){
+    const window = this._party_list_window.active ? this._party_list_window : this._reserve_list_window.active ? this._reserve_list_window : null;
+    if(!window){
+        SoundManager.playBuzzer();
+        this.popScene();
+        return;
+    }
+    const is_party = window == this._party_list_window;
+    const is_reserve = window == this._reserve_list_window;
+    const reserve_box_index = this._box_index;
+    const reserve_boxes = $gameParty._reserveBoxes;
+    const reserve_box = reserve_boxes[reserve_box_index];
+    if(!this._held_data){
+        const index = window.index();
+        const actor = window.actor();
+        if(actor){
+            this._held_data = {actor:actor, was_party: is_party, was_reserve: is_reserve, reserve_id: reserve_box_index};
+            if(is_reserve){
+                reserve_box[index] = undefined;
+            }else if(is_party){
+                $gameParty._actors[index] = null;
+                $gameParty._actors = $gameParty._actors.filter(Boolean);
+            }
+        }
+    }else if(this._held_data){
+        const index = window.index();
+        const actor = window.actor();
+        if(is_reserve){
+            reserve_box[index] = this._held_data.actor;
+            if(actor){
+                this._held_data = {actor:actor, was_party: is_party, was_reserve: is_reserve, reserve_id: reserve_box_index};
+            }else{
+                delete this._held_data;
+            }
+        }else if(is_party){
+            $gameParty._actors[index] = this._held_data.actor;
+            $gameParty._actors = $gameParty._actors.filter(Boolean);
+            if(actor){
+                this._held_data = {actor:actor, was_party: is_party, was_reserve: is_reserve, reserve_id: reserve_box_index};
+            }else{
+                delete this._held_data;
+            }
+        }
+    }
+    $gameParty._reserveBoxes = reserve_boxes;
+}
+
+SceneMC_ReserveBoxes.prototype.cancelCommand = function(){
+    if(this._held_data){
+        const party = this._held_data.was_party;
+        const reserve = this._held_data.was_reserve;
+        const reserve_box_id = this._held_data.reserve_id
+        const actor = this._held_data.actor;
+        if(party){
+            $gameParty._actors.push(actor);
+        }else if(reserve){
+            const reserve_boxes = $gameParty._reserveBoxes;
+            const reserve_box = reserve_boxes[reserve_box_id];
+            for(let i = 0; i < Syn_MC.RESERVE_BOX_SIZE; i++){
+                if(!reserve_box[i]){
+                    reserve_box[i] = actor;
+                    $gameParty._reserveBoxes = reserve_boxes;
+                    break;
+                }
+            }
+        }
+        delete this._held_data;
+        return;
+    }
+    this.popScene();
+}
+
+SceneMC_ReserveBoxes.prototype.changeWindow = function(){
+    SoundManager.playCursor();
+    if(this._party_list_window.active){
+        this._party_list_window.deactivate();
+        this._reserve_list_window.activate();
+    }else if(this._reserve_list_window.active){
+        this._party_list_window.activate();
+        this._reserve_list_window.deactivate();
+    }
+}
+
+SceneMC_ReserveBoxes.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateBoxIndex();
+    this.updateDataWindows();
+}
+
+SceneMC_ReserveBoxes.prototype.updateDataWindows = function(){
+    const party_actor = this._party_list_window.actor();
+    const reserve_actor = this._reserve_list_window.actor();
+    const held_actor = this._held_data ? this._held_data.actor : null;
+    if(this._saved_party_actor != party_actor){
+        this._party_data_windows.forEach((window)=>{
+            window.setActor(party_actor);
+        })
+        this._saved_party_actor = party_actor;
+    }
+    if(this._saved_reserve_actor != reserve_actor){
+        this._reserve_data_windows.forEach((window)=>{
+            window.setActor(reserve_actor);
+        })
+        this._saved_reserve_actor = reserve_actor;
+    }
+    if(this._saved_held_actor != held_actor){
+        this._held_actor_data_windows.forEach((window)=>{
+            window.setActor(reserve_actor);
+        })
+        this._saved_held_actor = held_actor;
     }
 }
 

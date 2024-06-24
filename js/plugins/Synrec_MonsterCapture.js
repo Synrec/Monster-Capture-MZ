@@ -7065,6 +7065,7 @@ SceneMC_Breeder.prototype.getChild = function(){
 }
 
 SceneMC_Breeder.prototype.refreshAll = function(){
+    this._actor_list_window.setList($gameParty._actors);
     this._actor_list_window.refresh();
     this._breeder_command_window.refresh();
 }

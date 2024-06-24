@@ -2242,7 +2242,7 @@
  * @param Require Actor Select
  * @desc If actor select window, start actor selection.
  * @type boolean
- * @default false;
+ * @default false
  * 
  * @param Execute Script
  * @desc What code the command will run
@@ -2388,8 +2388,7 @@
  * 
  * @param Actor Select Window
  * @desc Windows to display leader actor data.
- * @type struct<actorSelcWindow>[]
- * @default []
+ * @type struct<actorSelcWindow>
  * 
  * @param Actor Data Windows
  * @desc Windows to display leader actor data.
@@ -3028,7 +3027,7 @@ function MAINMENU_UI_PARSER_MONSTERCAPTURE(obj){
         }catch(e){
             obj['Actor Data Windows'] = [];
         }
-        obj['Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor List Window']);
+        obj['Actor Select Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor Select Window']);
         obj['Command Window'] = COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj['Command Window']);
         return obj;
     }catch(e){
@@ -3171,7 +3170,7 @@ Syn_MC.BEASTIARY_UI_CONFIGURATION = BEASTIARY_UI_PARSER_MONSTERCAPTURE(Syn_MC.Pl
 
 Syn_MC_ScnMngr_Push = SceneManager.push;
 SceneManager.push = function(sceneClass) {
-    if(Syn_MC.MENU_CONFIGURATION){
+    if(Syn_MC.MAIN_MENU_CONFIGURATION && sceneClass === Scene_Menu){
         sceneClass = SceneMC_MainMenu;
     }
     Syn_MC_ScnMngr_Push.call(this, ...arguments);
@@ -5799,11 +5798,11 @@ WindowMC_ActorSelector.prototype.initialize = function(data, list){
     this.createBattlerSprites();
 }
 
-WindowMC_ActorSelector.prototype.createCharacterSprite = function(){
+WindowMC_ActorSelector.prototype.createCharacterSprites = function(){
     this._character_sprites = [];
 }
 
-WindowMC_ActorSelector.prototype.createCharacterSprite = function(){
+WindowMC_ActorSelector.prototype.createBattlerSprites = function(){
     this._battler_sprites = [];
 }
 
@@ -5951,7 +5950,7 @@ WindowMC_ActorSelector.prototype.drawGauges = function(rect, actor){
     const ry = rect.y;
     const window = this;
     const window_data = this._window_data;
-    const gauges = window_data['Gauges'];
+    const gauges = window_data['Gauges'] || [];
     gauges.forEach((config)=>{
         const label = config['Label'];
         const lx = eval(config['Label X']);
@@ -6104,6 +6103,7 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
     const rx = rect.x;
     const ry = rect.y;
     const window_data = this._window_data;
+    if(!this._character_sprites[index])this.createCharacterSprite(index);
     const character_sprite = this._character_sprites[index];
     if(!eval(window_data['Display Map Character'])){
         character_sprite.visible = false;
@@ -6125,6 +6125,7 @@ WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
     const rx = rect.x;
     const ry = rect.y;
     const window_data = this._window_data;
+    if(!this._battler_sprites[index])this.createBattlerSprite(index);
     const battler_sprite = this._battler_sprites[index];
     if(!eval(window_data['Display Battler'])){
         battler_sprite.visible = false;
@@ -6620,6 +6621,7 @@ SceneMC_Beastiary.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createBackgrounds();
     this.createBackgraphics();
+    this.createWindowLayer();
     this.createActorListWindow();
     this.createActorDataWindows();
 }
@@ -6713,6 +6715,7 @@ SceneMC_Breeder.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createBackgrounds();
     this.createBackgraphics();
+    this.createWindowLayer();
     this.createActorData1Windows();
     this.createActorData2Windows();
     this.createPartyDataWindows();
@@ -6944,10 +6947,12 @@ SceneMC_MainMenu.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createBackgrounds();
     this.createBackgraphics();
+    this.createWindowLayer();
     this.createCommandWindow();
     this.createActorListWindow();
     this.createActorDataWindows();
     this.createGameDataWindows();
+    console.log(this._windowLayer)
 }
 
 SceneMC_MainMenu.prototype.createBackgrounds = function(){
@@ -6982,6 +6987,8 @@ SceneMC_MainMenu.prototype.createCommandWindow = function(){
     const window = new WindowMC_CustomCommand(data);
     window.setHandler('ok', this.selectCommand.bind(this));
     window.setHandler('cancel', this.popScene.bind(this));
+    window.refresh();
+    window.activate();
     window.select(0);
     this.addWindow(window);
     this._command_window = window;
@@ -6989,12 +6996,13 @@ SceneMC_MainMenu.prototype.createCommandWindow = function(){
 
 SceneMC_MainMenu.prototype.createActorListWindow = function(){
     const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
-    const data = UI_Config['Command Window'];
+    const data = UI_Config['Actor Select Window'];
     const list = $gameParty._actors;
     const window = new WindowMC_ActorSelector(data, list);
     window.setHandler('ok', this.confirmActor.bind(this));
     window.setHandler('cancel', this.cancelCommand.bind(this));
     window.refresh();
+    window.deactivate();
     window.select(0);
     this.addWindow(window);
     this._actor_list_window = window;

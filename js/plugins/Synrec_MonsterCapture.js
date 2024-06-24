@@ -3471,6 +3471,11 @@ Game_Temp.prototype.renamePlayer = function(){
     SceneManager.push(SceneMC_PlayerRename);
 }
 
+Game_Temp.prototype.openMonsterReserve = function(id){
+    this._open_direct_box = id;
+    SceneManager.push(SceneMC_ReserveBoxes);
+}
+
 Syn_MC_GmSys_Init = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function(){
     Syn_MC_GmSys_Init.call(this, ...arguments);
@@ -4718,13 +4723,16 @@ Game_Party.prototype.callRenameScene = function(actor){
 }
 
 Game_Party.prototype.addToReserve = function(actor){
-    for(let i = 0; i < this._reserveBoxes.length; i++){
-        let box = this._reserveBoxes[i]['box'];
-        for(j = 0; j < box.length; j++){
-            if(!box[j]){
-                box[j] = actor;
-                return true;
+    if(actor instanceof Game_Actor){
+        for(let i = 0; i < this._reserveBoxes.length; i++){
+            const box = this._reserveBoxes[i];
+            for(let j = 0; j < Syn_MC.RESERVE_BOX_SIZE; j++){
+                if(!box[j]){
+                    box[j] = actor;
+                    return true;
+                }
             }
+            this._reserveBoxes[i] = box;
         }
     }
     return false;
@@ -7633,6 +7641,8 @@ SceneMC_ReserveBoxes.prototype.create = function(){
     this.createReserveDataWindows();
     this.createHeldActorDataWindows();
     this.createGameDataWindows();
+    this._last_window = 'party';
+    this.refreshAll();
 }
 
 SceneMC_ReserveBoxes.prototype.createBackgrounds = function(){
@@ -7669,7 +7679,6 @@ SceneMC_ReserveBoxes.prototype.createPartyListWindow = function(){
     window._forceMaxItems = $gameParty.maxBattleMembers();
     window.setHandler('ok', this.moveActor.bind(this));
     window.setHandler('cancel', this.cancelCommand.bind(this));
-    window.setHandler('shift', this.changeWindow.bind(this));
     window.refresh();
     window.activate();
     window.select(0);
@@ -7685,7 +7694,6 @@ SceneMC_ReserveBoxes.prototype.createReserveListWindow = function(){
     window._forceMaxItems = Syn_MC.RESERVE_BOX_SIZE;
     window.setHandler('ok', this.moveActor.bind(this));
     window.setHandler('cancel', this.cancelCommand.bind(this));
-    window.setHandler('shift', this.changeWindow.bind(this));
     window.refresh();
     window.deactivate();
     window.select(0);
@@ -7746,7 +7754,7 @@ SceneMC_ReserveBoxes.prototype.createGameDataWindows = function(){
 }
 
 SceneMC_ReserveBoxes.prototype.moveActor = function(){
-    const window = this._party_list_window.active ? this._party_list_window : this._reserve_list_window.active ? this._reserve_list_window : null;
+    const window = this._last_window == 'party' ? this._party_list_window : this._last_window == 'reserve' ? this._reserve_list_window : null;
     if(!window){
         SoundManager.playBuzzer();
         this.popScene();
@@ -7756,6 +7764,9 @@ SceneMC_ReserveBoxes.prototype.moveActor = function(){
     const is_reserve = window == this._reserve_list_window;
     const reserve_box_index = this._box_index;
     const reserve_boxes = $gameParty._reserveBoxes;
+    if(!Array.isArray(reserve_boxes[reserve_box_index])){
+        reserve_boxes[reserve_box_index] = [];
+    }
     const reserve_box = reserve_boxes[reserve_box_index];
     if(!this._held_data){
         const index = window.index();
@@ -7789,6 +7800,7 @@ SceneMC_ReserveBoxes.prototype.moveActor = function(){
             }
         }
     }
+    this.refreshAll();
     $gameParty._reserveBoxes = reserve_boxes;
 }
 
@@ -7812,26 +7824,129 @@ SceneMC_ReserveBoxes.prototype.cancelCommand = function(){
             }
         }
         delete this._held_data;
+        this.refreshAll();
         return;
     }
     this.popScene();
 }
 
-SceneMC_ReserveBoxes.prototype.changeWindow = function(){
-    SoundManager.playCursor();
-    if(this._party_list_window.active){
-        this._party_list_window.deactivate();
-        this._reserve_list_window.activate();
-    }else if(this._reserve_list_window.active){
-        this._party_list_window.activate();
-        this._reserve_list_window.deactivate();
+SceneMC_ReserveBoxes.prototype.changeWindowByButton = function(){
+    if(Input.isTriggered('shift')){
+        SoundManager.playCursor();
+        if(this._party_list_window.active){
+            this._party_list_window.deactivate();
+            this._reserve_list_window.activate();
+            this._changingWindows = true;
+            this._last_window = 'reserve';
+        }else if(this._reserve_list_window.active){
+            this._party_list_window.activate();
+            this._reserve_list_window.deactivate();
+            this._changingWindows = true;
+            this._last_window = 'party';
+        }
+        this.refreshAll();
     }
+}
+SceneMC_ReserveBoxes.prototype.changeWindowByTouch = function(){
+    SoundManager.playCursor();
+    const party_window = this._party_list_window;
+    const reserve_window = this._reserve_list_window;
+    const tx = TouchInput.x;
+    const ty = TouchInput.y;
+    if(this._party_list_window.active){
+        const wx = reserve_window.x;
+        const wy = reserve_window.y;
+        const ww = reserve_window.width;
+        const wh = reserve_window.height;
+        if(
+            tx >= wx &&
+            tx <= wx + ww &&
+            ty >= wy &&
+            ty <= wy + wh
+        ){
+            SoundManager.playCursor();
+            reserve_window.activate();
+            this._changingWindows = true;
+            this._last_window = 'reserve';
+        }
+    }else if(this._reserve_list_window.active){
+        const wx = party_window.x;
+        const wy = party_window.y;
+        const ww = party_window.width;
+        const wh = party_window.height;
+        if(
+            tx >= wx &&
+            tx <= wx + ww &&
+            ty >= wy &&
+            ty <= wy + wh
+        ){
+            SoundManager.playCursor();
+            party_window.activate();
+            this._changingWindows = true;
+            this._last_window = 'party';
+        }
+    }
+    this.refreshAll();
+}
+
+SceneMC_ReserveBoxes.prototype.refreshAll = function(){
+    const reserve_box_index = this._box_index;
+    const reserve_boxes = $gameParty._reserveBoxes;
+    const reserve_box = reserve_boxes[reserve_box_index] || [];
+    this._reserve_list_window.setList(reserve_box);
+    this._reserve_list_window.refresh();
+    const party = $gameParty._actors;
+    this._party_list_window.setList(party);
+    this._party_list_window.refresh();
+    switch(this._last_window){
+        case 'party':
+            this._party_list_window.activate();
+            break;
+        case 'reserve':
+            this._reserve_list_window.activate();
+            break;
+    }
+    $gameParty._reserveBoxes = reserve_boxes;
 }
 
 SceneMC_ReserveBoxes.prototype.update = function(){
     Scene_Base.prototype.update.call(this);
-    this.updateBoxIndex();
-    this.updateDataWindows();
+    this.updateChangeWindow();
+    if(!this._changingWindows){
+        this.updateBoxIndex();
+        this.updateDataWindows();
+    }
+}
+
+SceneMC_ReserveBoxes.prototype.updateChangeWindow = function(){
+    this._changingWindows = false;
+    if(TouchInput.isTriggered()){
+        this.changeWindowByTouch();
+    }else{
+        this.changeWindowByButton();
+    }
+}
+
+SceneMC_ReserveBoxes.prototype.updateBoxIndex = function(){
+    if(!isNaN($gameTemp._open_direct_box))return;
+    if(this._reserve_list_window.active){
+        const max_boxes = Syn_MC.RESERVE_BOX_COUNT;
+        const threshold = 20;
+        const wheel_y = TouchInput.wheelY;
+        if(wheel_y >= threshold || Input.isTriggered('pageup')){
+            this._box_index--;
+            if(this._box_index < 0){
+                this._box_index = max_boxes - 1;
+            }
+            this.refreshAll();
+        }else if(wheel_y <= -threshold || Input.isTriggered('pagedown')){
+            this._box_index++;
+            if(this._box_index >= max_boxes){
+                this._box_index = 0;
+            }
+            this.refreshAll();
+        }
+    }
 }
 
 SceneMC_ReserveBoxes.prototype.updateDataWindows = function(){
@@ -7852,7 +7967,7 @@ SceneMC_ReserveBoxes.prototype.updateDataWindows = function(){
     }
     if(this._saved_held_actor != held_actor){
         this._held_actor_data_windows.forEach((window)=>{
-            window.setActor(reserve_actor);
+            window.setActor(held_actor);
         })
         this._saved_held_actor = held_actor;
     }

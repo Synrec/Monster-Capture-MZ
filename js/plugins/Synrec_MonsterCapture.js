@@ -2612,6 +2612,11 @@
  * @type struct<animPic>[]
  * @default []
  * 
+ * @param Game Data Windows
+ * @desc Windows to display game data.
+ * @type struct<gameDataWindow>[]
+ * @default []
+ * 
  * @param Actor Data Windows
  * @desc Windows to display actor data.
  * @type struct<actorDataWindow>[]
@@ -3354,6 +3359,13 @@ function BEASTIARY_UI_PARSER_MONSTERCAPTURE(obj){
             }).filter(Boolean)
         }catch(e){
             obj['Actor Data Windows'] = [];
+        }
+        try{
+            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Game Data Windows'] = [];
         }
         obj['Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor List Window']);
         return obj;
@@ -6268,9 +6280,9 @@ WindowMC_ActorSelector.prototype.updateSprites = function(){
             sprite.setHome(x, y);
             if(sprite._visibility){
                 const actor = this.actor(i);
-                sprite.setBattler(actor)
+                sprite.setBattler(actor);
             }else{
-                sprite.setBattler(null)
+                sprite.setBattler(null);
             }
         }
     }
@@ -6981,6 +6993,7 @@ SceneMC_Beastiary.prototype.create = function(){
     this.createWindowLayer();
     this.createActorListWindow();
     this.createActorDataWindows();
+    this.createGameDataWindows();
 }
 
 SceneMC_Beastiary.prototype.createBackgrounds = function(){
@@ -7014,10 +7027,11 @@ SceneMC_Beastiary.prototype.createActorListWindow = function(){
     const data = UI_Config['Actor List Window'];
     const filtered = UI_Config['Filtered Actors'] ? UI_Config['Filtered Actors'].map(id => eval(id)) : [];
     const obtained_actors = $gameSystem._obtained_actors;
-    const list = $dataActors.filter((actor_data)=>{
+    const filtered_actor_data = $dataActors.filter((actor_data)=>{
         const id = actor_data.id;
         return !filtered.includes(id);
-    }).map((data)=>{
+    })
+    const list = filtered_actor_data.map((data)=>{
         const id = data.id;
         if(obtained_actors.includes(id)){
             const actor = new Game_Actor(id);
@@ -7025,6 +7039,7 @@ SceneMC_Beastiary.prototype.createActorListWindow = function(){
         }else return "";
     })
     const window = new WindowMC_ActorSelector(data, list);
+    window._forceMaxItems = filtered_actor_data.length;
     window.refresh();
     window.select(0);
     window.setHandler('cancel', this.popScene.bind(this));
@@ -7043,6 +7058,19 @@ SceneMC_Beastiary.prototype.createActorDataWindows = function(){
         windows.push(window);
     })
     this._data_windows = windows;
+}
+
+SceneMC_Beastiary.prototype.createGameDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BEASTIARY_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Game Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_GameData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._game_data_windows = windows;
 }
 
 SceneMC_Beastiary.prototype.update = function(){

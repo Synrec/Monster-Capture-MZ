@@ -5337,7 +5337,8 @@ WindowMC_GameData.prototype.updateDisplay = function(){
     const window_data = this._window_data;
     const sw_id = eval(window_data['Display Switch']);
     if(!sw_id){
-        this.hide();
+        this.show();
+        return;
     }
     const sw_on = $gameSwitches.value(sw_id);
     if(sw_on){
@@ -5759,6 +5760,7 @@ WindowMC_ActorData.prototype.displayBattler = function(){
     const window_data = this._window_data;
     if(!eval(window_data['Display Battler'])){
         this._battler_sprite.visible = false;
+        this._battler_sprite.setBattler();
         return;
     }else{
         const hx = eval(window_data['Battler X']);
@@ -5911,13 +5913,48 @@ WindowMC_ActorSelector.prototype.actor = function(){
 }
 
 WindowMC_ActorSelector.prototype.update = function(){
-    Window_Base.prototype.update.call(this);
-    this.updateActor();
+    Window_Selectable.prototype.update.call(this);
+    this.updateSprites();
 }
 
-WindowMC_ActorSelector.prototype.updateActor = function(){
-    if(this._actor){
-        const window_data = this._window_data;
+WindowMC_ActorSelector.prototype.updateSprites = function(){
+    const chara_sprites = this._character_sprites;
+    for(let i = 0; i < chara_sprites.length; i++){
+        const rect = this.itemRect(i);
+        const sprite = chara_sprites[i];
+        if(sprite){
+            if(sprite.visible){
+                const chara = sprite._character;
+                const rx = rect.x;
+                const ry = rect.y;
+                const sx = -this._scrollX;
+                const sy = -this._scrollY;
+                const ox = chara._off_screenX;
+                const oy = chara._off_screenY;
+                const x = rx + sx + ox;
+                const y = ry + sy + oy;
+                chara._screenX = x;
+                chara._screenY = y;
+            }
+        }
+    }
+    const batt_sprites = this._battler_sprites;
+    for(let i = 0; i < batt_sprites.length; i++){
+        const rect = this.itemRect(i);
+        const sprite = batt_sprites[i];
+        if(sprite){
+            if(sprite.visible){
+                const rx = rect.x;
+                const ry = rect.y;
+                const sx = -this._scrollX;
+                const sy = -this._scrollY;
+                const ox = sprite._offset_x;
+                const oy = sprite._offset_y;
+                const x = rx + sx + ox;
+                const y = ry + sy + oy;
+                sprite.setHome(x, y);
+            }
+        }
     }
 }
 
@@ -6100,8 +6137,6 @@ WindowMC_ActorSelector.prototype.drawSpParams = function(rect, actor){
 }
 
 WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, actor){
-    const rx = rect.x;
-    const ry = rect.y;
     const window_data = this._window_data;
     if(!this._character_sprites[index])this.createCharacterSprite(index);
     const character_sprite = this._character_sprites[index];
@@ -6113,8 +6148,10 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
         const char_indx = actor.characterIndex();
         this._chara.setImage(char_name, char_indx);
         this._chara.setDirection(eval(window_data['Character Direction']) || 2);
-        this._chara._screenX = rx + eval(window_data['Character X']) || 0;
-        this._chara._screenY = ry + eval(window_data['Character Y']) || 0;
+        this._chara._screenX = rect.x;
+        this._chara._screenY = rect.y;
+        this._chara._off_screenX = eval(window_data['Character X']) || 0;
+        this._chara._off_screenY = eval(window_data['Character Y']) || 0;
         character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
         character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
         character_sprite.visible = true;
@@ -6122,18 +6159,19 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
 }
 
 WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
-    const rx = rect.x;
-    const ry = rect.y;
     const window_data = this._window_data;
     if(!this._battler_sprites[index])this.createBattlerSprite(index);
     const battler_sprite = this._battler_sprites[index];
     if(!eval(window_data['Display Battler'])){
         battler_sprite.visible = false;
+        battler_sprite.setBattler();
         return;
     }else{
-        const hx = rx + eval(window_data['Battler X']);
-        const hy = ry + eval(window_data['Battler y']);
-        battler_sprite.setHome(hx, hy);
+        const hx = eval(window_data['Battler X']) || 0;
+        const hy = eval(window_data['Battler Y']) || 0;
+        battler_sprite.setHome(rect.x, rect.y);
+        battler_sprite._offset_x = hx;
+        battler_sprite._offset_y = hy;
         battler_sprite.setBattler(actor);
         battler_sprite.scale.x = eval(window_data['Battler Scale X']);
         battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
@@ -6982,6 +7020,7 @@ SceneMC_MainMenu.prototype.createBackgraphics = function(){
 }
 
 SceneMC_MainMenu.prototype.createCommandWindow = function(){
+    const index = SceneManager._menuMainIndex || 0;
     const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
     const data = UI_Config['Command Window'];
     const window = new WindowMC_CustomCommand(data);
@@ -6989,12 +7028,13 @@ SceneMC_MainMenu.prototype.createCommandWindow = function(){
     window.setHandler('cancel', this.popScene.bind(this));
     window.refresh();
     window.activate();
-    window.select(0);
+    window.select(index);
     this.addWindow(window);
     this._command_window = window;
 }
 
 SceneMC_MainMenu.prototype.createActorListWindow = function(){
+    const actor_index = Math.min((SceneManager._menuActorIndex || 0), $gameParty._actors.length - 1);
     const UI_Config = Syn_MC.MAIN_MENU_CONFIGURATION;
     const data = UI_Config['Actor Select Window'];
     const list = $gameParty._actors;
@@ -7003,7 +7043,7 @@ SceneMC_MainMenu.prototype.createActorListWindow = function(){
     window.setHandler('cancel', this.cancelCommand.bind(this));
     window.refresh();
     window.deactivate();
-    window.select(0);
+    window.select(actor_index);
     this.addWindow(window);
     this._actor_list_window = window;
 }
@@ -7044,6 +7084,8 @@ SceneMC_MainMenu.prototype.selectCommand = function(){
             this._actor_list_window.activate();
             return;
         }
+        SceneManager._menuMainIndex = this._command_window.index();
+        SceneManager._menuActorIndex = this._actor_list_window.index();
         const exec_evnt = eval(command['Execute Event']);
         if(exec_evnt){
             $gameTemp.reserveCommonEvent(exec_evnt);
@@ -7063,6 +7105,8 @@ SceneMC_MainMenu.prototype.confirmActor = function(){
     $gameParty.setMenuActor(actor);
     const command = this._reserve_command;
     if(command){
+        SceneManager._menuMainIndex = this._command_window.index();
+        SceneManager._menuActorIndex = this._actor_list_window.index();
         const exec_evnt = eval(command['Execute Event']);
         if(exec_evnt){
             $gameTemp.reserveCommonEvent(exec_evnt);

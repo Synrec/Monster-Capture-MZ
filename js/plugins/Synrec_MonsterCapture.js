@@ -1496,6 +1496,30 @@
  * @type text
  * @default 0
  * 
+ * @param Draw Gold
+ * @desc Draw player currency
+ * @type boolean
+ * @default false
+ * 
+ * @param Gold Text
+ * @parent Draw Gold
+ * @desc Text for gold
+ * %1 = gold amount
+ * @type text
+ * @default %1\G
+ * 
+ * @param Gold X
+ * @parent Draw Gold
+ * @desc Text position
+ * @type text
+ * @default 0
+ * 
+ * @param Gold Y
+ * @parent Draw Gold
+ * @desc Text position
+ * @type text
+ * @default 0
+ * 
  * @param Display Map Character
  * @desc Display actor map character
  * @type boolean
@@ -3287,7 +3311,7 @@ Syn_MC_GmSys_Init = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function(){
     Syn_MC_GmSys_Init.call(this, ...arguments);
     this.initializeCapturedActors();
-    this._player_name = "";
+    this._player_name = "Player";
 }
 
 Game_System.prototype.initializeCapturedActors = function(){
@@ -5274,8 +5298,20 @@ WindowMC_GameData.prototype.initialize = function(data){
     this.drawData();
 }
 
+WindowMC_GameData.prototype.aliasPlayer = function(){
+    const chara = JsonEx.makeDeepCopy($gamePlayer);
+    chara.setStepAnime(true);
+    chara.screenX = function(){
+        return this._screenX || 0;
+    }
+    chara.screenY = function(){
+        return this._screenY || 0;
+    }
+    return chara;
+}
+
 WindowMC_GameData.prototype.createCharacterSprite = function(){
-    const chara = $gamePlayer;
+    const chara = this.aliasPlayer();
     const sprite = new SpriteMenu_CharacterMonster(chara);
     sprite.visible = false;
     this.addChild(sprite);
@@ -5370,6 +5406,7 @@ WindowMC_GameData.prototype.drawData = function(){
     this.drawPlayerBackGraphic();
     this.drawPlayTime();
     this.drawSaveCount();
+    this.drawGold();
     this.drawCaptureCount();
     this.displayMapCharacter();
 }
@@ -5510,18 +5547,29 @@ WindowMC_GameData.prototype.drawCaptureCount = function(){
     this.drawTextEx(text, tx, ty);
 }
 
+WindowMC_GameData.prototype.drawGold = function(){
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Gold']))return;
+    const gold = $gameParty.gold();
+    const text = (window_data['Gold Text'] || "").format(gold);
+    const tx = eval(window_data['Gold X']);
+    const ty = eval(window_data['Gold Y']);
+    this.drawTextEx(text, tx, ty);
+}
+
 WindowMC_GameData.prototype.displayMapCharacter = function(){
     const window_data = this._window_data;
     if(!eval(window_data['Display Map Character'])){
-        this._character_sprite.visible = false;
+        this._chara.setOpacity(0);
         return;
     }else{
+        this._chara.setOpacity(255);
         this._chara.setDirection(eval(window_data['Character Direction']) || 2);
         this._chara._screenX = eval(window_data['Character X']) || 0;
         this._chara._screenY = eval(window_data['Character Y']) || 0;
         this._character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
         this._character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
-        this._character_sprite.visible = true;
+        this._character_sprite.alpha = 1;
     }
 }
 
@@ -5553,6 +5601,7 @@ WindowMC_ActorData.prototype.initialize = function(data){
 
 WindowMC_ActorData.prototype.createCharacterSprite = function(){
     const chara = new Game_MonsterCharacter();
+    chara.setStepAnime(true);
     const sprite = new SpriteMenu_CharacterMonster(chara);
     sprite.visible = false;
     this.addChild(sprite);
@@ -5805,9 +5854,10 @@ WindowMC_ActorData.prototype.displayMapCharacter = function(){
     const actor = this._actor;
     const window_data = this._window_data;
     if(!eval(window_data['Display Map Character'])){
-        this._character_sprite.visible = false;
+        this._chara.setOpacity(0);
         return;
     }else{
+        this._chara.setOpacity(255);
         const char_name = actor.characterName();
         const char_indx = actor.characterIndex();
         this._chara.setImage(char_name, char_indx);
@@ -5829,7 +5879,7 @@ WindowMC_ActorData.prototype.displayBattler = function(){
         return;
     }else{
         const hx = eval(window_data['Battler X']);
-        const hy = eval(window_data['Battler y']);
+        const hy = eval(window_data['Battler Y']);
         this._battler_sprite.setHome(hx, hy);
         this._battler_sprite.setBattler(actor);
         this._battler_sprite.scale.x = eval(window_data['Battler Scale X']);
@@ -5876,6 +5926,7 @@ WindowMC_ActorSelector.prototype.createBattlerSprites = function(){
 WindowMC_ActorSelector.prototype.createCharacterSprite = function(i){
     const rect = this.itemRect(i);
     const chara = new Game_MonsterCharacter();
+    chara.setStepAnime(true);
     const sprite = new SpriteMenu_CharacterMonster(chara);
     sprite.visible = false;
     this.addChild(sprite);
@@ -6055,8 +6106,8 @@ WindowMC_ActorSelector.prototype.drawGauges = function(rect, actor){
     const gauges = window_data['Gauges'] || [];
     gauges.forEach((config)=>{
         const label = config['Label'];
-        const lx = eval(config['Label X']);
-        const ly = eval(config['Label Y']);
+        const lx = rx + eval(config['Label X']);
+        const ly = ry + eval(config['Label Y']);
         window.drawTextEx(label, lx, ly);
         const cur_val = eval(config['Gauge Current Value']) || 0;
         const max_val = eval(config['Gauge Max Value']) || 1;
@@ -6207,6 +6258,7 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
     const character_sprite = this._character_sprites[index];
     if(!eval(window_data['Display Map Character'])){
         character_sprite.visible = false;
+        character_sprite._character.setOpacity(0);
         return;
     }else{
         const char_name = actor.characterName();
@@ -6220,6 +6272,7 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
         character_sprite.scale.x = eval(window_data['Character Scale X']) || 0;
         character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
         character_sprite.visible = true;
+        character_sprite._character.setOpacity(255);
     }
 }
 
@@ -7032,6 +7085,93 @@ function SceneMC_Player(){
 SceneMC_Player.prototype = Object.create(Scene_Base.prototype);
 SceneMC_Player.prototype.constructor = SceneMC_Player;
 
+SceneMC_Player.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createWindowLayer();
+    this.createActorDataWindows();
+    this.createGameDataWindows();
+}
+
+SceneMC_Player.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.PLAYER_UI_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds
+}
+
+SceneMC_Player.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.PLAYER_UI_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds
+}
+
+SceneMC_Player.prototype.createActorDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.PLAYER_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._actor_data_windows = windows;
+}
+
+SceneMC_Player.prototype.createGameDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.PLAYER_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Game Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_GameData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._game_data_windows = windows;
+}
+
+SceneMC_Player.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateDataWindows();
+    this.updateExitScene();
+}
+
+SceneMC_Player.prototype.updateDataWindows = function(){
+    const actor = $gameParty.leader();
+    if(this._saved_actor != actor){
+        this._actor_data_windows.forEach((window)=>{
+            window.setActor(actor);
+        })
+        this._saved_actor = actor;
+    }
+}
+
+SceneMC_Player.prototype.updateExitScene = function(){
+    if(
+        TouchInput.isCancelled() ||
+        Input.isTriggered('cancel')
+    ){
+        SoundManager.playCancel();
+        this.popScene();
+    }
+}
+
 function SceneMC_Evolution(){
     this.initialize(...arguments);
 }
@@ -7055,7 +7195,6 @@ SceneMC_MainMenu.prototype.create = function(){
     this.createActorListWindow();
     this.createActorDataWindows();
     this.createGameDataWindows();
-    console.log(this._windowLayer)
 }
 
 SceneMC_MainMenu.prototype.createBackgrounds = function(){

@@ -2306,6 +2306,69 @@
  * @default 0
  * 
  */
+/*~struct~breederCmdWindow:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default Window
+ * 
+ * @param Dimension Configuration
+ * @desc Setup position and width of the window
+ * @type struct<locSize>
+ * @default {"X":"0","Y":"0","Width":"1","Height":"1"}
+ * 
+ * @param Window Font and Style Configuration
+ * @desc Custom style the window
+ * @type struct<windowStyle>
+ * @default {"Font Settings":"","Font Size":"16","Font Face":"sans-serif","Base Font Color":"#ffffff","Font Outline Color":"rgba(0, 0, 0, 0.5)","Font Outline Thickness":"3","Window Skin":"Window","Window Opacity":"255","Show Window Dimmer":"false"}
+ * 
+ * @param Max Columns
+ * @desc Max columns the window will use
+ * @type number
+ * @default 1
+ * 
+ * @param Item Width
+ * @desc Max width of window items. 0 = Default
+ * @type number
+ * @default 0
+ * 
+ * @param Item Height
+ * @desc Max Item height of window items. 0 = Default
+ * @type number
+ * @default 0
+ * 
+ * @param Text X
+ * @desc Position of the text in selector
+ * @type text
+ * @default 0
+ * 
+ * @param Text Y
+ * @desc Position of the text in selector
+ * @type text
+ * @default 0
+ * 
+ * @param Set Actor 1 Text
+ * @desc Text for setting actor 1
+ * @type text
+ * @default Set 1
+ * 
+ * @param Set Actor 2 Text
+ * @desc Text for setting actor 2
+ * @type text
+ * @default Set 2
+ * 
+ * @param Get Child Text
+ * @desc Text for get child
+ * @type text
+ * @default Get Child
+ * 
+ * @param Cancel Text
+ * @desc Text for cancel command
+ * @type text
+ * @default Cancel
+ * 
+ */
 /*~struct~menuUI:
  * 
  * @param Backgrounds
@@ -2374,6 +2437,10 @@
  * @type struct<animPic>[]
  * @default []
  * 
+ * @param Breeder Command Window
+ * @desc Window for breeder command
+ * @type struct<breederCmdWindow>
+ * 
  * @param Actor 1 Data Windows
  * @desc Windows to display actor 1 data.
  * @type struct<actorDataWindow>[]
@@ -2387,6 +2454,11 @@
  * @param Party List Window
  * @desc Window display list of party members.
  * @type struct<actorSelcWindow>
+ * 
+ * @param Party Actor Data Windows
+ * @desc Windows to display party member data.
+ * @type struct<actorDataWindow>[]
+ * @default []
  * 
  */
 /*~struct~beastiaryUI:
@@ -3005,6 +3077,17 @@ function PLAYER_UI_PARSER_MONSTERCAPTURE(obj){
 
 Syn_MC.PLAYER_UI_CONFIGURATION = PLAYER_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Player UI Configuration']);
 
+function BREEDER_COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
+        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);     
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
 function BREEDER_UI_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -3022,6 +3105,7 @@ function BREEDER_UI_PARSER_MONSTERCAPTURE(obj){
         }catch(e){
             obj['Back Graphics'] = [];
         }
+        obj['Breeder Command Window'] = BREEDER_COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj['Breeder Command Window']);
         try{
             obj['Actor 1 Data Windows'] = JSON.parse(obj['Actor 1 Data Windows']).map((config)=>{
                 return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
@@ -3037,6 +3121,13 @@ function BREEDER_UI_PARSER_MONSTERCAPTURE(obj){
             obj['Actor 2 Data Windows'] = [];
         }
         obj['Party List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Party List Window']);
+        try{
+            obj['Party Actor Data Windows'] = JSON.parse(obj['Party Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Party Actor Data Windows'] = [];
+        }
         return obj;
     }catch(e){
         return;
@@ -4542,7 +4633,7 @@ Game_Party.prototype.progressPreBreed = function(){
                 const reqSteps = eval(data['Required Steps']);
                 const steps = Math.max(1, reqSteps - rngSteps);
                 const breeder_obj = map_breeder[id_key];
-                const steps_taken = breeder_obj['Steps'];
+                const steps_taken = breeder_obj['Steps'] || 0;
                 if(steps_taken >= steps){
                     const obj = {};
                     obj['Result Actor'] = result_actor_id;
@@ -6285,6 +6376,129 @@ WindowMC_PlayerNameEdit.prototype.drawPlayerFace = function(){
     this.drawFace(face_name, face_index, 0, 0, 144, 144);
 }
 
+function WindowMC_BreederCommand(){
+    this.initialzie(...arguments);
+}
+
+WindowMC_BreederCommand.prototype = Object.create(Window_Selectable.prototype);
+WindowMC_BreederCommand.prototype.constructor = WindowMC_BreederCommand;
+
+WindowMC_BreederCommand.prototype.initialize = function(data){
+    const mz_mode = Utils.RPGMAKER_NAME == "MZ";
+    const rect = this.createRect(data);
+    this._window_data = data;
+    this._style_data = data['Window Font and Style Configuration'];
+    this.generateList(data);
+    if(mz_mode){
+        Window_Selectable.prototype.initialize.call(this, rect);
+    }else{
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Selectable.prototype.initialize.call(this,x,y,w,h);
+    }
+    this.openness = 0;
+    this.setOpacityAndDimmer();
+    this.refresh();
+}
+
+WindowMC_BreederCommand.prototype.generateList = function(){
+    const data = this._window_data;
+    const act_1_opt = data['Set Actor 1 Text'];
+    const act_2_opt = data['Set Actor 2 Text'];
+    const chld_opt = data['Get Child Text'];
+    const cncl_opt = data['Cancel Text'];
+    this._list = [act_1_opt, act_2_opt, chld_opt, cncl_opt];
+    this._text_x = eval(data['Text X']) || 0;
+    this._text_y = eval(data['Text Y']) || 0;
+}
+
+WindowMC_BreederCommand.prototype.maxItems = function(){
+    return this._list ? this._list.length : 0;
+}
+
+WindowMC_BreederCommand.prototype.maxCols = function(){
+    const window_data = this._window_data;
+    return eval(window_data['Max Columns']) || 1;
+}
+
+WindowMC_BreederCommand.prototype.itemWidth = function(){
+    const base = Window_Selectable.prototype.itemWidth.call(this);
+    const window_data = this._window_data;
+    return eval(window_data['Item Width']) || base;
+}
+
+WindowMC_BreederCommand.prototype.itemHeight = function(){
+    const base = Window_Selectable.prototype.itemHeight.call(this);
+    const window_data = this._window_data;
+    return eval(window_data['Item Height']) || base;
+}
+
+WindowMC_BreederCommand.prototype.createRect = function(data){
+    const dimension_config = data['Dimension Configuration'];
+    const x = dimension_config['X'];
+    const y = dimension_config['Y'];
+    const w = dimension_config['Width'];
+    const h = dimension_config['Height'];
+    return new Rectangle(x,y,w,h);
+}
+
+WindowMC_BreederCommand.prototype.standardPadding = function() {
+    return 8;
+}
+
+WindowMC_BreederCommand.prototype.loadWindowskin = function(){
+    const base = Window_Base.prototype.loadWindowskin.call(this);
+    const custom_config = this._style_data;
+    if(!custom_config)return base;
+    const skin_name = custom_config['Window Skin'];
+    if(!skin_name)return base;
+    this.windowskin = ImageManager.loadSystem(skin_name);
+}
+
+WindowMC_BreederCommand.prototype.resetFontSettings = function() {
+    const base = Window_Base.prototype.resetFontSettings;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const font_face = custom_config['Font Face'] || "sans-serif";
+    const font_size = custom_config['Font Size'] || 16;
+    const font_outline_size = custom_config['Font Outline Thickness'] || 3;
+    this.contents.fontFace = font_face;
+    this.contents.fontSize = font_size;
+    this.contents.outlineWidth = font_outline_size;
+    this.resetTextColor();
+}
+
+WindowMC_BreederCommand.prototype.resetTextColor = function() {
+    const base = Window_Base.prototype.resetTextColor;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const text_color = custom_config['Base Font Color'] || "#ffffff";
+    const outline_color = custom_config['Font Outline Color'] || "rgba(0, 0, 0, 0.5)";
+    this.changeTextColor(text_color);
+    this.contents.outlineColor = outline_color;
+}
+
+WindowMC_BreederCommand.prototype.setOpacityAndDimmer = function(){
+    const custom_config = this._style_data;
+    if(!custom_config)return;
+    const show_dimmer = custom_config['Show Window Dimmer'] || false;
+    const win_opacity = custom_config['Window Opacity'] || 0;
+    this.opacity = win_opacity;
+    show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
+}
+
+WindowMC_BreederCommand.prototype.drawItem = function(i){
+    const rect = this.itemRect(i);
+    const rx = rect.x;
+    const ry = rect.y;
+    const tx = rx + this._text_x;
+    const ty = ry + this._text_y;
+    const text = this._list[i];
+    this.drawTextEx(text, tx, ty);
+}
+
 Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     Syn_MC_ScnMap_Updt.call(this);
@@ -6495,6 +6709,209 @@ function SceneMC_Breeder(){
 SceneMC_Breeder.prototype = Object.create(Scene_Base.prototype);
 SceneMC_Breeder.prototype.constructor = SceneMC_Breeder;
 
+SceneMC_Breeder.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createActorData1Windows();
+    this.createActorData2Windows();
+    this.createPartyDataWindows();
+    this.createPartyListWindow();
+    this.createBreederCommandWindow();
+}
+
+SceneMC_Breeder.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds
+}
+
+SceneMC_Breeder.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds
+}
+
+SceneMC_Breeder.prototype.createActorData1Windows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Actor 1 Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._actor_1_data_windows = windows;
+}
+
+SceneMC_Breeder.prototype.createActorData2Windows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Actor 2 Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._actor_2_data_windows = windows;
+}
+
+SceneMC_Breeder.prototype.createPartyDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Party Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._party_data_windows = windows;
+}
+
+SceneMC_Breeder.prototype.createPartyListWindow = function(){
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const data = UI_Config['Party List Window'];
+    const list = $gameParty._actors;
+    const window = new WindowMC_ActorSelector(data, list);
+    window.setHandler('ok', this.openCommand.bind(this));
+    window.setHandler('cancel', this.popScene.bind(this));
+    window.refresh();
+    window.select(0);
+    this.addWindow(window);
+    this._actor_list_window = window;
+}
+
+SceneMC_Breeder.prototype.createBreederCommandWindow = function(){
+    const UI_Config = Syn_MC.BREEDER_UI_CONFIGURATION;
+    const data = UI_Config['Breeder Command Window'];
+    const window = new WindowMC_BreederCommand(data);
+    window.setHandler('ok', this.executeCommand.bind(this));
+    window.setHandler('cancel', this.closeCommand.bind(this));
+    window.select(0);
+    this.addWindow(window);
+    this._breeder_command_window = window;
+}
+
+SceneMC_Breeder.prototype.openCommand = function(){
+    this._actor_list_window.deactivate();
+    this._breeder_command_window.activate();
+    this._breeder_command_window.open();
+}
+
+SceneMC_Breeder.prototype.closeCommand = function(){
+    this._actor_list_window.activate();
+    this._breeder_command_window.deactivate();
+    this._breeder_command_window.close();
+}
+
+SceneMC_Breeder.prototype.executeCommand = function(){
+    const cmd_index = this._breeder_command_window.index();
+    switch(cmd_index){
+        case 0: return this.setActor1();
+        case 1: return this.setActor2();
+        case 2: return this.getChild();
+        case 3: return this.closeCommand();
+    }
+}
+
+SceneMC_Breeder.prototype.setActor1 = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    if(!breeder_objs[map_id]){
+        const obj = {};
+        obj['Actor 1'] = null;
+        obj['Actor 2'] = null;
+        obj['Child'] = null;
+        breeder_objs[map_id] = obj;
+    }
+    const breeder_obj = breeder_objs[map_id];
+    const actor_1 = breeder_obj['Actor 1'];
+    const party_actor = this._actor_list_window.actor();
+    const party_index = this._actor_list_window.index();
+    $gameParty._actors[party_index] = actor_1;
+    breeder_obj['Actor 1'] = party_actor;
+}
+
+SceneMC_Breeder.prototype.setActor2 = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    if(!breeder_objs[map_id]){
+        const obj = {};
+        obj['Actor 1'] = null;
+        obj['Actor 2'] = null;
+        obj['Child'] = null;
+        breeder_objs[map_id] = obj;
+    }
+    const breeder_obj = breeder_objs[map_id];
+    const actor_2 = breeder_obj['Actor 2'];
+    const party_actor = this._actor_list_window.actor();
+    const party_index = this._actor_list_window.index();
+    $gameParty._actors[party_index] = actor_2;
+    breeder_obj['Actor 2'] = party_actor;
+}
+
+SceneMC_Breeder.prototype.getChild = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    if(!breeder_objs[map_id]){
+        return;
+    }
+    const breeder_obj = breeder_objs[map_id];
+    const child = breeder_obj['Child'];
+    $gameParty.addBreed(child);
+}
+
+SceneMC_Breeder.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateDataWindows();
+}
+
+SceneMC_Breeder.prototype.updateDataWindows = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    const breeder_obj = breeder_objs[map_id];
+    if(breeder_obj){
+        const actor_1 = breeder_obj['Actor 1'];
+        const actor_2 = breeder_obj['Actor 2'];
+        if(this._saved_actor_1 != actor_1){
+            this._actor_1_data_windows.forEach((window)=>{
+                window.setActor(actor_1);
+            })
+            this._saved_actor_1 = actor_1;
+        }
+        if(this._saved_actor_2 != actor_2){
+            this._actor_2_data_windows.forEach((window)=>{
+                window.setActor(actor_2);
+            })
+            this._saved_actor_2 = actor_2;
+        }
+    }
+    const party_actor = this._actor_list_window.actor();
+    if(this._saved_actor != party_actor){
+        this._party_data_windows.forEach((window)=>{
+            window.setActor(party_actor);
+        })
+        this._saved_actor = party_actor;
+    }
+}
+
 function SceneMC_ReserveBoxes(){
     this.initialize(...arguments);
 }
@@ -6524,6 +6941,7 @@ SceneMC_MainMenu.prototype = Object.create(Scene_Base.prototype);
 SceneMC_MainMenu.prototype.constructor = SceneMC_MainMenu;
 
 SceneMC_MainMenu.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
     this.createBackgrounds();
     this.createBackgraphics();
     this.createCommandWindow();

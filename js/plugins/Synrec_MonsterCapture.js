@@ -3833,6 +3833,14 @@ Game_Player.prototype.updatePlayerConfig = function(){
         this._custom_data = configs[var_val] || null;
         if(this._custom_data){
             this._custom_data = JsonEx.makeDeepCopy(this._custom_data);
+            const char_file = this._custom_data['Default Character File'];
+            if(char_file){
+                ImageManager.loadCharacter(char_file);
+            }
+            const dash_char_file = this._custom_data['Dash Character File'];
+            if(dash_char_file){
+                ImageManager.loadCharacter(dash_char_file);
+            }
         }
         this._custom_variable = var_id;
         this._need_refresh = true;
@@ -5861,7 +5869,13 @@ WindowMC_ActorData.prototype.update = function(){
 
 WindowMC_ActorData.prototype.updateActor = function(){
     if(this._actor){
-        const window_data = this._window_data;
+        const batt_sprite = this._battler_sprite;
+        if(batt_sprite._motionCD <= 0){
+            batt_sprite.startMotion(batt_sprite._motionLoaded);
+            batt_sprite._motionCD = batt_sprite.motionSpeed() * 4;
+        }else{
+            batt_sprite._motionCD--;
+        }
     }
 }
 
@@ -6068,10 +6082,13 @@ WindowMC_ActorData.prototype.displayBattler = function(){
     }else if(actor){
         const hx = eval(window_data['Battler X']);
         const hy = eval(window_data['Battler Y']);
+        this._battler_sprite._motionLoaded = window_data['Battler Motion'];
+        this._battler_sprite.startMotion(this._battler_sprite._motionLoaded);
         this._battler_sprite.setHome(hx, hy);
         this._battler_sprite.setBattler(actor);
         this._battler_sprite.scale.x = eval(window_data['Battler Scale X']);
         this._battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
+        this._battler_sprite._motionCD = 0;
     }else{
         this._battler_sprite.setBattler();
     }
@@ -6280,7 +6297,16 @@ WindowMC_ActorSelector.prototype.updateSprites = function(){
             sprite.setHome(x, y);
             if(sprite._visibility){
                 const actor = this.actor(i);
-                sprite.setBattler(actor);
+                if(sprite._battler != actor){
+                    sprite.setBattler(actor);
+                }else{
+                    if(sprite._motionCD <= 0){
+                        sprite.startMotion(sprite._motionLoaded);
+                        sprite._motionCD = sprite.motionSpeed() * 4;
+                    }else{
+                        sprite._motionCD--;
+                    }
+                }
             }else{
                 sprite.setBattler(null);
             }
@@ -6502,11 +6528,14 @@ WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
         const hx = eval(window_data['Battler X']) || 0;
         const hy = eval(window_data['Battler Y']) || 0;
         battler_sprite.setHome(rect.x + hx, rect.y + hy);
+        battler_sprite._motionLoaded = window_data['Battler Motion'];
+        battler_sprite.startMotion(battler_sprite._motionLoaded);
         battler_sprite._offset_x = hx;
         battler_sprite._offset_y = hy;
         battler_sprite.scale.x = eval(window_data['Battler Scale X']);
         battler_sprite.scale.y = eval(window_data['Battler Scale Y']);
         battler_sprite._visibility = true;
+        battler_sprite._motionCD = 0;
     }
 }
 
@@ -7025,11 +7054,13 @@ SceneMC_Beastiary.prototype.createBackgraphics = function(){
 SceneMC_Beastiary.prototype.createActorListWindow = function(){
     const UI_Config = Syn_MC.BEASTIARY_UI_CONFIGURATION;
     const data = UI_Config['Actor List Window'];
-    const filtered = UI_Config['Filtered Actors'] ? UI_Config['Filtered Actors'].map(id => eval(id)) : [];
+    const filtered = Array.isArray(UI_Config['Filtered Actors']) ? UI_Config['Filtered Actors'].map(id => eval(id)) : [];
     const obtained_actors = $gameSystem._obtained_actors;
     const filtered_actor_data = $dataActors.filter((actor_data)=>{
-        const id = actor_data.id;
-        return !filtered.includes(id);
+        if(actor_data){
+            const id = actor_data.id;
+            return !filtered.includes(id);
+        }
     })
     const list = filtered_actor_data.map((data)=>{
         const id = data.id;
@@ -7041,6 +7072,7 @@ SceneMC_Beastiary.prototype.createActorListWindow = function(){
     const window = new WindowMC_ActorSelector(data, list);
     window._forceMaxItems = filtered_actor_data.length;
     window.refresh();
+    window.activate();
     window.select(0);
     window.setHandler('cancel', this.popScene.bind(this));
     this.addWindow(window);

@@ -81,6 +81,20 @@
  * @max 7
  * @default 0
  * 
+ * @param Breeder Hatcher Direction
+ * @parent Breeder Combinations
+ * @desc Set player facing direction to this
+ * @type select
+ * @option down
+ * @value 2
+ * @option left
+ * @value 4
+ * @option right
+ * @value 6
+ * @option up
+ * @value 8
+ * @default 2
+ * 
  * @param Breeder Hatcher Animation
  * @parent Breeder Combinations
  * @desc Animation to play for hatching
@@ -2816,7 +2830,8 @@ try{
 }
 
 Syn_MC.BREEDER_HATCH_GFX = Syn_MC.Plugin['Breeder Hatcher Graphic'];
-Syn_MC.BREEDER_HATCH_GFX_INDEX = Syn_MC.Plugin['Breeder Hatcher Graphic Index'];
+Syn_MC.BREEDER_HATCH_GFX_INDEX = eval(Syn_MC.Plugin['Breeder Hatcher Graphic Index']) || 0;
+Syn_MC.BREEDER_HATCH_GFX_DIRECTION = eval(Syn_MC.Plugin['Breeder Hatcher Direction']) || 2;;
 Syn_MC.BREEDER_HATCH_GFX_ANIM = Syn_MC.Plugin['Breeder Hatcher Animation'];
 
 function REGION_DATA_PARSER_MONSTERCAPTURE(obj){
@@ -3520,7 +3535,7 @@ Game_Map.prototype.updateHatch = function(){
         !isNaN(Syn_MC.BREEDER_HATCH_GFX_INDEX) && 
         !isNaN(Syn_MC.BREEDER_HATCH_GFX_ANIM)
     ){
-        SceneManager.push(Scene_Hatch);
+        SceneManager.push(SceneMC_Hatch);
     }else{
         for(let i = 0; i < $gameParty._breederArray.length; i++){
             const item = $gameParty._breederArray[i];
@@ -4708,11 +4723,9 @@ Game_Party.prototype.progressPreBreed = function(){
             })
             const data = this.grabValidData(map_id);
             if(data){
-                const result_actor_id = eval(data['Result Actor']);
-                const rngSteps = Math.randomInt(eval(data['Random Steps']));
-                const reqSteps = eval(data['Required Steps']);
-                const steps = Math.max(1, reqSteps - rngSteps);
                 const breeder_obj = map_breeder[id_key];
+                const result_actor_id = eval(data['Result Actor']);
+                const steps = isNaN(breeder_obj['Max Steps']) ? Infinity : breeder_obj['Max Steps'];
                 const steps_taken = breeder_obj['Steps'] || 0;
                 if(steps_taken >= steps){
                     const obj = {};
@@ -4813,20 +4826,20 @@ Game_Party.prototype.grabValidData = function(map_id){
                 const a1_data = combine['Actor 1 Required'];
                 const p1_a1_match = (
                     p1._actorId == eval(a1_data['Actor']) &&
-                    p1_gender == a1_data['Gender']
+                    (p1_gender == a1_data['Gender'] || !a1_data['Gender'])
                 )
                 const p2_a1_match = (
                     p2._actorId == eval(a1_data['Actor']) &&
-                    p2_gender == a1_data['Gender']
+                    (p2_gender == a1_data['Gender'] || !a1_data['Gender'])
                 )
                 const a2_data = combine['Actor 2 Required'];
                 const p1_a2_match = (
                     p1._actorId == eval(a2_data['Actor']) &&
-                    p1_gender == a2_data['Gender']
+                    (p1_gender == a2_data['Gender'] || !a2_data['Gender'])
                 )
                 const p2_a2_match = (
                     p2._actorId == eval(a2_data['Actor']) &&
-                    p2_gender == a2_data['Gender']
+                    (p2_gender == a2_data['Gender'] || !a2_data['Gender'])
                 )
                 return(
                     (
@@ -6932,6 +6945,161 @@ SceneMC_Beastiary.prototype.updateDataWindows = function(){
     }
 }
 
+function SceneMC_Hatch(){
+    this.initialize(...arguments);
+}
+
+SceneMC_Hatch.prototype = Object.create(Scene_Base.prototype);
+SceneMC_Hatch.prototype.constructor = SceneMC_Hatch;
+
+SceneMC_Hatch.prototype.create = function(){
+    this.createSprite();
+    this._canHatch = true;
+}
+
+SceneMC_Hatch.prototype.createSprite = function(){
+    this._hatchSpriteset = new Spriteset_Base();
+    this.addChild(this._hatchSpriteset);
+    this._hatchChar = new Game_Character();
+    this._hatchChar.screenX = function(){return this._screenX};
+    this._hatchChar.screenY = function(){return this._screenY};
+    this._hatchChar._screenX = (Graphics.width / 2);
+    this._hatchChar._screenY = (Graphics.boxHeight / 2);
+    const dir = Syn_MC.BREEDER_HATCH_GFX_DIRECTION || 2;
+    this._hatchChar.setDirection(2);
+    this._hatchChar.setStepAnime(true);
+    this._hatchChar.setImage(Syn_MC.BREEDER_HATCH_GFX, Syn_MC.BREEDER_HATCH_GFX_INDEX);
+    this._hatchSprite = new Sprite_Character(this._hatchChar);
+    this._hatchSpriteset.addChild(this._hatchSprite);
+}
+
+SceneMC_Hatch.prototype.startHatch = function(){
+    let data;
+    for(let i = 0; i < $gameParty._breederArray.length; i++){
+        const item = $gameParty._breederArray[i];
+        const progress = item['Step Progress'];
+        const complete = item['Step Complete'];
+        if(progress >= complete){
+            data = JsonEx.makeDeepCopy(item);
+            $gameParty._breederArray.splice(i, 1);
+            break;
+        }
+    }
+    const actorId = data['Result Actor'];
+    const averageStats = data['Fusion Params'];
+    const fuse_stats_only = eval(data['Fusion Params Only']);
+    if(averageStats){
+        const actor = new Game_Actor(actorId);
+        const hp = actor.param(0);
+        const mp = actor.param(1);
+        const atk = actor.param(2);
+        const def = actor.param(3);
+        const mat = actor.param(4);
+        const mdf = actor.param(5);
+        const agi = actor.param(6);
+        const luk = actor.param(7);
+        const parAvgs = data['Fusion Params'];
+        if(!actor._breed_bonus){
+            actor.initBreederBonus();
+        }
+        if(fuse_stats_only){
+            actor._paramPlus[0] += parAvgs[0];          
+            actor._paramPlus[1] += parAvgs[1];            
+            actor._paramPlus[2] += parAvgs[2];
+            actor._paramPlus[3] += parAvgs[3];
+            actor._paramPlus[4] += parAvgs[4];
+            actor._paramPlus[5] += parAvgs[5];
+            actor._paramPlus[6] += parAvgs[6];
+            actor._paramPlus[7] += parAvgs[7];
+        }else{
+            actor._paramPlus[0] += parAvgs[0] - hp;
+            actor._paramPlus[1] += parAvgs[1] - mp;
+            actor._paramPlus[2] += parAvgs[2] - atk;
+            actor._paramPlus[3] += parAvgs[3] - def;
+            actor._paramPlus[4] += parAvgs[4] - mat;
+            actor._paramPlus[5] += parAvgs[5] - mdf;
+            actor._paramPlus[6] += parAvgs[6] - agi;
+            actor._paramPlus[7] += parAvgs[7] - luk;
+        }
+        actor._fuse_only_params = fuse_stats_only;
+        actor.setTp(0);
+        actor.setGender();
+        if($gameParty._actors.length >= $gameParty.maxBattleMembers()){
+            actor.onBattleEnd();
+            $gameParty.addToReserve(actor);
+        }else{
+            actor.onBattleStart();
+            $gameParty._actors.push(actor);
+        }
+    }else{
+        $gameParty.addActor(actorId);
+    }
+    const actorData = $dataActors[actorId];
+    const img = actorData.characterName;
+    const idx = actorData.characterIndex;
+    this._hatchChar.setImage(img, idx);
+    const animId = Syn_MC.BREEDER_HATCH_GFX_ANIM;
+    const animData = $dataAnimations[animId];
+    const is_mv_anim = !!animData.frames;
+    if(Utils.RPGMAKER_NAME == "MZ"){
+        const targets = [this._hatchSprite];
+        this._animSprite = new (is_mv_anim ? Sprite_AnimationMV : Sprite_Animation)();
+        this._animSprite.anchor.x = 0.5;
+        this._animSprite.anchor.y = 0.5;
+        this._animSprite.setup(targets, animData);
+        this._hatchSpriteset.addChild(this._animSprite);
+    }else{
+        const target = this._hatchSprite;
+        this._animSprite = new Sprite_Animation();
+        this._animSprite.anchor.x = 0.5;
+        this._animSprite.anchor.y = 0.5;
+        this._animSprite.setup(target, animData);
+        this._hatchSpriteset.addChild(this._animSprite);
+    }
+    this._isHatching = true;
+    this._canHatch = false;
+    this._exitDelay = 60;
+}
+
+SceneMC_Hatch.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this._hatchChar.update();
+    if(this._animSprite){
+        if(this._animSprite.isPlaying())return;
+    }
+    if(this._isHatching){
+        this._hatchSprite.alpha -= 0.01;
+        if(this._hatchSprite.alpha <= 0){
+            this._hatchSprite.alpha = 0;
+            this._isHatching = false;
+            const img = Syn_MC.BREEDER_HATCH_GFX;
+            const idx = Syn_MC.BREEDER_HATCH_GFX_INDEX;
+            this._hatchChar.setImage(img, idx);
+        }
+    }
+    const validHatches = $gameParty._breederArray.filter((item)=>{
+        return item['Step Progress'] >= item['Step Complete']
+    })
+    if(Input.isTriggered('ok') && validHatches.length > 0 && this._canHatch){
+        this.startHatch();
+    }else if(this._hatchSprite.alpha < 1){
+        this._hatchSprite.alpha += 0.01;
+        if(this._hatchSprite.alpha >= 1){
+            this._hatchSprite.alpha = 1;
+            this._canHatch = true;
+        }
+    }
+    if(validHatches.length <= 0 && this._exitDelay <= 0){
+        this.startExit();
+    }else if(validHatches.length <= 0)this._exitDelay--;
+}
+
+SceneMC_Hatch.prototype.startExit = function(){
+    $gameScreen.startFlash([255, 255, 255, 255], 60);
+    SoundManager.playUseItem();
+    SceneManager.pop();
+}
+
 function SceneMC_Breeder(){
     this.initialize(...arguments);
 }
@@ -7098,6 +7266,7 @@ SceneMC_Breeder.prototype.setActor1 = function(){
         obj['Actor 1'] = null;
         obj['Actor 2'] = null;
         obj['Child'] = null;
+        obj['Steps'] = 0;
         breeder_objs[map_id] = obj;
     }
     const breeder_obj = breeder_objs[map_id];
@@ -7106,11 +7275,12 @@ SceneMC_Breeder.prototype.setActor1 = function(){
     const party_index = this._actor_list_window.index();
     $gameParty._actors[party_index] = actor_1;
     breeder_obj['Actor 1'] = party_actor || null;
+    breeder_obj['Steps'] = 0;
     this._breeder_command_window.close();
     this._breeder_command_window.deactivate();
     this._actor_list_window.activate();
     $gameParty._actors = $gameParty._actors.filter(Boolean);
-    $gameParty._map_breeder = breeder_objs
+    $gameParty._map_breeder = breeder_objs;
     this.refreshAll();
 }
 
@@ -7122,6 +7292,7 @@ SceneMC_Breeder.prototype.setActor2 = function(){
         obj['Actor 1'] = null;
         obj['Actor 2'] = null;
         obj['Child'] = null;
+        obj['Steps'] = 0;
         breeder_objs[map_id] = obj;
     }
     const breeder_obj = breeder_objs[map_id];
@@ -7130,15 +7301,17 @@ SceneMC_Breeder.prototype.setActor2 = function(){
     const party_index = this._actor_list_window.index();
     $gameParty._actors[party_index] = actor_2;
     breeder_obj['Actor 2'] = party_actor;
+    breeder_obj['Steps'] = 0;
     this._breeder_command_window.close();
     this._breeder_command_window.deactivate();
     this._actor_list_window.activate();
     $gameParty._actors = $gameParty._actors.filter(Boolean);
-    $gameParty._map_breeder = breeder_objs
+    $gameParty._map_breeder = breeder_objs;
     this.refreshAll();
 }
 
 SceneMC_Breeder.prototype.getChild = function(){
+    this.immediateBreed();
     const breeder_objs = $gameParty._map_breeder;
     const map_id = $gameMap._mapId;
     if(!breeder_objs[map_id]){
@@ -7148,7 +7321,12 @@ SceneMC_Breeder.prototype.getChild = function(){
     }
     const breeder_obj = breeder_objs[map_id];
     const child = breeder_obj['Child'];
-    $gameParty.addBreed(child);
+    if(child){
+        $gameParty.addBreed(child);
+        breeder_obj['Child'] = null;
+    }else{
+        SoundManager.playBuzzer();
+    }
     this._breeder_command_window.close();
     this._breeder_command_window.deactivate();
     this._actor_list_window.activate();
@@ -7157,7 +7335,37 @@ SceneMC_Breeder.prototype.getChild = function(){
     this.refreshAll();
 }
 
+SceneMC_Breeder.prototype.immediateBreed = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    if(!breeder_objs[map_id]){
+        return;
+    }
+    const breeder_obj = breeder_objs[map_id];
+    const actor_1 = breeder_obj['Actor 1'];
+    const actor_2 = breeder_obj['Actor 2'];
+    const child = breeder_obj['Child'];
+    const steps = breeder_obj['Steps'];
+    const max_steps = isNaN(breeder_obj['Max Steps']) ? Infinity : breeder_obj['Max Steps'];
+    if(!actor_1 || !actor_2 || child)return;
+    if(steps < max_steps)return;
+    $gameParty.progressPreBreed();
+    SoundManager.playRecovery();
+}
+
 SceneMC_Breeder.prototype.refreshAll = function(){
+    const breeder_objs = $gameParty._map_breeder;
+    const map_id = $gameMap._mapId;
+    const breeder_obj = breeder_objs[map_id];
+    if(breeder_obj){
+        const combine_data = $gameParty.grabValidData(map_id);
+        if(combine_data){
+            const req_steps = eval(combine_data['Required Steps']);
+            const random_steps = eval(combine_data['Random Steps']);
+            breeder_obj['Max Steps'] = req_steps + Math.randomInt(random_steps);
+        }
+    }
+    $gameParty._map_breeder = breeder_objs;
     this._actor_list_window.setList($gameParty._actors);
     this._actor_list_window.refresh();
     this._breeder_command_window.refresh();

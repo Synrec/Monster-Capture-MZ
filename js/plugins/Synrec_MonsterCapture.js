@@ -6,6 +6,20 @@
  * 
  * Plugin has been remade from the base monster capture plugins set.
  * 
+ * Script Calls:
+ * 
+ * > Rename Player
+ * - $gameTemp.renamePlayer()
+ * 
+ * > Open Reserve Box
+ * - $gameTemp.openMonsterReserve(id)
+ * - id = Box ID to open
+ * - id can be set out of bounds of normal access box
+ *   for special reserve boxes
+ * 
+ * There are no notetags in this plugin. Everything relies on the
+ * plugin parameters.
+ * 
  * @param Gameover Configuration
  * @desc Setup what to do on gameover
  * @type struct<gameoverConfig>

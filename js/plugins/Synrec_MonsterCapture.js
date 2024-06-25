@@ -2531,6 +2531,12 @@
  * @type struct<animPic>[]
  * @default []
  * 
+ * @param Evolve Block States
+ * @parent Evolution Settings
+ * @desc These states will block evolution
+ * @type state[]
+ * @default []
+ * 
  * @param Auto Evolve
  * @desc Automatically calls scene and evolves actor.
  * @type boolean
@@ -3620,6 +3626,11 @@ function EVOLVE_UI_PARSER_MONSTERCAPTURE(obj){
         }
         obj['Actor Select Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor Select Window']);
         try{
+            obj['Evolve Block States'] = JSON.parse(obj['Evolve Block States']);
+        }catch(e){
+            obj['Evolve Block States'] = [];
+        }
+        try{
             obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
                 return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
             }).filter(Boolean)
@@ -4630,7 +4641,16 @@ Game_Actor.prototype.setup = function(actorId) {
     Syn_MC_GmActr_Setup.call(this, ...arguments);
 }
 
+Game_Actor.prototype.evolveBlockState = function(){
+    const states = this._states;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    return (UI_Config['Evolve Block States'] || []).some((sid)=>{
+        return states.includes(eval(sid));
+    })
+}
+
 Game_Actor.prototype.meetEvolutionRequirement = function(){
+    if(this.evolveBlockState())return false;
     const id = this._actorId;
     const config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
         return eval(config['Actor']) == id;
@@ -5857,6 +5877,42 @@ Spriteset_Battle.prototype.compareSprites = function(a, b, reverse){
     }else{
         return b.spriteId - a.spriteId
     }
+}
+
+function SpritesetMC_Evolution(){
+    this.initialize(...arguments);
+}
+
+SpritesetMC_Evolution.prototype = Object.create(Spriteset_Base.prototype);
+SpritesetMC_Evolution.prototype.constructor = SpritesetMC_Evolution;
+
+SpritesetMC_Evolution.prototype.createLowerLayer = function() {
+    Spriteset_Base.prototype.createLowerLayer.call(this);
+    this.createEvolveField();
+}
+
+SpritesetMC_Evolution.prototype.createEvolveField = function() {
+    const width = Graphics.boxWidth;
+    const height = Graphics.boxHeight;
+    const x = (Graphics.width - width) / 2;
+    const y = (Graphics.height - height) / 2;
+    this._evolveField = new Sprite();
+    this._evolveField.setFrame(0, 0, width, height);
+    this._baseSprite.addChild(this._evolveField);
+    this._effectsContainer = this._evolveField;
+}
+
+SpritesetMC_Evolution.prototype.findTargetSprite = function() {
+    return this._evolveSprite;
+}
+
+SpritesetMC_Evolution.prototype.updateAnimations = function() {
+    for (const sprite of this._animationSprites) {
+        if (!sprite.isPlaying()) {
+            this.removeAnimation(sprite);
+        }
+    }
+    this.processAnimationRequests();
 }
 
 Syn_MC_WinSklList_DrwSklCost = Window_SkillList.prototype.drawSkillCost;
@@ -9016,6 +9072,8 @@ SceneMC_AutoEvolution.prototype.createBackgraphics = function(){
 }
 
 SceneMC_AutoEvolution.prototype.createEvolveCharacter = function(){
+    this._evolveSpriteset = new SpritesetMC_Evolution();
+    this.addChild(this._evolveSpriteset);
     const actor = $gameTemp._evolve_actor;
     const char_name = actor.characterName();
     const char_index = actor.characterIndex();
@@ -9034,7 +9092,8 @@ SceneMC_AutoEvolution.prototype.createEvolveCharacter = function(){
     sprite.scale.x = csx;
     sprite.scale.y = csy;
     sprite.visible = false;
-    this.addChild(sprite);
+    this._evolveSpriteset._evolveField.addChild(sprite);
+    this._evolveSpriteset._evolveSprite = sprite;
     this._chara = chara;
     this._character_sprite = sprite;
 }
@@ -9065,7 +9124,7 @@ SceneMC_AutoEvolution.prototype.isEvolveBusy = function(){
     const windows_moving = this._actor_data_windows.some((window)=>{
         return window.isOpening() || window.isClosing();
     })
-    return !windows_moving;
+    return windows_moving;
 }
 
 SceneMC_AutoEvolution.prototype.update = function(){
@@ -9166,6 +9225,10 @@ SceneMC_AutoEvolution.prototype.updateSuccessEvolution = function(){
     }
     const actor = $gameTemp._evolve_actor;
     actor.evolve();
+    const char_name = actor.characterName();
+    const char_index = actor.characterIndex();
+    const chara = this._chara;
+    chara.setImage(char_name, char_index);
     const anim = eval(UI_Config['Evolve Success Animation']);
     if(!this._play_end_anim){
         this._play_end_anim = true;
@@ -9198,6 +9261,7 @@ SceneMC_AutoEvolution.prototype.updateProcessEvolution = function(){
         }
         return;
     }
+    console.log(this._chara.isAnimationPlaying())
     if(
         Input.isTriggered('ok') ||
         Input.isTriggered('cancel') ||
@@ -9214,7 +9278,6 @@ SceneMC_AutoEvolution.prototype.updateProcessEvolution = function(){
 }
 
 SceneMC_AutoEvolution.prototype.updateStartEvolution = function(){
-    console.log(this._display_duration)
     const windows = this._actor_data_windows;
     if(
         windows.some((window)=>{
@@ -9239,10 +9302,9 @@ SceneMC_AutoEvolution.prototype.updateStartEvolution = function(){
     const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
     const fade_rate = eval(UI_Config['Evolve Character Fade Rate']);
     if(this._chara._opacity < 255){
-        this._chara._opacity -= fade_rate;
+        this._chara._opacity += fade_rate;
         if(this._chara._opacity >= 255){
             this._phase = 'evolving';
-            console.log('derp')
         }
     }
 }

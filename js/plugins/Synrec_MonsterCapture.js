@@ -2610,6 +2610,11 @@
  * @type text
  * @default 0
  * 
+ * @param Evolve Character Fade Rate
+ * @desc Fade In/Out rate of the evolve character.
+ * @type text
+ * @default 255
+ * 
  */
 /*~struct~breederUI:
  * 
@@ -7642,10 +7647,40 @@ WindowMC_BattlerInfo.prototype.drawResTP = function(){
     this.drawTextEx(text, tx, ty);
 }
 
+Syn_MC_ScnMap_Strt = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    Syn_MC_ScnMap_Strt.call(this);
+    if(SceneManager._calledEvolution)return;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const auto_evolve = eval(UI_Config['Auto Evolve']);
+    if(!auto_evolve)return;
+    SceneManager._calledEvolution = true;
+    this.checkForEvolution();
+}
+
+Scene_Map.prototype.checkForEvolution = function(){
+    for(let i = 0; i < $gameParty._actors.length; i++){
+        const actor = $gameParty._actors[i];
+        if(actor){
+            const canEvolve = actor.meetEvolutionRequirement();
+            if(canEvolve){
+                $gameTemp.autoEvolveActor(actor);
+                return;
+            }
+        }
+    }
+}
+
 Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     Syn_MC_ScnMap_Updt.call(this);
     this.updateRsvpScenes();
+}
+
+Syn_MC_ScnMap_UpdtEnctr = Scene_Map.prototype.updateEncounter;
+Scene_Map.prototype.updateEncounter = function() {
+    SceneManager._calledEvolution = false;
+    Syn_MC_ScnMap_UpdtEnctr.call(this);
 }
 
 Scene_Map.prototype.updateRsvpScenes = function(){
@@ -8948,8 +8983,10 @@ SceneMC_AutoEvolution.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createBackgrounds();
     this.createBackgraphics();
+    this.createEvolveCharacter();
     this.createWindowLayer();
     this.createActorDataWindows();
+    this._phase = 'start';
 }
 
 SceneMC_AutoEvolution.prototype.createBackgrounds = function(){
@@ -8976,6 +9013,235 @@ SceneMC_AutoEvolution.prototype.createBackgraphics = function(){
         backgrounds.push(sprite);
     })
     this._backgfxs = backgrounds;
+}
+
+SceneMC_AutoEvolution.prototype.createEvolveCharacter = function(){
+    const actor = $gameTemp._evolve_actor;
+    const char_name = actor.characterName();
+    const char_index = actor.characterIndex();
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const cx = eval(UI_Config['Evolve Character X']) || 0;
+    const cy = eval(UI_Config['Evolve Character Y']) || 0;
+    const chara = new Game_MonsterCharacter();
+    chara.setImage(char_name, char_index);
+    chara.setStepAnime(true);
+    chara.setScreenX(cx);
+    chara.setScreenY(cy);
+    chara.setOpacity(0);
+    const csx = eval(UI_Config['Evolve Character Scale X']) || 0;
+    const csy = eval(UI_Config['Evolve Character Scale Y']) || 0;
+    const sprite = new SpriteMenu_CharacterMonster(chara);
+    sprite.scale.x = csx;
+    sprite.scale.y = csy;
+    sprite.visible = false;
+    this.addChild(sprite);
+    this._chara = chara;
+    this._character_sprite = sprite;
+}
+
+SceneMC_AutoEvolution.prototype.createActorDataWindows = function(){
+    const actor = $gameTemp._evolve_actor;
+    const scene = this;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Evolve Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        window.openness = 0;
+        window.setActor(actor);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._display_duration = eval(UI_Config['Evolve Data Display Time']) || Infinity;
+    if(this._display_duration > 0){
+        windows.forEach((window)=>{
+            window.open();
+        })
+    }
+    this._actor_data_windows = windows;
+}
+
+SceneMC_AutoEvolution.prototype.isBusy = function(){
+    const windows_moving = this._actor_data_windows.some((window)=>{
+        return window.isOpening() || window.isClosing();
+    })
+    return !windows_moving;
+}
+
+SceneMC_AutoEvolution.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateDataWindows();
+    if(this.isBusy())return;
+    this.updateEvolution();
+}
+
+SceneMC_AutoEvolution.prototype.updateDataWindows = function(){
+    if(!this._actor_list_window)return;
+    const actor = $gameTemp._evolve_actor;
+    if(this._saved_actor != actor){
+        this._saved_actor = actor;
+        this._actor_data_windows.forEach((window)=>{
+            window.setActor(actor);
+        })
+    }
+}
+
+SceneMC_AutoEvolution.prototype.updateEvolution = function(){
+    switch(this._phase){
+        case 'exit':return this.updateExitScene();
+        case 'fail':return this.updateFailEvolution();
+        case 'success':return this.updateSuccessEvolution();
+        case 'evolving':return this.updateProcessEvolution();
+        case 'start':return this.updateStartEvolution();
+    }
+}
+
+SceneMC_AutoEvolution.prototype.updateExitScene = function(){
+    const windows = this._actor_data_windows;
+    if(
+        windows.some((window)=>{
+            return window.isOpen();
+        })
+    ){
+        if(
+            Input.isTriggered('ok') ||
+            Input.isTriggered('cancel') ||
+            TouchInput.isTriggered() ||
+            TouchInput.isCancelled() ||
+            this._display_duration <= 0
+        ){
+            windows.forEach((window)=>{
+                window.close();
+            })
+        }else if(!isNaN(this._display_duration) && this._display_duration > 0){
+            this._display_duration--;
+        }
+        return;
+    }
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const fade_rate = eval(UI_Config['Evolve Character Fade Rate']);
+    if(this._chara._opacity > 0){
+        this._chara._opacity -= fade_rate;
+        if(this._chara._opacity <= 0){
+            this.popScene();
+        }
+    }
+}
+
+SceneMC_AutoEvolution.prototype.updateFailEvolution = function(){
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const anim = eval(UI_Config['Evolve Fail Animation']);
+    if(!this._play_end_anim){
+        this._play_end_anim = true;
+        if(anim){
+            if(Utils.RPGMAKER_NAME == 'MV'){
+                this._chara.requestAnimation(anim);
+            }else{
+                $gameTemp.requestAnimation([this._chara], anim);
+            }
+        }
+        return;
+    }
+    if(this._chara.isAnimationPlaying()){
+        return;
+    }
+    this._phase = 'exit';
+}
+
+SceneMC_AutoEvolution.prototype.updateSuccessEvolution = function(){
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const windows = this._actor_data_windows;
+    if(
+        windows.some((window)=>{
+            return window.isClosed();
+        })
+    ){
+        this._display_duration = eval(UI_Config['Evolve Data Display Time']) || Infinity;
+        if(this._display_duration > 0){
+            windows.forEach((window)=>{
+                window.open();
+            })
+            return;
+        }
+    }
+    const actor = $gameTemp._evolve_actor;
+    actor.evolve();
+    const anim = eval(UI_Config['Evolve Success Animation']);
+    if(!this._play_end_anim){
+        this._play_end_anim = true;
+        if(anim){
+            if(Utils.RPGMAKER_NAME == 'MV'){
+                this._chara.requestAnimation(anim);
+            }else{
+                $gameTemp.requestAnimation([this._chara], anim);
+            }
+        }
+        return;
+    }
+    if(this._chara.isAnimationPlaying()){
+        return;
+    }
+    this._phase = 'exit';
+}
+
+SceneMC_AutoEvolution.prototype.updateProcessEvolution = function(){
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const anim = eval(UI_Config['Evolve Animation']);
+    if(!this._play_anim){
+        this._play_anim = true;
+        if(anim){
+            if(Utils.RPGMAKER_NAME == 'MV'){
+                this._chara.requestAnimation(anim);
+            }else{
+                $gameTemp.requestAnimation([this._chara], anim);
+            }
+        }
+        return;
+    }
+    if(
+        Input.isTriggered('ok') ||
+        Input.isTriggered('cancel') ||
+        TouchInput.isTriggered() ||
+        TouchInput.isCancelled()
+    ){
+        this._phase = 'fail';
+        return;
+    }
+    if(this._chara.isAnimationPlaying()){
+        return;
+    }
+    this._phase = 'success';
+}
+
+SceneMC_AutoEvolution.prototype.updateStartEvolution = function(){const windows = this._actor_data_windows;
+    if(
+        windows.some((window)=>{
+            return window.isOpen();
+        })
+    ){
+        if(
+            Input.isTriggered('ok') ||
+            Input.isTriggered('cancel') ||
+            TouchInput.isTriggered() ||
+            TouchInput.isCancelled() ||
+            this._display_duration <= 0
+        ){
+            windows.forEach((window)=>{
+                window.close();
+            })
+        }else if(!isNaN(this._display_duration) && this._display_duration > 0){
+            this._display_duration--;
+        }
+        return;
+    }
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const fade_rate = eval(UI_Config['Evolve Character Fade Rate']);
+    if(this._chara._opacity > 0){
+        this._chara._opacity -= fade_rate;
+        if(this._chara._opacity >= 255){
+            this._phase = 'evolving';
+        }
+    }
 }
 
 function SceneMC_Evolution(){

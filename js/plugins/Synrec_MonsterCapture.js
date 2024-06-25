@@ -3596,6 +3596,44 @@ function RESERVE_BOX_UI_PARSER_MONSTERCAPTURE(obj){
 
 Syn_MC.RESERVE_BOX_UI_CONFIGURATION = RESERVE_BOX_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Reserve Box UI Configuration']);
 
+function EVOLVE_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
+                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Backgrounds'] = [];
+        }
+        try{
+            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
+                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Back Graphics'] = [];
+        }
+        obj['Actor Select Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor Select Window']);
+        try{
+            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Actor Data Windows'] = [];
+        }
+        try{
+            obj['Evolve Actor Data Windows'] = JSON.parse(obj['Evolve Actor Data Windows']).map((config)=>{
+                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Evolve Actor Data Windows'] = [];
+        }
+        return obj;
+    }catch(e){}
+}
+
+Syn_MC.EVOLUTION_UI_CONFIGURATION = EVOLVE_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Evolve UI Configuration']);
+
 function BREEDER_COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -3870,6 +3908,13 @@ Game_Temp.prototype.renamePlayer = function(){
 Game_Temp.prototype.openMonsterReserve = function(id){
     this._open_direct_box = id;
     SceneManager.push(SceneMC_ReserveBoxes);
+}
+
+Game_Temp.prototype.autoEvolveActor = function(actor){
+    if(actor instanceof Game_Actor){
+        this._evolve_actor = actor;
+        SceneManager.push(SceneMC_AutoEvolution);
+    }
 }
 
 Syn_MC_GmSys_Init = Game_System.prototype.initialize;
@@ -8899,12 +8944,134 @@ function SceneMC_AutoEvolution(){
 SceneMC_AutoEvolution.prototype = Object.create(Scene_Base.prototype);
 SceneMC_AutoEvolution.prototype.constructor = SceneMC_AutoEvolution;
 
+SceneMC_AutoEvolution.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createWindowLayer();
+    this.createActorDataWindows();
+}
+
+SceneMC_AutoEvolution.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds;
+}
+
+SceneMC_AutoEvolution.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds;
+}
+
 function SceneMC_Evolution(){
     this.initialize(...arguments);
 }
 
 SceneMC_Evolution.prototype = Object.create(Scene_Base.prototype);
 SceneMC_Evolution.prototype.constructor = SceneMC_Evolution;
+
+SceneMC_Evolution.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createBackgrounds();
+    this.createBackgraphics();
+    this.createWindowLayer();
+    this.createActorListWindow();
+    this.createActorDataWindows();
+}
+
+SceneMC_Evolution.prototype.createBackgrounds = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const background_configs = UI_Config['Backgrounds'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_StaticGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgrounds = backgrounds
+}
+
+SceneMC_Evolution.prototype.createBackgraphics = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const background_configs = UI_Config['Back Graphics'];
+    const backgrounds = [];
+    background_configs.forEach((config)=>{
+        const sprite = new SpriteMC_AnimGfx(config);
+        scene.addChild(sprite);
+        backgrounds.push(sprite);
+    })
+    this._backgfxs = backgrounds
+}
+
+SceneMC_Evolution.prototype.createActorListWindow = function(){
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const data = UI_Config['Actor Select Window'];
+    const list = $gameParty._actors;
+    const window = new WindowMC_ActorSelector(data, list);
+    window.setHandler('ok', this.evolveActor.bind(this));
+    window.setHandler('cancel', this.popScene.bind(this));
+    window.refresh();
+    window.activate();
+    window.select(0);
+    this.addWindow(window);
+    this._actor_list_window = window;
+}
+
+SceneMC_Evolution.prototype.createActorDataWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
+    const actor_winodws = UI_Config['Actor Data Windows'];
+    const windows = [];
+    actor_winodws.forEach((config)=>{
+        const window = new WindowMC_ActorData(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._actor_data_windows = windows;
+}
+
+SceneMC_Evolution.prototype.evolveActor = function(){
+    const actor = this._actor_list_window.actor();
+    if(actor.meetEvolutionRequirement()){
+        $gameTemp.autoEvolveActor(actor);
+    }else{
+        SoundManager.playBuzzer();
+        this._actor_list_window.activate();
+    }
+}
+
+SceneMC_Evolution.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateDataWindows();
+}
+
+SceneMC_Evolution.prototype.updateDataWindows = function(){
+    if(!this._actor_list_window)return;
+    const actor = this._actor_list_window.actor();
+    if(this._saved_actor != actor){
+        this._saved_actor = actor;
+        this._actor_data_windows.forEach((window)=>{
+            window.setActor(actor);
+        })
+    }
+}
 
 function SceneMC_MainMenu(){
     this.initialize(...arguments);
@@ -9064,7 +9231,7 @@ SceneMC_MainMenu.prototype.update = function(){
 }
 
 SceneMC_MainMenu.prototype.updateDataWindows = function(){
-    if(!this._list_window)return;
+    if(!this._actor_list_window)return;
     const actor = this._actor_list_window.actor();
     if(this._saved_actor != actor){
         this._saved_actor = actor;

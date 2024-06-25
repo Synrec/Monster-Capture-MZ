@@ -2519,6 +2519,98 @@
  * @default []
  *  
  */
+/*~struct~evolveUI:
+ * 
+ * @param Backgrounds
+ * @desc Lowest graphic layer for the scene.
+ * @type struct<staticPic>[]
+ * @default []
+ * 
+ * @param Back Graphics
+ * @desc Graphic layer just above background.
+ * @type struct<animPic>[]
+ * @default []
+ * 
+ * @param Auto Evolve
+ * @desc Automatically calls scene and evolves actor.
+ * @type boolean
+ * @default false
+ * 
+ * @param Evolve Animation
+ * @desc Animation to play for actor evolution.
+ * @type animation
+ * @default 0
+ * 
+ * @param Evolve Success Animation
+ * @desc Animation to play for actor evolution.
+ * @type animation
+ * @default 0
+ * 
+ * @param Evolve Fail Animation
+ * @desc Animation to play for actor evolution.
+ * @type animation
+ * @default 0
+ * 
+ * @param Evolve Healing
+ * @desc Recover all on evolution.
+ * @type boolean
+ * @default false
+ * 
+ * @param Actor Select Window
+ * @desc Window display list of party members.
+ * @type struct<actorSelcWindow>
+ * 
+ * @param Actor Data Windows
+ * @desc Windows to display selected party actor data.
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Evolve Actor Data Windows
+ * @desc Windows show on actor evolve
+ * @type struct<actorDataWindow>[]
+ * @default []
+ * 
+ * @param Evolve Data Display Time
+ * @parent Evolve Actor Data Windows
+ * @desc Set time limit for evolve data windows
+ * 0 = Until player confirms
+ * @type text
+ * @default 0
+ * 
+ * @param Evolve Character Direction
+ * @desc Set direction for evolving character
+ * @type select
+ * @option down
+ * @value 2
+ * @option left
+ * @value 4
+ * @option right
+ * @value 6
+ * @option up
+ * @value 8
+ * @default 2
+ * 
+ * @param Evolve Character X
+ * @desc Position of the character on screen
+ * @type text
+ * @default 0
+ * 
+ * @param Evolve Character Y
+ * @desc Position of the character on screen
+ * @type text
+ * @default 0
+ * 
+ * @param Evolve Character Scale X
+ * @desc Size of the character on screen
+ * @type text
+ * @default 0
+ * 
+ * @param Evolve Character Scale Y
+ * @desc Size of the character on screen
+ * @type text
+ * @default 0
+ * 
+ */
 /*~struct~breederUI:
  * 
  * @param Backgrounds

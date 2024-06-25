@@ -6592,10 +6592,10 @@ WindowMC_ActorSelector.prototype.updateSprites = function(){
                 const chara = sprite._character;
                 const rx = rect.x;
                 const ry = rect.y;
-                const sx = -this._scrollX;
-                const sy = -this._scrollY;
-                const ox = chara._off_screenX;
-                const oy = chara._off_screenY;
+                const sx = -this._scrollX || 0;
+                const sy = -this._scrollY || 0;
+                const ox = chara._off_screenX || 0;
+                const oy = chara._off_screenY || 0;
                 const x = rx + sx + ox;
                 const y = ry + sy + oy;
                 chara._screenX = x;
@@ -6615,10 +6615,10 @@ WindowMC_ActorSelector.prototype.updateSprites = function(){
         if(sprite){
             const rx = rect.x;
             const ry = rect.y;
-            const sx = -this._scrollX;
-            const sy = -this._scrollY;
-            const ox = sprite._offset_x;
-            const oy = sprite._offset_y;
+            const sx = -this._scrollX || 0;
+            const sy = -this._scrollY || 0;
+            const ox = sprite._offset_x || 0;
+            const oy = sprite._offset_y || 0;
             const x = rx + sx + ox;
             const y = ry + sy + oy;
             sprite.setHome(x, y);
@@ -7241,9 +7241,20 @@ WindowMC_BattleSwap.prototype.updateList = function(){
     const members = $gameParty.allMembers();
     const list = members.filter((actor)=>{
         return actor.isHidden();
-    });
-    this._list = list;
-    this.refresh();
+    }).filter(Boolean);
+    const cur_list = this._list || [];
+    if(list.length != cur_list.length){
+        this.setList(list);
+        return;
+    }
+    for(let i = 0; i < cur_list.length; i++){
+        const cur_mem = cur_list[i];
+        const new_mem = list[i];
+        if(cur_mem != new_mem){
+            this.setList(list);
+            return;
+        }
+    }
 }
 
 function WindowMC_BattlerInfo(){

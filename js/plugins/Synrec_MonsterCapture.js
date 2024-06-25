@@ -7557,8 +7557,8 @@ Scene_Battle.prototype.swapBattler = function(){
 }
 
 Scene_Battle.prototype.triggerSwap = function(){
-    const index = this._swapWindow.index();
-    if(isNaN(index) || index < 0 || !$gameParty._actors[index]){
+    const actor = this._swapWindow.actor();
+    if(!actor){
         SoundManager.playBuzzer();
         this._swapWindow.show();
         this._swapWindow.activate();
@@ -7566,7 +7566,24 @@ Scene_Battle.prototype.triggerSwap = function(){
         this.refreshAllSprites();
         return;
     }
-    if($gameParty._actors[index] == BattleManager.actor() || $gameParty._actors[index].isAppeared() || $gameParty._actors[index]._hp <= 0){
+    const index = $gameParty._actors.indexOf(actor);
+    if(
+        isNaN(index) || 
+        index < 0 || 
+        !$gameParty._actors[index]
+    ){
+        SoundManager.playBuzzer();
+        this._swapWindow.show();
+        this._swapWindow.activate();
+        this._swapWindow.refresh();
+        this.refreshAllSprites();
+        return;
+    }
+    if(
+        $gameParty._actors[index] == BattleManager.actor() || 
+        $gameParty._actors[index].isAppeared() || 
+        $gameParty._actors[index]._hp <= 0
+    ){
         SoundManager.playBuzzer();
         this._swapWindow.show();
         this._swapWindow.activate();

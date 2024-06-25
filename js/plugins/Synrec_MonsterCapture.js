@@ -9061,7 +9061,7 @@ SceneMC_AutoEvolution.prototype.createActorDataWindows = function(){
     this._actor_data_windows = windows;
 }
 
-SceneMC_AutoEvolution.prototype.isBusy = function(){
+SceneMC_AutoEvolution.prototype.isEvolveBusy = function(){
     const windows_moving = this._actor_data_windows.some((window)=>{
         return window.isOpening() || window.isClosing();
     })
@@ -9071,7 +9071,7 @@ SceneMC_AutoEvolution.prototype.isBusy = function(){
 SceneMC_AutoEvolution.prototype.update = function(){
     Scene_Base.prototype.update.call(this);
     this.updateDataWindows();
-    if(this.isBusy())return;
+    if(this.isEvolveBusy())return;
     this.updateEvolution();
 }
 
@@ -9213,7 +9213,9 @@ SceneMC_AutoEvolution.prototype.updateProcessEvolution = function(){
     this._phase = 'success';
 }
 
-SceneMC_AutoEvolution.prototype.updateStartEvolution = function(){const windows = this._actor_data_windows;
+SceneMC_AutoEvolution.prototype.updateStartEvolution = function(){
+    console.log(this._display_duration)
+    const windows = this._actor_data_windows;
     if(
         windows.some((window)=>{
             return window.isOpen();
@@ -9236,10 +9238,11 @@ SceneMC_AutoEvolution.prototype.updateStartEvolution = function(){const windows 
     }
     const UI_Config = Syn_MC.EVOLUTION_UI_CONFIGURATION;
     const fade_rate = eval(UI_Config['Evolve Character Fade Rate']);
-    if(this._chara._opacity > 0){
+    if(this._chara._opacity < 255){
         this._chara._opacity -= fade_rate;
         if(this._chara._opacity >= 255){
             this._phase = 'evolving';
+            console.log('derp')
         }
     }
 }

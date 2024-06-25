@@ -119,6 +119,10 @@
  * @desc Configure UI settings for breeder
  * @type struct<reserveUI>
  * 
+ * @param Evolve UI Configuration
+ * @desc Configure UI settings for evolution
+ * @type struct<evolveUI>
+ * 
  * @param Breeder UI Configuration
  * @desc Configure UI settings for breeder
  * @type struct<breederUI>
@@ -8795,6 +8799,13 @@ SceneMC_ReserveBoxes.prototype.updateDataWindows = function(){
         this._saved_held_actor = held_actor;
     }
 }
+
+function SceneMC_AutoEvolution(){
+    this.initialize(...arguments);
+}
+
+SceneMC_AutoEvolution.prototype = Object.create(Scene_Base.prototype);
+SceneMC_AutoEvolution.prototype.constructor = SceneMC_AutoEvolution;
 
 function SceneMC_Evolution(){
     this.initialize(...arguments);

@@ -4749,7 +4749,7 @@ Game_Enemy.prototype.setLevel = function(force_level, recover){
     }
     if(maxLevel < minLevel)throw new Error("Max level is set less than min level. Please check plugin / map settings.");
     const bandWidth = Math.abs(Math.floor(maxLevel - minLevel));
-    if(minLevel + bandWidth > actorMaxLevel)throw new Error("Actor maximum level set too low with current settings.");
+    if(minLevel + bandWidth > maxLevel)throw new Error("Actor maximum level set too low with current settings.");
     this._actor._level = force_level || this._level || Math.min($dataActors[this._actor._actorId].maxLevel, (minLevel + Math.randomInt(bandWidth)));
     this._actor.initExp();
     this._actor.initSkills();
@@ -7238,7 +7238,8 @@ WindowMC_BattleSwap.prototype.update = function(){
 }
 
 WindowMC_BattleSwap.prototype.updateList = function(){
-    const list = this._list.filter((actor)=>{
+    const members = $gameParty.allMembers();
+    const list = members.filter((actor)=>{
         return actor.isHidden();
     });
     this._list = list;
@@ -7375,7 +7376,7 @@ WindowMC_BattlerInfo.prototype.drawIcons = function(){
     const window_data = this._window_data;
     if(!eval(window_data['Draw Team Icons']))return;
     const battler = this._battler;
-    const max = Math.max($gameParty.members().length, $gameTroop.members().length);
+    const max = Math.max($gameParty.allMembers().length, $gameTroop.members().length);
     const members = battler.isActor() ? $gameParty.members() : $gameTroop.members();
     const valid_icon = eval(window_data['Valid Battler Icon']);
     const invalid_icon = eval(window_data['Invalid Battler Icon']);
@@ -7504,11 +7505,13 @@ Scene_Battle.prototype.createPartyInfoWindows = function(){
     const party_group = UI_Config['Party Info Windows'];
     const info_window_configs = party_group['Info Windows'];
     const windows = [];
-    info_window_configs.forEach((config)=>{
-        const window = new WindowMC_BattlerInfo(config);
-        scene.addWindow(window);
-        windows.push(window);
-    })
+    if(info_window_configs){
+        info_window_configs.forEach((config)=>{
+            const window = new WindowMC_BattlerInfo(config);
+            scene.addWindow(window);
+            windows.push(window);
+        })
+    }
     this._party_info_windows = windows;
 }
 
@@ -7518,11 +7521,13 @@ Scene_Battle.prototype.createTroopInfoWindows = function(){
     const troop_group = UI_Config['Troop Info Windows'];
     const info_window_configs = troop_group['Info Windows'];
     const windows = [];
-    info_window_configs.forEach((config)=>{
-        const window = new WindowMC_BattlerInfo(config);
-        scene.addWindow(window);
-        windows.push(window);
-    })
+    if(info_window_configs){
+        info_window_configs.forEach((config)=>{
+            const window = new WindowMC_BattlerInfo(config);
+            scene.addWindow(window);
+            windows.push(window);
+        })
+    }
     this._troop_info_windows = windows;
 }
 

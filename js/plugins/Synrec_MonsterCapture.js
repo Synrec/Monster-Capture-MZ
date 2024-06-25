@@ -2633,6 +2633,211 @@
  * @default []
  * 
  */
+/*~struct~battlerInfoWindow:
+ * 
+ * @param Name
+ * @desc No function.
+ * @type text
+ * @default Window
+ * 
+ * @param Dimension Configuration
+ * @desc Setup position and width of the window
+ * @type struct<locSize>
+ * @default {"X":"0","Y":"0","Width":"1","Height":"1"}
+ * 
+ * @param Window Font and Style Configuration
+ * @desc Custom style the window
+ * @type struct<windowStyle>
+ * @default {"Font Settings":"","Font Size":"16","Font Face":"sans-serif","Base Font Color":"#ffffff","Font Outline Color":"rgba(0, 0, 0, 0.5)","Font Outline Thickness":"3","Window Skin":"Window","Window Opacity":"255","Show Window Dimmer":"false"}
+ * 
+ * @param Gauges
+ * @desc Setup gauges for the window
+ * @type struct<gaugeDraw>[]
+ * @default []
+ * 
+ * @param Draw Team Icons
+ * @desc Draw icons representing number of battlers
+ * @type boolean
+ * @default false
+ * 
+ * @param Valid Battler Icon
+ * @parent Draw Team Icons
+ * @desc Icon used for valid battler
+ * @type text
+ * @default 160
+ * 
+ * @param Invalid Battler Icon
+ * @parent Draw Team Icons
+ * @desc Icon used for invalid battler
+ * @type text
+ * @default 162
+ * 
+ * @param No Battler Icon
+ * @parent Draw Team Icons
+ * @desc Icon used for non-existing battler
+ * @type text
+ * @default 167
+ * 
+ * @param Icon X
+ * @parent Draw Team Icons
+ * @desc Starting position of icon list
+ * @type text
+ * @default 0
+ * 
+ * @param Icon Y
+ * @parent Draw Team Icons
+ * @desc Starting position of icon list
+ * @type text
+ * @default 0
+ * 
+ * @param Draw Battler Name
+ * @desc Draw battler name
+ * @type boolean
+ * @default false
+ * 
+ * @param Name Text
+ * @parent Draw Battler Name
+ * @desc Text used for the name
+ * %1 = Name, %2 = Nickname
+ * @type text
+ * @default %1
+ * 
+ * @param Name X
+ * @parent Draw Battler Name
+ * @desc Position of name in window
+ * @type text
+ * @default 0
+ * 
+ * @param Name Y
+ * @parent Draw Battler Name
+ * @desc Position of name in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw Class Level
+ * @desc Draw battler class name and level
+ * @type boolean
+ * @default false
+ * 
+ * @param Class Level Text
+ * @parent Draw Class Level
+ * @desc Draw battler name and level
+ * %1 = class name, %2 = level
+ * @type text
+ * @default Class: %1 <%2>
+ * 
+ * @param Class Level X
+ * @parent Draw Class Level
+ * @desc Position of class level in window.
+ * @type text
+ * @default 0
+ * 
+ * @param Class Level Y
+ * @parent Draw Class Level
+ * @desc Position of class level in window.
+ * @type text
+ * @default 0
+ * 
+ * @param Draw HP Resource
+ * @desc Draw battler current and max HP
+ * @type boolean
+ * @default false
+ * 
+ * @param HP Text
+ * @parent Draw HP Resource
+ * @desc Text for HP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[84]%1 / %2
+ * 
+ * @param HP X
+ * @parent Draw HP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param HP Y
+ * @parent Draw HP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw MP Resource
+ * @desc Draw battler current and max MP
+ * @type boolean
+ * @default false
+ * 
+ * @param MP Text
+ * @parent Draw MP Resource
+ * @desc Text for MP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[79]%1 / %2
+ * 
+ * @param MP X
+ * @parent Draw MP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param MP Y
+ * @parent Draw MP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param Draw TP Resource
+ * @desc Draw battler current and max TP
+ * @type boolean
+ * @default false
+ * 
+ * @param TP Text
+ * @parent Draw TP Resource
+ * @desc Text for TP (Escape chars allowed)
+ * %1 = Current, %2 = Max
+ * @type text
+ * @default \I[79]%1 / %2
+ * 
+ * @param TP X
+ * @parent Draw TP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ * @param TP Y
+ * @parent Draw TP Resource
+ * @desc Position of text in window
+ * @type text
+ * @default 0
+ * 
+ */
+/*~struct~infoWindowStruct:
+ * 
+ * @param Info Windows
+ * @desc Info windows to create
+ * @type struct<battlerInfoWindow>[]
+ * @default []
+ * 
+ */
+/*~struct~battleUI:
+ * 
+ * @param Swap Window Configuration
+ * @desc Window display list of actors battler can swap to.
+ * @type struct<actorSelcWindow>
+ * 
+ * @param Party Info Windows
+ * @desc Create Info windows for party.
+ * First Always displayed.
+ * @type struct<infoWindowStruct>[]
+ * @default []
+ * 
+ * @param Troop Info Windows
+ * @desc Create Info windows for troop
+ * First Always displayed.
+ * @type struct<infoWindowStruct>[]
+ * @default []
+ * 
+ */
 
 const Syn_MC = {};
 Syn_MC.Plugin = PluginManager.parameters(`Synrec_MonsterCapture`);
@@ -3375,6 +3580,66 @@ function BEASTIARY_UI_PARSER_MONSTERCAPTURE(obj){
 }
 
 Syn_MC.BEASTIARY_UI_CONFIGURATION = BEASTIARY_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Beastiary UI Configuration']);
+
+function BATTLE_INFO_WINDOW_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);obj = JSON.parse(obj);
+        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
+        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);     
+        try{
+            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
+                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Gauges'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+function BATTLE_INFO_WINDOW_GROUP_PARSER(obj){
+    try{
+        obj = JSON.parse(obj);
+        try{
+            obj['Info Windows'] = JSON.parse(obj['Info WIndows']).map((config)=>{
+                return BATTLE_INFO_WINDOW_PARSER_MONSTERCAPTURE(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Info Windows'] = [];
+        }
+        return obj;
+    }catch(e){
+        return obj;
+    }
+}
+
+function BATTLE_UI_PARSER_MONSTERCAPTURE(obj){
+    try{
+        obj = JSON.parse(obj);
+        obj['Swap Window Configuration'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Swap Window Configuration']);
+        try{
+            obj['Party Info Windows'] = JSON.parse(obj['Party Info Windows']).map((config)=>{
+                return BATTLE_INFO_WINDOW_GROUP_PARSER(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Party Info Windows'] = [];
+        }
+        try{
+            obj['Troop Info Windows'] = JSON.parse(obj['Troop Info Windows']).map((config)=>{
+                return BATTLE_INFO_WINDOW_GROUP_PARSER(config);
+            }).filter(Boolean)
+        }catch(e){
+            obj['Troop Info Windows'] = [];
+        }
+        return obj;
+    }catch(e){
+        return;
+    }
+}
+
+Syn_MC.BATTLE_UI_CONFIGURATION = BATTLE_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Battle UI Configuration']);
 
 Syn_MC_ScnMngr_Push = SceneManager.push;
 SceneManager.push = function(sceneClass) {
@@ -6898,6 +7163,26 @@ WindowMC_BreederCommand.prototype.drawItem = function(i){
     this.drawTextEx(text, tx, ty);
 }
 
+function WindowMC_BattleSwap(){
+    this.initialize(...arguments);
+}
+
+WindowMC_BattleSwap.prototype = Object.create(WindowMC_ActorSelector.prototype);
+WindowMC_BattleSwap.prototype.constructor = WindowMC_BattleSwap;
+
+WindowMC_BattleSwap.prototype.update = function(){
+    WindowMC_ActorSelector.prototype.update.call(this);
+    this.updateList();
+}
+
+WindowMC_BattleSwap.prototype.updateList = function(){
+    const list = this._list.filter((actor)=>{
+        return actor.isHidden();
+    });
+    this._list = list;
+    this.refresh();
+}
+
 Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     Syn_MC_ScnMap_Updt.call(this);
@@ -6906,6 +7191,113 @@ Scene_Map.prototype.update = function() {
 
 Scene_Map.prototype.updateRsvpScenes = function(){
     $gameTemp.updateReserveScene();
+}
+
+Scene_Battle.prototype.updateAutoAction = function(){
+    if(!this._actorCommandWindow.active)return;
+    if(this._autoAction == 'guard'){
+        if(BattleManager.actor()){
+            this.commandGuard();
+        }
+    }
+}
+
+Syn_MC_ScnBatt_CrtAllWins = Scene_Battle.prototype.createAllWindows;
+Scene_Battle.prototype.createAllWindows = function() {
+    Syn_MC_ScnBatt_CrtAllWins.call(this);
+    this.createSwapWindow();
+    this.createPartyInfoWindows();
+    this.createTroopInfoWindows();
+}
+
+Scene_Battle.prototype.createSwapWindow = function(){
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+    const data = UI_Config['Swap Window Configuration'];
+    const window = new WindowMC_BattleSwap(data);
+    window.setHandler('ok', this.triggerSwap.bind(this));
+    window.setHandler('cancel', this.cancelSwap.bind(this));
+    window.hide();
+    this.addWindow(window);
+    this._swapWindow = window;
+}
+
+Scene_Battle.prototype.createPartyInfoWindows = function(){}
+
+Scene_Battle.prototype.createTroopInfoWindows = function(){}
+
+Syn_MC_ScnBatt_IsAnyInptWinActv = Scene_Battle.prototype.isAnyInputWindowActive;
+Scene_Battle.prototype.isAnyInputWindowActive = function() {
+    return (
+        Syn_MC_ScnBatt_IsAnyInptWinActv.call(this) ||
+        this._swapWindow.active
+    );
+}
+
+Scene_Battle.prototype.swapBattler = function(){
+    this._swapWindow.refresh();
+    this._swapWindow.show();
+    this._swapWindow.activate();
+}
+
+Scene_Battle.prototype.triggerSwap = function(){
+    const index = this._swapWindow.index();
+    if(isNaN(index) || index < 0 || !$gameParty._actors[index]){
+        SoundManager.playBuzzer();
+        this._swapWindow.show();
+        this._swapWindow.activate();
+        this._swapWindow.refresh();
+        this.refreshAllSprites();
+        return;
+    }
+    if($gameParty._actors[index] == BattleManager.actor() || $gameParty._actors[index].isAppeared() || $gameParty._actors[index]._hp <= 0){
+        SoundManager.playBuzzer();
+        this._swapWindow.show();
+        this._swapWindow.activate();
+        this._swapWindow.refresh();
+        this.refreshAllSprites();
+        return;
+    }else{
+        SoundManager.playOk();
+        BattleManager.actor()._swapId = index;
+        BattleManager.actor().action(0).setGuard();
+        this._swapWindow.hide();
+        this._swapWindow.deactivate();
+        this._swapWindow.refresh();
+        this.selectNextCommand();
+        return;
+    }
+}
+
+Scene_Battle.prototype.refreshAllSprites = function(){
+    let actors = this._spriteset._actorSprites;
+    for(act = 0; act < actors.length; act++){
+        let actor = actors[act];
+        let battler = actor._battler;
+        if(battler && SynrecMC.GenderTraits){
+            actor.setGendHex(battler);
+            actor.setGendFilter(battler);
+        }
+        actor._updateColorFilter();
+    }
+}
+
+Scene_Battle.prototype.cancelSwap = function(){
+    this._swapWindow.hide();
+    this._swapWindow.deactivate();
+    this.changeInputWindow();
+}
+
+Syn_MC_ScnBatt_HideSubInptWins = Scene_Battle.prototype.hideSubInputWindows;
+Scene_Battle.prototype.hideSubInputWindows = function() {
+    Syn_MC_ScnBatt_HideSubInptWins.call(this);
+    this._swapWindow.hide();
+    this._swapWindow.deactivate();
+}
+
+Syn_MC_ScnBatt_SelcPrevCmd = Scene_Battle.prototype.selectPreviousCommand;
+Scene_Battle.prototype.selectPreviousCommand = function() {
+    Syn_MC_ScnBatt_SelcPrevCmd.call(this);
+    if(BattleManager.actor())BattleManager.actor()._swapId = undefined;
 }
 
 Syn_MC_ScnGmOver_Updt = Scene_Gameover.prototype.update;

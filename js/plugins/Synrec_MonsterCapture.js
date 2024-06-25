@@ -7183,6 +7183,197 @@ WindowMC_BattleSwap.prototype.updateList = function(){
     this.refresh();
 }
 
+function WindowMC_BattlerInfo(){
+    this.initialize(...arguments);
+}
+
+WindowMC_BattlerInfo.prototype = Object.create(Window_Base.prototype);
+WindowMC_BattlerInfo.prototype.constructor = WindowMC_BattlerInfo;
+
+WindowMC_BattlerInfo.prototype.initialize = function(data){
+    const mz_mode = Utils.RPGMAKER_NAME == "MZ";
+    const rect = this.createRect(data);
+    this._window_data = data;
+    this._style_data = data['Window Font and Style Configuration'];
+    if(mz_mode){
+        Window_Base.prototype.initialize.call(this, rect);
+    }else{
+        const x = rect.x;
+        const y = rect.y;
+        const w = rect.width;
+        const h = rect.height;
+        Window_Base.prototype.initialize.call(this,x,y,w,h);
+    }
+    this.setOpacityAndDimmer();
+}
+
+WindowMC_BattlerInfo.prototype.createRect = function(data){
+    const dimension_config = data['Dimension Configuration'];
+    const x = dimension_config['X'];
+    const y = dimension_config['Y'];
+    const w = dimension_config['Width'];
+    const h = dimension_config['Height'];
+    return new Rectangle(x,y,w,h);
+}
+
+WindowMC_BattlerInfo.prototype.standardPadding = function() {
+    return 8;
+}
+
+WindowMC_BattlerInfo.prototype.loadWindowskin = function(){
+    const base = Window_Base.prototype.loadWindowskin.call(this);
+    const custom_config = this._style_data;
+    if(!custom_config)return base;
+    const skin_name = custom_config['Window Skin'];
+    if(!skin_name)return base;
+    this.windowskin = ImageManager.loadSystem(skin_name);
+}
+
+WindowMC_BattlerInfo.prototype.resetFontSettings = function() {
+    const base = Window_Base.prototype.resetFontSettings;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const font_face = custom_config['Font Face'] || "sans-serif";
+    const font_size = custom_config['Font Size'] || 16;
+    const font_outline_size = custom_config['Font Outline Thickness'] || 3;
+    this.contents.fontFace = font_face;
+    this.contents.fontSize = font_size;
+    this.contents.outlineWidth = font_outline_size;
+    this.resetTextColor();
+}
+
+WindowMC_BattlerInfo.prototype.resetTextColor = function() {
+    const base = Window_Base.prototype.resetTextColor;
+    const custom_config = this._style_data;
+    if(!custom_config)return base.call(this);
+    const text_color = custom_config['Base Font Color'] || "#ffffff";
+    const outline_color = custom_config['Font Outline Color'] || "rgba(0, 0, 0, 0.5)";
+    this.changeTextColor(text_color);
+    this.contents.outlineColor = outline_color;
+}
+
+WindowMC_BattlerInfo.prototype.setOpacityAndDimmer = function(){
+    const custom_config = this._style_data;
+    if(!custom_config)return;
+    const show_dimmer = custom_config['Show Window Dimmer'] || false;
+    const win_opacity = custom_config['Window Opacity'] || 0;
+    this.opacity = win_opacity;
+    show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
+}
+
+WindowMC_BattlerInfo.prototype.setActor = function(actor){
+    this.contents.clear();
+    this._actor = actor;
+    if(actor){
+        this.show();
+        this.drawData();
+    }else if(this._blank_hide){
+        this.hide();
+    }else{
+        this._battler_sprite.setBattler();
+        this._chara.setOpacity(0);
+    }
+}
+
+WindowMC_BattlerInfo.prototype.drawData = function(){
+    this.drawIcons();
+    this.drawGauges();
+    this.drawName();
+    this.drawClassLevel();
+    this.drawResHP();
+    this.drawResMP();
+    this.drawResTP();
+}
+
+WindowMC_BattlerInfo.prototype.drawGauges = function(){
+    const window = this;
+    const actor = this._actor;
+    const window_data = this._window_data;
+    const gauges = window_data['Gauges'];
+    gauges.forEach((config)=>{
+        const label = config['Label'];
+        const lx = eval(config['Label X']);
+        const ly = eval(config['Label Y']);
+        window.drawTextEx(label, lx, ly);
+        const cur_val = eval(config['Gauge Current Value']) || 0;
+        const max_val = eval(config['Gauge Max Value']) || 1;
+        const ratio = Math.max(0, Math.min(1, cur_val / max_val));
+        const gx = eval(config['Gauge X']);
+        const gy = eval(config['Gauge Y']);
+        const gw = eval(config['Gauge Width']);
+        const gh = eval(config['Gauge Height']);
+        const gb = eval(config['Gauge Border']);
+        const border_color = config['Gauge Border Color'];
+        const background_color = config['Gauge Background Color'];
+        const fill_color = config['Gauge Color'];
+        window.contents.fillRect(gx,gy,gw,gh,border_color);
+        window.contents.fillRect(gx + gb, gy + gb, gw - (gb * 2), gh - (gb * 2), background_color);
+        window.contents.fillRect(gx + gb, gy + gb, (gw - (gb * 2)) * ratio, gh - (gb * 2), fill_color);
+    })
+}
+
+WindowMC_BattlerInfo.prototype.drawName = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Actor Name']))return;
+    const name = actor.name();
+    const nickname = actor.nickname();
+    const text = (window_data['Name Text'] || "").format(name, nickname);
+    const tx = eval(window_data['Name X']) || 0;
+    const ty = eval(window_data['Name Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BattlerInfo.prototype.drawClassLevel = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Class Level']))return;
+    const class_id = actor._classId;
+    const class_data = $dataClasses[class_id] || {};
+    const class_name = class_data ? class_data.name : "";
+    const level = actor.level;
+    const text = (window_data['Class Level Text'] || "").format(class_name, level);
+    const tx = eval(window_data['Class Level X']) || 0;
+    const ty = eval(window_data['Class Level Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BattlerInfo.prototype.drawResHP = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw HP Resource']))return;
+    const cur = actor.hp;
+    const max = actor.mhp;
+    const text = (window_data['HP Text'] || "").format(cur, max);
+    const tx = eval(window_data['HP X']) || 0;
+    const ty = eval(window_data['HP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BattlerInfo.prototype.drawResMP = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw MP Resource']))return;
+    const cur = actor.mp;
+    const max = actor.mmp;
+    const text = (window_data['MP Text'] || "").format(cur, max);
+    const tx = eval(window_data['MP X']) || 0;
+    const ty = eval(window_data['MP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
+WindowMC_BattlerInfo.prototype.drawResTP = function(){
+    const actor = this._actor;
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw TP Resource']))return;
+    const cur = actor.tp;
+    const max = actor.maxTp();
+    const text = (window_data['TP Text'] || "").format(cur, max);
+    const tx = eval(window_data['TP X']) || 0;
+    const ty = eval(window_data['TP Y']) || 0;
+    this.drawTextEx(text, tx, ty);
+}
+
 Syn_MC_ScnMap_Updt = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     Syn_MC_ScnMap_Updt.call(this);
@@ -7221,9 +7412,37 @@ Scene_Battle.prototype.createSwapWindow = function(){
     this._swapWindow = window;
 }
 
-Scene_Battle.prototype.createPartyInfoWindows = function(){}
+Scene_Battle.prototype.createPartyInfoWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+    const party_group = UI_Config['Party Info Windows'];
+    const info_window_configs = party_group['Info Windows'];
+    const windows = [];
+    info_window_configs.forEach((config)=>{
+        const window = new WindowMC_BattlerInfo(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._party_info_windows = windows;
+}
 
-Scene_Battle.prototype.createTroopInfoWindows = function(){}
+Scene_Battle.prototype.createTroopInfoWindows = function(){
+    const scene = this;
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+    const troop_group = UI_Config['Troop Info Windows'];
+    const info_window_configs = troop_group['Info Windows'];
+    const windows = [];
+    info_window_configs.forEach((config)=>{
+        const window = new WindowMC_BattlerInfo(config);
+        scene.addWindow(window);
+        windows.push(window);
+    })
+    this._troop_info_windows = windows;
+}
+
+Scene_Battle.prototype.createTroopInfoWindows = function(){
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+}
 
 Syn_MC_ScnBatt_IsAnyInptWinActv = Scene_Battle.prototype.isAnyInputWindowActive;
 Scene_Battle.prototype.isAnyInputWindowActive = function() {

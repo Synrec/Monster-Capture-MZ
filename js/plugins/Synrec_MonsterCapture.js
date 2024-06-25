@@ -3751,7 +3751,7 @@ Syn_MC.BEASTIARY_UI_CONFIGURATION = BEASTIARY_UI_PARSER_MONSTERCAPTURE(Syn_MC.Pl
 
 function BATTLE_INFO_WINDOW_PARSER_MONSTERCAPTURE(obj){
     try{
-        obj = JSON.parse(obj);obj = JSON.parse(obj);
+        obj = JSON.parse(obj);
         obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
         obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);     
         try{
@@ -3771,7 +3771,7 @@ function BATTLE_INFO_WINDOW_GROUP_PARSER(obj){
     try{
         obj = JSON.parse(obj);
         try{
-            obj['Info Windows'] = JSON.parse(obj['Info WIndows']).map((config)=>{
+            obj['Info Windows'] = JSON.parse(obj['Info Windows']).map((config)=>{
                 return BATTLE_INFO_WINDOW_PARSER_MONSTERCAPTURE(config);
             }).filter(Boolean)
         }catch(e){
@@ -7775,24 +7775,30 @@ Scene_Battle.prototype.createPartyInfoWindows = function(){
     const scene = this;
     const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
     const party_group = UI_Config['Party Info Windows'];
-    const info_window_configs = party_group['Info Windows'];
-    const windows = [];
-    if(info_window_configs){
-        info_window_configs.forEach((config)=>{
-            const window = new WindowMC_BattlerInfo(config);
-            scene.addWindow(window);
-            windows.push(window);
-        })
-    }
-    this._party_info_windows = windows;
+    const groups = {};
+    let index = 0;
+    party_group.forEach((group)=>{
+        const windows = [];
+        const info_window_configs = group['Info Windows'];
+        if(info_window_configs){
+            info_window_configs.forEach((config)=>{
+                const window = new WindowMC_BattlerInfo(config);
+                scene.addWindow(window);
+                windows.push(window);
+            })
+        }
+        groups[index] = windows;
+        index++;
+    })
+    this._party_info_windows = groups;
 }
 
 Scene_Battle.prototype.createTroopInfoWindows = function(){
     const scene = this;
+    const windows = [];
     const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
     const troop_group = UI_Config['Troop Info Windows'];
     const info_window_configs = troop_group['Info Windows'];
-    const windows = [];
     if(info_window_configs){
         info_window_configs.forEach((config)=>{
             const window = new WindowMC_BattlerInfo(config);

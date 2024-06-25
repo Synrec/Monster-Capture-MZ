@@ -4649,8 +4649,8 @@ Game_Actor.prototype.performSwap = function(){
     const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
     const anim = eval(UI_Config['Swap Animation']);
     this.hide();
-    $gameParty.members()[this._swapId].appear();
-    const animTarget = $gameParty.members()[this._swapId];
+    $gameParty.allMembers()[this._swapId].appear();
+    const animTarget = $gameParty.allMembers()[this._swapId];
     if(Utils.RPGMAKER_NAME == 'MV'){
         this.startAnimation(anim);
     }else{
@@ -5754,6 +5754,35 @@ Window_ActorCommand.prototype.addSwapCommand = function(cmd_name){
     this.addCommand(cmd_name, 'party');
     let scene = SceneManager._scene;
     this.setHandler('party', scene.swapBattler.bind(scene), this._actor.canSwap());
+}
+
+Window_BattleLog.prototype.performSwap = function(subject) {
+    subject.performSwap();
+    subject._swapId = undefined;
+}
+
+Syn_MC_WinBattLog_StrtActn = Window_BattleLog.prototype.startAction;
+Window_BattleLog.prototype.startAction = function(subject, action, targets) {
+    if(!isNaN(subject._swapId)){
+        if(subject.isActor()){
+            const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+            const anim = eval(UI_Config['Swap Animation']);
+            const targetSwap = $gameParty.allMembers()[subject._swapId];
+            this.push("performActorSwap", subject);
+            this.push("showAnimation", subject, [targetSwap], anim);
+            this.push("clear");
+            this.push("performActionEnd", subject);
+            this.push("clear");
+            this.push("performActionEnd", targetSwap);
+        }
+        return;
+    }
+    Syn_MC_WinBattLog_StrtActn.call(this, subject, action, targets);
+}
+
+Window_BattleLog.prototype.performActorSwap = function(subject){
+    subject.performSwap();
+    subject._swapId = undefined;
 }
 
 Window_BattleLog.prototype.checkForDeathSwap = function(){

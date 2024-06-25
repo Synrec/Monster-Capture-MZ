@@ -4061,6 +4061,13 @@ Game_Action.prototype.playCaptureSuccess = function(target){
     target.refresh();
     $gameParty.addCaptureActor(target, hpSet, mpSet);
     target._actor = null;
+    const troop_index = $gameTroop.members().indexOf(target);
+    if(troop_index >= 0){
+        $gameTroop._enemies.splice(troop_index, 1);
+        if($gameTroop._enemies.length > 0){
+            $gameTroop._need_swap_in = true;
+        }
+    }
 }
 
 Game_Action.prototype.playCaptureFail = function(target){
@@ -5159,6 +5166,7 @@ Game_Party.prototype.addCaptureActor = function(enemy, hp, mp){
     actor.setHp(hp);
     actor.setMp(mp);
     actor.setTp(0);
+    actor.hide();
     if(this._actors.length >= this.maxBattleMembers()){
         actor.onBattleEnd();
         this.addToReserve(actor);
@@ -6018,6 +6026,15 @@ Window_BattleLog.prototype.checkForDeathSwap = function(){
                     }
                 }
             }
+        }else if($gameTroop._need_swap_in){
+            for(let i = 0; i < $gameTroop.members().length; i++){
+                let mem = $gameTroop.members()[i];
+                if(mem._hp > 0){
+                    member.appear();
+                    break;
+                }
+            }
+            $gameTroop._need_swap_in = false;
         }
     })
 }
@@ -7577,6 +7594,20 @@ WindowMC_BattlerInfo.prototype.setBattler = function(battler){
     }
 }
 
+WindowMC_BattlerInfo.prototype.update = function(){
+    Window_Base.prototype.update.call(this);
+    this.updateLogVisible();
+}
+
+WindowMC_BattlerInfo.prototype.updateLogVisible = function(){
+    const battle_log = BattleManager._logWindow;
+    if(battle_log.numLines() > 0){
+        this.close();
+    }else{
+        this.open();
+    }
+}
+
 WindowMC_BattlerInfo.prototype.drawData = function(){
     this.drawGauges();
     this.drawIcons();
@@ -7619,13 +7650,13 @@ WindowMC_BattlerInfo.prototype.drawIcons = function(){
     if(!eval(window_data['Draw Team Icons']))return;
     const battler = this._battler;
     const max = Math.max($gameParty.allMembers().length, $gameTroop.members().length);
-    const members = battler.isActor() ? $gameParty.members() : $gameTroop.members();
+    const members = battler.isActor() ? $gameParty.allMembers() : $gameTroop.members();
     const valid_icon = eval(window_data['Valid Battler Icon']);
     const invalid_icon = eval(window_data['Invalid Battler Icon']);
     const no_icon = eval(window_data['No Battler Icon']);
     const x = eval(window_data['Icon X']);
     const y = eval(window_data['Icon Y']);
-    for(let i = 0; i < max; I++){
+    for(let i = 0; i < max; i++){
         const ix = x + (32 * i);
         const iy = y;
         const member = members[i];
@@ -7733,14 +7764,14 @@ Scene_Map.prototype.update = function() {
     this.updateRsvpScenes();
 }
 
+Scene_Map.prototype.updateRsvpScenes = function(){
+    $gameTemp.updateReserveScene();
+}
+
 Syn_MC_ScnMap_UpdtEnctr = Scene_Map.prototype.updateEncounter;
 Scene_Map.prototype.updateEncounter = function() {
     SceneManager._calledEvolution = false;
     Syn_MC_ScnMap_UpdtEnctr.call(this);
-}
-
-Scene_Map.prototype.updateRsvpScenes = function(){
-    $gameTemp.updateReserveScene();
 }
 
 Scene_Battle.prototype.updateAutoAction = function(){
@@ -7795,18 +7826,24 @@ Scene_Battle.prototype.createPartyInfoWindows = function(){
 
 Scene_Battle.prototype.createTroopInfoWindows = function(){
     const scene = this;
-    const windows = [];
     const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
     const troop_group = UI_Config['Troop Info Windows'];
-    const info_window_configs = troop_group['Info Windows'];
-    if(info_window_configs){
-        info_window_configs.forEach((config)=>{
-            const window = new WindowMC_BattlerInfo(config);
-            scene.addWindow(window);
-            windows.push(window);
-        })
-    }
-    this._troop_info_windows = windows;
+    const groups = {};
+    let index = 0;
+    troop_group.forEach((group)=>{
+        const windows = [];
+        const info_window_configs = group['Info Windows'];
+        if(info_window_configs){
+            info_window_configs.forEach((config)=>{
+                const window = new WindowMC_BattlerInfo(config);
+                scene.addWindow(window);
+                windows.push(window);
+            })
+        }
+        groups[index] = windows;
+        index++;
+    })
+    this._troop_info_windows = groups;
 }
 
 Syn_MC_ScnBatt_IsAnyInptWinActv = Scene_Battle.prototype.isAnyInputWindowActive;
@@ -7899,6 +7936,43 @@ Syn_MC_ScnBatt_SelcPrevCmd = Scene_Battle.prototype.selectPreviousCommand;
 Scene_Battle.prototype.selectPreviousCommand = function() {
     Syn_MC_ScnBatt_SelcPrevCmd.call(this);
     if(BattleManager.actor())BattleManager.actor()._swapId = undefined;
+}
+
+Syn_MC_ScnBatt_Updt = Scene_Battle.prototype.update;
+Scene_Battle.prototype.update = function(){
+    Syn_MC_ScnBatt_Updt.call(this);
+    this.updateInfoWindows();
+}
+
+Scene_Battle.prototype.updateInfoWindows = function(){
+    this.updatePartyInfoWindows();
+    this.updateTroopInfoWindows();
+}
+
+Scene_Battle.prototype.updatePartyInfoWindows = function(){
+    const battle_actors = $gameParty.members();
+    const groups = this._party_info_windows;
+    const indicies = Object.keys(groups).map(id => eval(id));
+    for(const index in indicies){
+        const actor = battle_actors[index];
+        const windows = groups[index];
+        windows.forEach((window)=>{
+            window.setBattler(actor);
+        })
+    }
+}
+
+Scene_Battle.prototype.updateTroopInfoWindows = function(){
+    const battle_enemies = $gameTroop.members();
+    const groups = this._troop_info_windows;
+    const indicies = Object.keys(groups).map(id => eval(id));
+    for(const index in indicies){
+        const enemy = battle_enemies[index];
+        const windows = groups[index];
+        windows.forEach((window)=>{
+            window.setBattler(enemy);
+        })
+    }
 }
 
 Syn_MC_ScnGmOver_Updt = Scene_Gameover.prototype.update;
@@ -9267,7 +9341,6 @@ SceneMC_AutoEvolution.prototype.updateProcessEvolution = function(){
         }
         return;
     }
-    console.log(this._chara.isAnimationPlaying())
     if(
         Input.isTriggered('ok') ||
         Input.isTriggered('cancel') ||

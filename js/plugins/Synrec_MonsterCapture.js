@@ -2825,6 +2825,24 @@
  * @desc Window display list of actors battler can swap to.
  * @type struct<actorSelcWindow>
  * 
+ * @param Swap Command Name
+ * @parent Swap Window Configuration
+ * @desc Name of the swap command
+ * @type text
+ * @default Swap
+ * 
+ * @param Swap Block States
+ * @parent Swap Window Configuration
+ * @desc These states will prevent actor swaping
+ * @type state[]
+ * @default []
+ * 
+ * @param Swap Animation
+ * @parent Swap Window COnfiguration
+ * @desc Animation used for battler swap
+ * @type animation
+ * @default 0
+ * 
  * @param Party Info Windows
  * @desc Create Info windows for party.
  * First Always displayed.
@@ -3620,6 +3638,11 @@ function BATTLE_UI_PARSER_MONSTERCAPTURE(obj){
         obj = JSON.parse(obj);
         obj['Swap Window Configuration'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Swap Window Configuration']);
         try{
+            obj['Swap Block States'] = JSON.parse(obj['Swap Block States']);
+        }catch(e){
+            obj['Swap Block States'] = [];
+        }
+        try{
             obj['Party Info Windows'] = JSON.parse(obj['Party Info Windows']).map((config)=>{
                 return BATTLE_INFO_WINDOW_GROUP_PARSER(config);
             }).filter(Boolean)
@@ -4382,6 +4405,15 @@ Game_BattlerBase.prototype.restorePowerPoints = function(){
     }
 }
 
+Game_BattlerBase.prototype.canSwap = function(){
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+    const swap_blockers = UI_Config['Swap Block States'].map(id => eval(id)).filter(Boolean)
+    const states = this._states;
+    return states.some((sid)=>{
+        return swap_blockers.includes(sid);
+    })
+}
+
 Syn_MC_GmBattBse_Die = Game_BattlerBase.prototype.die;
 Game_BattlerBase.prototype.die = function() {
     if(this._isCaptured){
@@ -4613,6 +4645,19 @@ Game_Actor.prototype.paramBase = function(){
     return Syn_MC_GmActr_BseParam.call(this, ...arguments);
 }
 
+Game_Actor.prototype.performSwap = function(){
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+    const anim = eval(UI_Config['Swap Animation']);
+    this.hide();
+    $gameParty.members()[this._swapId].appear();
+    const animTarget = $gameParty.members()[this._swapId];
+    if(Utils.RPGMAKER_NAME == 'MV'){
+        this.startAnimation(anim);
+    }else{
+        $gameTemp.requestAnimation([animTarget], anim);
+    }
+}
+
 Syn_MC_GmEnem_Init = Game_Enemy.prototype.initialize
 Game_Enemy.prototype.initialize = function(enemyId, x, y) {
     Syn_MC_GmEnem_Init.call(this, ...arguments);
@@ -4769,10 +4814,11 @@ Game_Enemy.prototype.transform = function(enemyId) {
 }
 
 Game_Enemy.prototype.performSwap = function(){
+    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+    const anim = eval(UI_Config['Swap Animation']);
     this.hide();
     $gameTroop.members()[this._swapId].appear();
     const animTarget = $gameTroop.members()[this._swapId];
-    const anim = 0;
     if(Utils.RPGMAKER_NAME == 'MV'){
         this.startAnimation(anim);
     }else{
@@ -5692,6 +5738,22 @@ Syn_MC_WinBattLog_EndActn = Window_BattleLog.prototype.endAction;
 Window_BattleLog.prototype.endAction = function(subject) {
     Syn_MC_WinBattLog_EndActn.call(this, subject);
     this.push("checkForDeathSwap");
+}
+
+Syn_MC_WinActrCmd_MkCmdList = Window_ActorCommand.prototype.makeCommandList;
+Window_ActorCommand.prototype.makeCommandList = function() {
+    if (this._actor) {
+        Syn_MC_WinActrCmd_MkCmdList.call(this);
+        const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+        const cmd_name = UI_Config['Swap Command Name'];
+        if(cmd_name)this.addSwapCommand(cmd_name);
+    }
+}
+
+Window_ActorCommand.prototype.addSwapCommand = function(cmd_name){
+    this.addCommand(cmd_name, 'party');
+    let scene = SceneManager._scene;
+    this.setHandler('party', scene.swapBattler.bind(scene), this._actor.canSwap());
 }
 
 Window_BattleLog.prototype.checkForDeathSwap = function(){
@@ -7261,23 +7323,20 @@ WindowMC_BattlerInfo.prototype.setOpacityAndDimmer = function(){
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
 
-WindowMC_BattlerInfo.prototype.setActor = function(actor){
+WindowMC_BattlerInfo.prototype.setBattler = function(battler){
     this.contents.clear();
-    this._actor = actor;
-    if(actor){
+    this._battler = battler;
+    if(battler){
         this.show();
         this.drawData();
     }else if(this._blank_hide){
         this.hide();
-    }else{
-        this._battler_sprite.setBattler();
-        this._chara.setOpacity(0);
     }
 }
 
 WindowMC_BattlerInfo.prototype.drawData = function(){
-    this.drawIcons();
     this.drawGauges();
+    this.drawIcons();
     this.drawName();
     this.drawClassLevel();
     this.drawResHP();
@@ -7287,7 +7346,7 @@ WindowMC_BattlerInfo.prototype.drawData = function(){
 
 WindowMC_BattlerInfo.prototype.drawGauges = function(){
     const window = this;
-    const actor = this._actor;
+    const battler = this._battler;
     const window_data = this._window_data;
     const gauges = window_data['Gauges'];
     gauges.forEach((config)=>{
@@ -7312,12 +7371,39 @@ WindowMC_BattlerInfo.prototype.drawGauges = function(){
     })
 }
 
+WindowMC_BattlerInfo.prototype.drawIcons = function(){
+    const window_data = this._window_data;
+    if(!eval(window_data['Draw Team Icons']))return;
+    const battler = this._battler;
+    const max = Math.max($gameParty.members().length, $gameTroop.members().length);
+    const members = battler.isActor() ? $gameParty.members() : $gameTroop.members();
+    const valid_icon = eval(window_data['Valid Battler Icon']);
+    const invalid_icon = eval(window_data['Invalid Battler Icon']);
+    const no_icon = eval(window_data['No Battler Icon']);
+    const x = eval(window_data['Icon X']);
+    const y = eval(window_data['Icon Y']);
+    for(let i = 0; i < max; I++){
+        const ix = x + (32 * i);
+        const iy = y;
+        const member = members[i];
+        if(member){
+            if(member.hp > 0){
+                this.drawIcon(valid_icon, ix, iy);
+            }else{
+                this.drawIcon(invalid_icon, ix, iy);
+            }
+        }else{
+            this.drawIcon(no_icon, ix, iy);
+        }
+    }
+}
+
 WindowMC_BattlerInfo.prototype.drawName = function(){
-    const actor = this._actor;
+    const battler = this._battler;
     const window_data = this._window_data;
     if(!eval(window_data['Draw Actor Name']))return;
-    const name = actor.name();
-    const nickname = actor.nickname();
+    const name = battler.name();
+    const nickname = battler.isActor() ? battler.nickname() : battler.name();
     const text = (window_data['Name Text'] || "").format(name, nickname);
     const tx = eval(window_data['Name X']) || 0;
     const ty = eval(window_data['Name Y']) || 0;
@@ -7325,13 +7411,13 @@ WindowMC_BattlerInfo.prototype.drawName = function(){
 }
 
 WindowMC_BattlerInfo.prototype.drawClassLevel = function(){
-    const actor = this._actor;
+    const battler = this._battler;
     const window_data = this._window_data;
     if(!eval(window_data['Draw Class Level']))return;
-    const class_id = actor._classId;
+    const class_id = battler._classId;
     const class_data = $dataClasses[class_id] || {};
     const class_name = class_data ? class_data.name : "";
-    const level = actor.level;
+    const level = battler.level;
     const text = (window_data['Class Level Text'] || "").format(class_name, level);
     const tx = eval(window_data['Class Level X']) || 0;
     const ty = eval(window_data['Class Level Y']) || 0;
@@ -7339,11 +7425,11 @@ WindowMC_BattlerInfo.prototype.drawClassLevel = function(){
 }
 
 WindowMC_BattlerInfo.prototype.drawResHP = function(){
-    const actor = this._actor;
+    const battler = this._battler;
     const window_data = this._window_data;
     if(!eval(window_data['Draw HP Resource']))return;
-    const cur = actor.hp;
-    const max = actor.mhp;
+    const cur = battler.hp;
+    const max = battler.mhp;
     const text = (window_data['HP Text'] || "").format(cur, max);
     const tx = eval(window_data['HP X']) || 0;
     const ty = eval(window_data['HP Y']) || 0;
@@ -7351,11 +7437,11 @@ WindowMC_BattlerInfo.prototype.drawResHP = function(){
 }
 
 WindowMC_BattlerInfo.prototype.drawResMP = function(){
-    const actor = this._actor;
+    const battler = this._battler;
     const window_data = this._window_data;
     if(!eval(window_data['Draw MP Resource']))return;
-    const cur = actor.mp;
-    const max = actor.mmp;
+    const cur = battler.mp;
+    const max = battler.mmp;
     const text = (window_data['MP Text'] || "").format(cur, max);
     const tx = eval(window_data['MP X']) || 0;
     const ty = eval(window_data['MP Y']) || 0;
@@ -7363,11 +7449,11 @@ WindowMC_BattlerInfo.prototype.drawResMP = function(){
 }
 
 WindowMC_BattlerInfo.prototype.drawResTP = function(){
-    const actor = this._actor;
+    const battler = this._battler;
     const window_data = this._window_data;
     if(!eval(window_data['Draw TP Resource']))return;
-    const cur = actor.tp;
-    const max = actor.maxTp();
+    const cur = battler.tp;
+    const max = battler.maxTp();
     const text = (window_data['TP Text'] || "").format(cur, max);
     const tx = eval(window_data['TP X']) || 0;
     const ty = eval(window_data['TP Y']) || 0;
@@ -7438,10 +7524,6 @@ Scene_Battle.prototype.createTroopInfoWindows = function(){
         windows.push(window);
     })
     this._troop_info_windows = windows;
-}
-
-Scene_Battle.prototype.createTroopInfoWindows = function(){
-    const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
 }
 
 Syn_MC_ScnBatt_IsAnyInptWinActv = Scene_Battle.prototype.isAnyInputWindowActive;

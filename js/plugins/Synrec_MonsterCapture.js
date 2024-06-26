@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.0 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.1 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -5193,7 +5193,7 @@ Game_Party.prototype.addCaptureActor = function(enemy, hp, mp){
     if(Utils.RPGMAKER_NAME == 'MZ'){
         $gameTemp.requestBattleRefresh();
     }
-    this.doAddActorExtra(actor);
+    this.doAddActorExtra(actor, target);
     $gameSystem.captureActor(actor);
 }
 
@@ -5224,7 +5224,7 @@ Game_Party.prototype.addActor = function(actorId, level, hp, mp, gender) {
     $gameSystem.captureActor(actor);
 }
 
-Game_Party.prototype.doAddActorExtra = function(actor){
+Game_Party.prototype.doAddActorExtra = function(actor, target){
     const id = actor._actorId;
     const config = Syn_MC.ACTOR_CONFIGURATIONS.find((config)=>{
         return eval(config['Actor']) == id;

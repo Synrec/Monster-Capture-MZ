@@ -4959,7 +4959,9 @@ Game_Enemy.prototype.equipSlots = function() {
 }
 
 Game_Enemy.prototype.equips = function() {
-    return this._actor._equips.map(item => item.object());
+    if(this._actor){
+        return this._actor._equips.map(item => item ? item.object() : null);
+    }else return [];
 }
 
 Game_Enemy.prototype.currentClass = function() {
@@ -5193,7 +5195,7 @@ Game_Party.prototype.addCaptureActor = function(enemy, hp, mp){
     if(Utils.RPGMAKER_NAME == 'MZ'){
         $gameTemp.requestBattleRefresh();
     }
-    this.doAddActorExtra(actor, target);
+    this.doAddActorExtra(actor, enemy);
     $gameSystem.captureActor(actor);
 }
 

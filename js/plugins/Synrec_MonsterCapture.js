@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.1 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.2 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -4053,7 +4053,8 @@ Game_Action.prototype.performCapture = function(target){
                     if(
                         is_captured < capture_chance &&
                         !target.hasAntiCaptureState() &&
-                        target.hasCaptureState()
+                        target.hasCaptureState() &&
+                        this.canCaptureTargets()
                     ){
                         this.playCaptureSuccess(target);
                     }else{
@@ -4065,6 +4066,16 @@ Game_Action.prototype.performCapture = function(target){
     }else{
         return false;
     }
+}
+
+Game_Action.prototype.canCaptureTargets = function(){
+    const party_mems = $gameParty._actors;
+    const max_party_mems = $gameParty.maxBattleMembers();
+    if(party_mems.length < max_party_mems)return true;
+    const reserve_mems = $gameParty.reserveMonsters();
+    const maxReserveMonsters = $gameParty.maxReserveMonsters();
+    if(reserve_mems.length < maxReserveMonsters)return true;
+    return false;
 }
 
 Game_Action.prototype.playCaptureSuccess = function(target){
@@ -5133,11 +5144,37 @@ Game_Party.prototype.initialize = function() {
 Game_Party.prototype.createReserveBoxes = function(){
     this._reserveBoxes = [];
     for(ib = 0; ib < Syn_MC.RESERVE_BOX_COUNT; ib++){
-        this._reserveBoxes[ib] = {name:'Box ' + ib, box:[]};
+        this._reserveBoxes[ib] = [];
         for(jb = 0; jb < Syn_MC.RESERVE_BOX_SIZE; jb++){
-            this._reserveBoxes[ib]['box'][jb] = undefined;
+            this._reserveBoxes[ib][jb] = undefined;
         }
     }
+}
+
+Game_Party.prototype.hasEmptyReserveSlot = function(){
+    for(ib = 0; ib < Syn_MC.RESERVE_BOX_COUNT; ib++){
+        for(jb = 0; jb < Syn_MC.RESERVE_BOX_SIZE; jb++){
+            if(!this._reserveBoxes[ib][jb])return true;
+        }
+    }
+}
+
+Game_Party.prototype.reserveMonsters = function(){
+    let monsters = []
+    for(ib = 0; ib < Syn_MC.RESERVE_BOX_COUNT; ib++){
+        for(jb = 0; jb < Syn_MC.RESERVE_BOX_SIZE; jb++){
+            if(this._reserveBoxes[ib][jb]){
+                monsters.push(this._reserveBoxes[ib][jb])
+            }
+        }
+    }
+    return monsters;
+}
+
+Game_Party.prototype.maxReserveMonsters = function(){
+    const box_count = Syn_MC.RESERVE_BOX_COUNT;
+    const box_size = Syn_MC.RESERVE_BOX_SIZE;
+    return box_count * box_size;
 }
 
 Game_Party.prototype.initBreeder = function(){
@@ -8794,6 +8831,15 @@ SceneMC_ReserveBoxes.prototype.create = function(){
     this.createGameDataWindows();
     this._last_window = 'party';
     this.refreshAll();
+}
+
+SceneMC_ReserveBoxes.prototype.popScene = function(){
+    const party_mems = $gameParty._actors;
+    if(party_mems.length <= 0){
+        SoundManager.playBuzzer();
+        return;
+    }
+    Scene_Base.prototype.popScene.call(this);
 }
 
 SceneMC_ReserveBoxes.prototype.createBackgrounds = function(){

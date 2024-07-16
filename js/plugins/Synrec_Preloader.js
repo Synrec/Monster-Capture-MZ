@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.1.0 Preloads image and audio for the game on start
+ * @plugindesc v1.1.1 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -422,6 +422,10 @@ ImageManager.loadBitmap = function(folder, filename) {
         $gameTemp.setPreloadList(whole_list);
     }
     return base;
+}
+
+ImageManager.clear = function() {
+    //! DO NOT CLEAR CACHE!!!
 }
 
 

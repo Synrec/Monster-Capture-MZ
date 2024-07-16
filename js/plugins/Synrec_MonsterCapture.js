@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.2 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.3 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -161,6 +161,12 @@
  * @desc The default limit of enemy battlers during battle
  * @type text
  * @default 1
+ * 
+ * @param Item Always
+ * @parent Battle UI Configuration
+ * @desc Allow item use even if actor cannot move.
+ * @type boolean
+ * @default false
  * 
  */
 /*~struct~gameoverConfig:
@@ -3264,6 +3270,8 @@ try{
 Syn_MC.DEFAULT_MAX_BATTLE_ACTORS = eval(Syn_MC.Plugin['Default Actor Battlers']) || 1;
 Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES = eval(Syn_MC.Plugin['Default Enemy Battlers']) || 1;
 
+Syn_MC.ALWAYS_ITEM = eval(Syn_MC.Plugin['Item Always']);
+
 function ANIM_IMAGE_PARSER_MONSTERCAPTURE(obj){
     try{
         obj = JSON.parse(obj);
@@ -4500,6 +4508,22 @@ Game_BattlerBase.prototype.initPowerPoints = function(){
     this._power_skills = {};
 }
 
+Syn_MC_GmBattBse_MetItmConds = Game_BattlerBase.prototype.meetsUsableItemConditions
+Game_BattlerBase.prototype.meetsUsableItemConditions = function(item) {
+    const allow_item_only = Syn_MC.ALWAYS_ITEM;
+    if(allow_item_only){
+        return this.isOccasionOk(item);
+    }
+    return Syn_MC_GmBattBse_MetItmConds.call(this, ...arguments);
+}
+
+Syn_MC_GmBattBse_CanInpt = Game_BattlerBase.prototype.canInput;
+Game_BattlerBase.prototype.canInput = function() {
+    const base = Syn_MC_GmBattBse_CanInpt.call(this, ...arguments);
+    const allow_item_only = Syn_MC.ALWAYS_ITEM;
+    return base || allow_item_only;
+}
+
 Game_BattlerBase.prototype.gender = function(){
     return this._gender;
 }
@@ -4662,6 +4686,18 @@ Game_BattlerBase.prototype.setGender = function(gender){
         }
 	}
     return false;
+}
+
+Syn_MC_GmBaatt_MkActns = Game_Battler.prototype.makeActions;
+Game_Battler.prototype.makeActions = function() {
+    if (!this.canMove() && Syn_MC.ALWAYS_ITEM) {
+        this.clearActions();
+        const action = new Game_Action(this);
+        action._item_use_only = true;
+        this._actions.push(action);
+    }else{
+        Syn_MC_GmBaatt_MkActns.call(this, ...arguments);
+    }
 }
 
 Syn_MC_GmActr_Setup = Game_Actor.prototype.setup;
@@ -6001,6 +6037,28 @@ Syn_MC_WinBattLog_EndActn = Window_BattleLog.prototype.endAction;
 Window_BattleLog.prototype.endAction = function(subject) {
     Syn_MC_WinBattLog_EndActn.call(this, subject);
     this.push("checkForDeathSwap");
+}
+
+Syn_MC_WinActrCmd_AddAtkCmd = Window_ActorCommand.prototype.addAttackCommand;
+Window_ActorCommand.prototype.addAttackCommand = function() {
+    const actor = BattleManager.actor();
+    if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
+    Syn_MC_WinActrCmd_AddAtkCmd.call(this, ...arguments);
+}
+
+Syn_MC_WinActrCmd_AddSklCmds = Window_ActorCommand.prototype.addSkillCommands;
+Window_ActorCommand.prototype.addSkillCommands = function() {
+    const actor = BattleManager.actor();
+    if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
+    Syn_MC_WinActrCmd_AddSklCmds.call(this, ...arguments);
+}
+
+
+Syn_MC_WinActrCmd_AddGrdCmd = Window_ActorCommand.prototype.addGuardCommand;
+Window_ActorCommand.prototype.addGuardCommand = function() {
+    const actor = BattleManager.actor();
+    if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
+    Syn_MC_WinActrCmd_AddGrdCmd.call(this, ...arguments);
 }
 
 Syn_MC_WinActrCmd_MkCmdList = Window_ActorCommand.prototype.makeCommandList;

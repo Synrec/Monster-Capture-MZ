@@ -3998,6 +3998,7 @@ Game_Action.prototype.subject = function() { //Overwritten Func
         return $gameTroop.members()[this._subjectEnemyIndex];
     }
 }
+
 Syn_MC_GmActn_App = Game_Action.prototype.apply;
 Game_Action.prototype.apply = function(target) {
     Syn_MC_GmActn_App.call(this, ...arguments);
@@ -6729,7 +6730,7 @@ WindowMC_ActorData.prototype.drawSpParams = function(){
     const window_data = this._window_data;
     const draw_params = window_data['Draw Sp Params'] || [];
     draw_params.forEach((param_draw)=>{
-        const param_id = eval(param_draw['Ex Param']);
+        const param_id = eval(param_draw['SP Param']);
         const param_value = (actor.sparam(param_id) || 0) * 100;
         const text = (param_draw['Param Text'] || "").format(param_value);
         const tx = eval(param_draw['X']) || 0;

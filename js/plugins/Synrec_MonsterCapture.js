@@ -5671,6 +5671,8 @@ SpriteMC_AnimGfx.prototype.updateFrame = function(){
         if(this._cur_frame >= mf){
             this._cur_frame = 0;
         }
+    }else{
+        this._frame_timer--;
     }
 }
 

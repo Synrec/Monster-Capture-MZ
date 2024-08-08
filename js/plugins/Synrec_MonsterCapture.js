@@ -6786,7 +6786,7 @@ function WindowMC_ActorSelector(){
 }
 
 WindowMC_ActorSelector.prototype = Object.create(Window_Selectable.prototype);
-WindowMC_ActorSelector.prototype.constructor = WindowMC_ActorData;
+WindowMC_ActorSelector.prototype.constructor = WindowMC_ActorSelector;
 
 WindowMC_ActorSelector.prototype.initialize = function(data, list){
     const mz_mode = Utils.RPGMAKER_NAME == "MZ";

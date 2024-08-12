@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0 Changes default battle action
+ * @plugindesc v1.1 Changes default battle action
  * @target MZ
  * 
  * @help
@@ -201,10 +201,12 @@ Window_BattleLog.prototype.startAction = function(subject, action, targets) {
                         const target_sprite = sprites.find((sprite)=>{
                             return sprite._battler == target;
                         })
-                        const x = target_sprite.x;
-                        const y = target_sprite.y;
-                        total_x += x || 0;
-                        total_y += y || 0;
+                        if(target_sprite){
+                            const x = target_sprite.x;
+                            const y = target_sprite.y;
+                            total_x += x || 0;
+                            total_y += y || 0;
+                        }
                     }
                 })
                 let sw = 0;

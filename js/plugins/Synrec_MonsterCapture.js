@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.3 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.5 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -3854,6 +3854,14 @@ BattleManager.startBattle = function() {
     this.processActiveMembers();
 }
 
+Syn_MC_BattMngr_StrtActrInpt = BattleManager.startActorInput;
+BattleManager.startActorInput = function() {
+    Syn_MC_BattMngr_StrtActrInpt.call(this, ...arguments);
+    if(Syn_MC.ALWAYS_ITEM && this._currentActor){
+        this._currentActor.makeActions();
+    }
+}
+
 BattleManager.processActiveMembers = function(){
     this._hasActor = true;
     this._hasEnemy = true;
@@ -3997,6 +4005,21 @@ Game_Action.prototype.subject = function() { //Overwritten Func
     } else {
         return $gameTroop.members()[this._subjectEnemyIndex];
     }
+}
+
+Syn_MC_GmActn_SetItm = Game_Action.prototype.setItem;
+Game_Action.prototype.setItem = function(itemId) {
+    Syn_MC_GmActn_SetItm.call(this, ...arguments);
+    if(Syn_MC.ALWAYS_ITEM)this._forcing = true;
+}
+
+Syn_MC_GmActn_IsVald = Game_Action.prototype.isValid;
+Game_Action.prototype.isValid = function() {
+    const item = this.item();
+    if(DataManager.isItem(item) && Syn_MC.ALWAYS_ITEM){
+        return true;
+    }
+    return Syn_MC_GmActn_IsVald.call(this, ...arguments);
 }
 
 Syn_MC_GmActn_App = Game_Action.prototype.apply;
@@ -4689,15 +4712,33 @@ Game_BattlerBase.prototype.setGender = function(gender){
     return false;
 }
 
-Syn_MC_GmBaatt_MkActns = Game_Battler.prototype.makeActions;
+Syn_MC_GmBatt_ClrActns = Game_Battler.prototype.clearActions;
+Game_Battler.prototype.clearActions = function() {
+    if(!Syn_MC.ALWAYS_ITEM){
+        Syn_MC_GmBatt_ClrActns.call(this, ...arguments);
+    }else{
+        for(let i = 0; i < this._actions.length; i++){
+            const action = this._actions[i];
+            if(action){
+                const item = action.item();
+                if(!DataManager.isItem(item)){
+                    this._actions.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+    }
+}
+
+Syn_MC_GmBatt_MkActns = Game_Battler.prototype.makeActions;
 Game_Battler.prototype.makeActions = function() {
     if (!this.canMove() && Syn_MC.ALWAYS_ITEM) {
         this.clearActions();
-        const action = new Game_Action(this);
+        const action = new Game_Action(this, true);
         action._item_use_only = true;
         this._actions.push(action);
     }else{
-        Syn_MC_GmBaatt_MkActns.call(this, ...arguments);
+        Syn_MC_GmBatt_MkActns.call(this, ...arguments);
     }
 }
 
@@ -6101,7 +6142,18 @@ Window_BattleLog.prototype.startAction = function(subject, action, targets) {
         }
         return;
     }
+    const data = action.item();
+    if(DataManager.isItem(data) && Syn_MC.ALWAYS_ITEM){
+        this.startItemAction(subject, action, targets);
+        return;
+    }
     Syn_MC_WinBattLog_StrtActn.call(this, subject, action, targets);
+}
+
+Window_BattleLog.prototype.startItemAction = function(subject, action, targets){
+    const item = action.item();
+    this.push("showAnimation", subject, targets.clone(), item.animationId);
+    this.displayAction(subject, item);
 }
 
 Window_BattleLog.prototype.performActorSwap = function(subject){

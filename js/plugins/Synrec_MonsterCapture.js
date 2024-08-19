@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.5 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.6 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -28,10 +28,17 @@
  * @desc Setup the player for the game.
  * @type struct<player>
  * 
- * @param Enemy Player Configuration
+ * @param Enemy Player Configurations
  * @desc Setup enemy player enemy battlers
  * @type struct<enemyPlayer>[]
  * @default []
+ * 
+ * @param Enemy Player Troop
+ * @parent Enemy Player Configurations
+ * @desc Select a troop for enemy player.
+ * Enemy positions in troop are used.
+ * @type troop
+ * @default 1
  * 
  * @param Actor Configurations
  * @desc Setup actors for the project.
@@ -321,10 +328,25 @@
  * @type text
  * @default Enemy_Player
  * 
+ * @param Identifier
+ * @desc How to reference the troop
+ * @type text
+ * @default troop
+ * 
  * @param Enemy Roster
  * @desc Setup the enemies in the roster
  * @type struct<rosterEnemy>[]
  * @default []
+ * 
+ * @param Item Pool
+ * @desc List of items useable by enemy player
+ * @type item[]
+ * @default []
+ * 
+ * @param Allow Swap
+ * @desc Allows the enemy player to swap out
+ * @type boolean
+ * @default false
  * 
  * @param Graphic
  * @desc A graphic used to represent the enemy player graphic.
@@ -3045,11 +3067,26 @@ function ENEMY_PLAYER_PARSER_MONSTERCAPTURE(obj){
         }catch(e){
             obj['Enemy Roster'] = [];
         }
-        return;
+        try{
+            obj['Item Pool'] = JSON.parse(obj['Item Pool']);
+        }catch(e){
+            obj['Item Pool'] = [];
+        }
+        return obj;
     }catch(e){
         return;
     }
 }
+
+try{
+    Syn_MC.ENEMY_PLAYER_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Enemy Player Configurations']).map((config)=>{
+        return ENEMY_PLAYER_PARSER_MONSTERCAPTURE(config);
+    }).filter(Boolean);
+}catch(e){
+    Syn_MC.ENEMY_PLAYER_CONFIGURATIONS = [];
+}
+
+Syn_MC.ENEMY_PLAYER_TROOP = eval(Syn_MC.Plugin['Enemy Player Troop']) || 1;
 
 function EVOLUTION_REQUIREMENTS_PARSER_MONSTERCAPTURE(obj){
     try{
@@ -3960,6 +3997,17 @@ Game_Temp.prototype.autoEvolveActor = function(actor){
     if(actor instanceof Game_Actor){
         this._evolve_actor = actor;
         SceneManager.push(SceneMC_AutoEvolution);
+    }
+}
+
+Game_Temp.prototype.startEnemyPlayerBattle = function(id){
+    const configurations = Syn_MC.ENEMY_PLAYER_CONFIGURATIONS;
+    const troop_config = configurations.find((config)=>{
+        return config['Identifier'] == id;
+    })
+    if(troop_config){
+        $gameTroop.setupEnemyPlayerMC(troop_config);
+        SceneManager.push(Scene_Battle);
     }
 }
 
@@ -5091,6 +5139,10 @@ Game_Enemy.prototype.transform = function(enemyId) {
     this.setupActorEnemy();
 }
 
+Game_Enemy.prototype.consumeItem = function(item) {
+    $gameTroop.consumeItem(item);
+}
+
 Game_Enemy.prototype.performSwap = function(){
     const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
     const anim = eval(UI_Config['Swap Animation']);
@@ -5106,6 +5158,7 @@ Game_Enemy.prototype.performSwap = function(){
 
 Syn_MC_GmEnem_MkActns = Game_Enemy.prototype.makeActions;
 Game_Enemy.prototype.makeActions = function() {
+    if(this.reserveSwap())return;
     if(this._actor){
         Game_Battler.prototype.makeActions.call(this);
         if(this.numActions() > 0){
@@ -5115,6 +5168,150 @@ Game_Enemy.prototype.makeActions = function() {
         this.setActionState("waiting");
     }else{
         Syn_MC_GmEnem_MkActns.call(this);
+    }
+}
+
+Game_Enemy.prototype.reserveSwap = function(){
+    if(!$gameTroop._allow_swap)return false;
+    if(!this.canSwap())return false;
+    let swap_to = -1;
+    let swap_highest = 0;
+    const enemy = this;
+    const allies = this._enemies.filter((enem)=>{
+        return enem != this;
+    })
+    const battling_actors = $gameParty.allMembers().filter((actor)=>{
+        return actor.isAppeared();
+    })
+    const battling_allies = allies.filter((enem)=>{
+        return enem.isAppeared();
+    })
+    const swap_valid_index = this.calculateSwapIndex(battling_actors, battling_allies);
+    const reserve_allies = allies.filter((enem)=>{
+        return enem.isHidden();
+    })
+    reserve_allies.forEach((ally_enemy)=>{
+        const index = $gameTroop.members().indexOf(ally_enemy);
+        const ally_swap_index = ally_enemy.calculateSwapIndex(battling_actors, battling_allies);
+        if(
+            ally_swap_index > swap_valid_index &&
+            !battling_allies.some((ally_enem)=>{
+                return ally_enem._swapId != index
+            }) &&
+            swap_highest < ally_swap_index &&
+            ally_enemy.canSwap()
+        ){
+            swap_to = index;
+            swap_highest = ally_swap_index;
+        }
+    })
+    if(swap_to >= 0){
+        this._swapId = swap_to;
+        return true;
+    }
+    return false;
+}
+
+Game_Enemy.prototype.calculateSwapIndex = function(actors, enemies){
+    if(!Array.isArray(actors))actors = [];
+    if(!Array.isArray(enemies))enemies = [];
+    let index = 0;
+    const enemy = this;
+    const enem_skills = enemy._skills || [];
+    enem_skills.forEach((skill_id)=>{
+        const skill_data = $dataSkills[skill_id];
+        if(!enemy.canUse(skill_data))index--;
+    })
+    if(this.isConfused())index--;
+    enemies.forEach((enemy)=>{
+        if(enemy.isConfused())index++;
+        enem_skills.forEach((skill_id)=>{
+            const skill_data = $dataSkills[skill_id];
+            const scope = skill_data.scope;
+            if(
+                enemy.canUse(skill_data) &&
+                [7, 8, 9, 10, 11, 12, 13, 14].includes(scope)
+            ){
+                const damage_data = skill_data.damage;
+                const elements = damage_data.elementId > 0 ? [damage_data.elementId] : enemy.attackElements();
+                elements.forEach((elem_id)=>{
+                    const actor_elem_rate = enemy.elementRate(elem_id);
+                    if(actor_elem_rate > 1)index++;
+                    if(actor_elem_rate < 1)index--;
+                })
+                if([1,3,5].includes(damage_data.type)){
+                    const a = enemy;
+                    const b = actor;
+                    const v = $gameVariables._data;
+                    const sign = damage_data.type == 3 ? -1 : 1;
+                    const value = Math.max(eval(damage_data), 0) * sign;
+                    if(value < enemy.hp)index++;
+                }
+                if([2,4,6].includes(damage_data.type)){
+                    const a = enemy;
+                    const b = actor;
+                    const v = $gameVariables._data;
+                    const sign = damage_data.type == 3 ? -1 : 1;
+                    const value = Math.max(eval(damage_data), 0) * sign;
+                    if(value < enemy.mp)index++;
+                }
+            }
+        })
+    })
+    actors.forEach((actor)=>{
+        enem_skills.forEach((skill_id)=>{
+            const skill_data = $dataSkills[skill_id];
+            const scope = skill_data.scope;
+            if(
+                enemy.canUse(skill_data) &&
+                [1, 2, 3, 4, 5, 6, 14].includes(scope)
+            ){
+                const damage_data = skill_data.damage;
+                const elements = damage_data.elementId > 0 ? [damage_data.elementId] : enemy.attackElements();
+                elements.forEach((elem_id)=>{
+                    const actor_elem_rate = actor.elementRate(elem_id);
+                    if(actor_elem_rate > 1)index++;
+                    if(actor_elem_rate < 1)index--;
+                })
+                if([1,3,5].includes(damage_data.type)){
+                    const a = enemy;
+                    const b = actor;
+                    const v = $gameVariables._data;
+                    const sign = damage_data.type == 3 ? -1 : 1;
+                    const value = Math.max(eval(damage_data), 0) * sign;
+                    if(value > actor.hp)index++;
+                }
+                if([2,4,6].includes(damage_data.type)){
+                    const a = enemy;
+                    const b = actor;
+                    const v = $gameVariables._data;
+                    const sign = damage_data.type == 3 ? -1 : 1;
+                    const value = Math.max(eval(damage_data), 0) * sign;
+                    if(value > actor.mp)index++;
+                }
+            }
+        })
+    })
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id
+    })
+    if(config){
+        const enemyCritHpPerc = eval(config['Critical HP Rate']) || 0.3;
+        const enemyCritMpPerc = eval(config['Critical MP Rate']) || 0.3;
+        const enemyCritTpPerc = eval(config['Critical TP Rate']) || 0.7;
+        const hpRatio = this.hpRate();
+        const mpRatio = this.mpRate();
+        const tpRatio = this.tpRate();
+        if(tpRatio > enemyCritTpPerc){
+            index--;
+        }
+        if(mpRatio < enemyCritMpPerc){
+            index--;
+        }
+        if(hpRatio < enemyCritHpPerc){
+            index--;
+        }
     }
 }
 
@@ -5205,11 +5402,95 @@ Game_Enemy.prototype.setupSkillAction = function(list){
             list = dmgArr;
         }
     }
-    for(i = 0; i < this.numActions(); i++){
+    this._set_items = [];
+    for(let i = 0; i < this.numActions(); i++){
         let listIndex = Math.floor(Math.random() * list.length);
         let listItem = list[listIndex];
-        this.action(i).setEnemyAction(listItem);
+        if(!this.setActionItem(i)){
+            this.action(i).setEnemyAction(listItem);
+        }
     }
+}
+
+Game_Enemy.prototype.setActionItem = function(action_index){
+    const enemy = this;
+    const action = this.action(action_index);
+    if(!action)return false;
+    const set_items = this._set_items;
+    const troop_items = ($gameTroop._items || []).map((id)=>{
+        return $dataItems[id];
+    }).filter(Boolean);
+    if(troop_items.length <= 0 || set_items.length >= troop_items)return false;
+    let list = [];
+    const id = this._enemyId;
+    const config = Syn_MC.ENEMY_CONFIGURATIONS.find((config)=>{
+        return eval(config['Enemy']) == id
+    })
+    const enemyCritHpPerc = eval(config['Critical HP Rate']) || 0.3;
+    const enemyCritMpPerc = eval(config['Critical MP Rate']) || 0.3;
+    const hpRatio = this.hpRate();
+    const mpRatio = this.mpRate();
+    if(mpRatio < enemyCritMpPerc){
+        const valid_items = troop_items.filter((item_data)=>{
+            const damage_data = item_data.damage;
+            const scope = item_data.scope;
+            if([7, 8, 9, 10, 11, 12, 13, 14].includes(scope)){
+                if(damage_data.type == 4){
+                    const a = enemy;
+                    const b = actor;
+                    const v = $gameVariables._data;
+                    const sign = -1;
+                    const value = Math.max(eval(damage_data), 0) * sign;
+                    if(value < 0)return true;
+                }
+                let mp_recovery = 0;
+                const effects = item_data.effects;
+                effects.forEach((effect)=>{
+                    if(effect.code == 12){
+                        mp_recovery += effect.value2;
+                        mp_recovery += (enemy.param(1) * effect.value1);
+                    }
+                })
+                return mp_recovery > 0;
+            }
+        })
+        list = valid_items;
+    }
+    if(hpRatio < enemyCritHpPerc){
+        const valid_items = troop_items.filter((item_data)=>{
+            const damage_data = item_data.damage;
+            const scope = item_data.scope;
+            if([7, 8, 9, 10, 11, 12, 13, 14].includes(scope)){
+                if(damage_data.type == 3){
+                    const a = enemy;
+                    const b = actor;
+                    const v = $gameVariables._data;
+                    const sign = -1;
+                    const value = Math.max(eval(damage_data), 0) * sign;
+                    if(value < 0)return true;
+                }
+                let hp_recovery = 0;
+                const effects = item_data.effects;
+                effects.forEach((effect)=>{
+                    if(effect.code == 11){
+                        hp_recovery += effect.value2;
+                        hp_recovery += (enemy.param(0) * effect.value1);
+                    }
+                })
+                return hp_recovery > 0;
+            }
+        })
+        list = valid_items;
+    }
+    if(list.length > 0){
+        const index = Math.randomInt(list.length);
+        const item = list[index];
+        action.setItem(item.id);
+        set_items.push(index);
+        console.log(action)
+        return true;
+    }
+    return false;
 }
 
 Syn_MC_GmPrty_Init = Game_Party.prototype.initialize;
@@ -5600,6 +5881,59 @@ Game_Party.prototype.grabValidData = function(map_id){
             const free_combine = free_combines[random_index];
             return combination || free_combine
         }
+    }
+}
+
+Game_Troop.prototype.setupEnemyPlayerMC = function(config){
+    const enemies = (config['Enemy Roster'] || []).map((enem_data)=>{
+        const level = eval(enem_data['Level']);
+        const enemy_id = eval(enem_data['Enemy']);
+        const enemy = new Game_Enemy(enemy_id);
+        enemy.setLevel(level, true);
+        return enemy;
+    }).filter(Boolean)
+    this.clear();
+    this._troopId = Syn_MC.ENEMY_PLAYER_TROOP;
+    this._enemies = enemies;
+    this._items = config['Item Pool'].map(id => eval(id)) || [];
+    this._allow_swap = eval(config['Allow Swap']);
+    this._enemy_player_graphic = config['Graphic'] || "";
+    this._no_capture = true;
+    this.repositionEnemies();
+}
+
+Game_Troop.prototype.repositionEnemies = function(){
+    const troop_data = $dataTroops[this._troopId];
+    const members = troop_data.members;
+    const enemies = this._enemies;
+    for(let i = 0; i < enemies.length; i++){
+        const random_member_position = Math.randomInt(members.length);
+        const enemy = enemies[i];
+        const member_data = members[i] ? members[i] : members[random_member_position];
+        if(member_data){
+            enemy._screenX = member_data.x;
+            enemy._screenY = member_data.y;
+        }else{
+            enemy._screenX = Graphics.width * 0.5;
+            enemy._screenY = Graphics.height * 0.5;
+        }
+    }
+}
+
+Game_Troop.prototype.clearEnemyPlayerMC = function(){
+    this._enemies = [];
+    this._items = [];
+    this._allow_swap = false;
+    this._enemy_player_graphic = "";
+    delete this._no_capture;
+}
+
+Game_Troop.prototype.consumeItem = function(item){
+    if(!item || !this._items)return;
+    const id = item.id;
+    const index = this._items.indexOf(id);
+    if(index >= 0){
+        this._items.splice(index, 1);
     }
 }
 
@@ -6098,12 +6432,12 @@ Window_ActorCommand.prototype.addSkillCommands = function() {
 }
 
 
-Syn_MC_WinActrCmd_AddGrdCmd = Window_ActorCommand.prototype.addGuardCommand;
-Window_ActorCommand.prototype.addGuardCommand = function() {
-    const actor = BattleManager.actor();
-    if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
-    Syn_MC_WinActrCmd_AddGrdCmd.call(this, ...arguments);
-}
+// Syn_MC_WinActrCmd_AddGrdCmd = Window_ActorCommand.prototype.addGuardCommand;
+// Window_ActorCommand.prototype.addGuardCommand = function() {
+//     const actor = BattleManager.actor();
+//     if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
+//     Syn_MC_WinActrCmd_AddGrdCmd.call(this, ...arguments);
+// }
 
 Syn_MC_WinActrCmd_MkCmdList = Window_ActorCommand.prototype.makeCommandList;
 Window_ActorCommand.prototype.makeCommandList = function() {
@@ -6139,6 +6473,16 @@ Window_BattleLog.prototype.startAction = function(subject, action, targets) {
             this.push("performActionEnd", subject);
             this.push("clear");
             this.push("performActionEnd", targetSwap);
+        }else if(subject.isEnemy()){
+            const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+            const anim = eval(UI_Config['Swap Animation']);
+            const targetSwap = $gameTroop.members()[subject._swapId];
+            this.push("performEnemySwap", subject);
+            this.push("showAnimation", subject, [targetSwap], anim);
+            this.push("clear");
+            this.push("performActionEnd", subject);
+            this.push("clear");
+            this.push("performActionEnd", targetSwap);
         }
         return;
     }
@@ -6157,6 +6501,11 @@ Window_BattleLog.prototype.startItemAction = function(subject, action, targets){
 }
 
 Window_BattleLog.prototype.performActorSwap = function(subject){
+    subject.performSwap();
+    subject._swapId = undefined;
+}
+
+Window_BattleLog.prototype.performEnemySwap = function(subject){
     subject.performSwap();
     subject._swapId = undefined;
 }

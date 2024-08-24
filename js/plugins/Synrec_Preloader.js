@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.1.1 Preloads image and audio for the game on start
+ * @plugindesc v1.1.3 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -847,7 +847,8 @@ Game_Temp.prototype.checkReservedImages = function(obj){
             }
             img_obj.attempts++;
         }else if(bitmap.isReady()){
-            ImageManager.loadBitmap(folder, file);
+            if(!Array.isArray(this._loading_bitmaps))this._loading_bitmaps = [];
+            this._loading_bitmaps.push(ImageManager.loadBitmap(folder, file));
             img_obj.delete = true;
         }else if(bitmap.isError() && attempts >= 3){
             const preload_list = $gameTemp.preloadList();
@@ -926,7 +927,8 @@ Game_Temp.prototype.checkReservedAudios = function(obj){
                 aud_obj.attempts = 3;
             }
         }else if(audio.isReady()){
-            AudioManager.createBuffer(folder, file);
+            if(!Array.isArray(this._loading_audios))this._loading_audios = [];
+            this._loading_audios.push(AudioManager.createBuffer(folder, file));
             aud_obj.delete = true;
         }else if(audio.isError() && attempts >= 3){
             const preload_list = $gameTemp.preloadList();
@@ -973,9 +975,44 @@ Game_Temp.prototype.updateConfirmPreload = function(){
             TouchInput.isCancelled() ||
             Syn_Preload.BYPASS_LOAD_CONFIRM
         ){
-            this._confirm_preload = true;
-            return false;
+            if(
+                !this.imageLoading() &&
+                !this.audioLoading()
+            ){
+                this._confirm_preload = true;
+                return false;
+            }
         }
     }
     return true;
+}
+
+Game_Temp.prototype.imageLoading = function(){
+    if(!Array.isArray(this._loading_bitmaps))return false;
+    for(let i = 0; i < this._loading_bitmaps.length; i++){
+        const bitmap = this._loading_bitmaps[i];
+        if(bitmap._loadingState == 'loaded'){
+            this._loading_bitmaps.splice(i, 1);
+            i--;
+        }else{
+            console.log('loading bitmaps');
+            return true;
+        }
+    }
+    return false;
+}
+
+Game_Temp.prototype.audioLoading = function(){
+    if(!Array.isArray(this._loading_audios))return false;
+    for(let i = 0; i < this._loading_audios.length; i++){
+        const audio = this._loading_audios[i];
+        if(audio._isLoaded){
+            this._loading_audios.splice(i, 1);
+            i--;
+        }else{
+            console.log('loading audios');
+            return true;
+        }
+    }
+    return false;
 }

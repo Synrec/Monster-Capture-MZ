@@ -3794,7 +3794,7 @@ function BEASTIARY_UI_PARSER_MONSTERCAPTURE(obj){
         }
         try{
             obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
+                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
             }).filter(Boolean)
         }catch(e){
             obj['Game Data Windows'] = [];

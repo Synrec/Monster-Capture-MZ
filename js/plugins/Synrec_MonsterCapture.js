@@ -4612,6 +4612,7 @@ Game_BattlerBase.prototype.isPowerSkill = function(id){
 Game_BattlerBase.prototype.addPowerSkill = function(id){
     if(this.isPowerSkill(id))return;
     const configs = Syn_MC.SKILL_CONFIGURATIONS;
+    console.log(configs)
     const config = configs.find((configuration)=>{
         return configuration['Skill'] == id;
     })
@@ -4982,11 +4983,35 @@ Game_Actor.prototype.performSwap = function(){
     }
 }
 
+Syn_MC_GmActr_LrnSkl = Game_Actor.prototype.learnSkill;
+Game_Actor.prototype.learnSkill = function(skillId) {
+    Syn_MC_GmActr_LrnSkl.call(this, ...arguments);
+    this.addPowerSkill(skillId);
+}
+
+Syn_MC_GmActr_FrgtSkl = Game_Actor.prototype.forgetSkill;
+Game_Actor.prototype.forgetSkill = function(skillId) {
+    Syn_MC_GmActr_FrgtSkl.call(this, ...arguments);
+    this.removePowerSkill(skillId);
+}
+
 Syn_MC_GmEnem_Init = Game_Enemy.prototype.initialize
 Game_Enemy.prototype.initialize = function(enemyId, x, y) {
     Syn_MC_GmEnem_Init.call(this, ...arguments);
     this.setupActorEnemy();
+    this.setupPowerSkills();
     this.refresh();
+}
+
+Game_Enemy.prototype.setupPowerSkills = function(){
+    const battler = this;
+    const actionList = this.enemy().actions.filter((a)=>{
+        return this.isActionValid(a);
+    })
+    actionList.forEach((action)=>{
+        const skill_id = action.skillId;
+        battler.addPowerSkill(skill_id);
+    })
 }
 
 Game_Enemy.prototype.hasAntiCaptureState = function(){

@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1 Changes default battle action
+ * @plugindesc v1.2 Changes default battle action
  * @target MZ
  * 
  * @help
@@ -374,6 +374,7 @@ Spriteset_Battle.prototype.update = function() {
 }
 
 Spriteset_Battle.prototype.updateBattlersLayer = function(){
+    const is_mv = Utils.RPGMAKER_NAME == 'MV';
     const field = this._battleField;
     const childs = field.children;
     const index_add = 0//childs.indexOf(this._back2Sprite);
@@ -418,9 +419,10 @@ Spriteset_Battle.prototype.updateBattlersLayer = function(){
                 sprite.parent.removeChild(sprite);
             }
         })
+        const field_childs = is_mv ? field.children.length : 0;
         while(sorted_battlers.length > 0){
             const sprite = sorted_battlers.pop();
-            field.addChildAt(sprite, index_add);
+            field.addChildAt(sprite, index_add + field_childs);
         }
     })
 }

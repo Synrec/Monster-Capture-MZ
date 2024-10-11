@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.1.3 Preloads image and audio for the game on start
+ * @plugindesc v1.1.4 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -995,7 +995,7 @@ Game_Temp.prototype.imageLoading = function(){
             this._loading_bitmaps.splice(i, 1);
             i--;
         }else{
-            console.log('loading bitmaps');
+            console.warn('Synrec Preloader: Loading images!');
             return true;
         }
     }
@@ -1006,11 +1006,14 @@ Game_Temp.prototype.audioLoading = function(){
     if(!Array.isArray(this._loading_audios))return false;
     for(let i = 0; i < this._loading_audios.length; i++){
         const audio = this._loading_audios[i];
-        if(audio._isLoaded){
+        if(
+            audio._isLoaded || 
+            (audio.isReady ? audio.isReady() : false)
+        ){
             this._loading_audios.splice(i, 1);
             i--;
         }else{
-            console.log('loading audios');
+            console.warn('Synrec Preloader: Loading audios!');
             return true;
         }
     }

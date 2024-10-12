@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.6 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.7 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 

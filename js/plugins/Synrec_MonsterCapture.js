@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.7 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.8 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -19,6 +19,8 @@
  * 
  * There are no notetags in this plugin. Everything relies on the
  * plugin parameters.
+ * 
+ * You can reference player name in text with: {Player Name}
  * 
  * @param Gameover Configuration
  * @desc Setup what to do on gameover
@@ -6413,6 +6415,13 @@ SpritesetMC_Evolution.prototype.updateAnimations = function() {
         }
     }
     this.processAnimationRequests();
+}
+
+Syn_MC_WinBse_ConvEscChars = Window_Base.prototype.convertEscapeCharacters;
+Window_Base.prototype.convertEscapeCharacters = function(text) {
+    text = text.replace(/({Player Name})/gi, $gameSystem._player_name);
+    console.log(text)
+    return Syn_MC_WinBse_ConvEscChars.call(this, text);
 }
 
 Syn_MC_WinSklList_DrwSklCost = Window_SkillList.prototype.drawSkillCost;

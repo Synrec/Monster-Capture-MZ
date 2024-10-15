@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.8 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.0.9 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -5690,7 +5690,9 @@ Game_Party.prototype.removeActor = function(actorId) {
         }
         $gamePlayer.refresh();
         $gameMap.requestRefresh();
-        $gameTemp.requestBattleRefresh();
+        if(Utils.RPGMAKER_NAME == 'MZ'){
+            $gameTemp.requestBattleRefresh();
+        }
     }
 }
 

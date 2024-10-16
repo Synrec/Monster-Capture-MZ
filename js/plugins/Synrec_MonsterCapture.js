@@ -4472,24 +4472,28 @@ Game_Followers.prototype.initialize = function() {
         const spriteset = scene._spriteset;
         const follNum = Math.min(eval(player_data['Follower Count']) || 0, $gameParty.maxBattleMembers());
         for(let i = 0; i < this._data.length; i++){
-            if(i >= follNum){
-                const member = this._data[i];
-                if(spriteset){
-                    const charSprites = spriteset._characterSprites;
-                    const tilemap = spriteset._tilemap;
-                    const sprite = charSprites.find((char_sprite)=>{
-                        const character = char_sprite._character;
-                        if(character == member){
-                            return true;
-                        }
-                    })
-                    if(sprite){
-                        tilemap.removeChild(sprite);
-                        const index = charSprites.indexOf(sprite);
-                        charSprites.splice(index, 1);
-                    }
-                }
+            const member = this._data[i];
+            if(member){
+                member._memberIndex = i;
             }
+            // if(i >= follNum){
+            //     const member = this._data[i];
+            //     if(spriteset){
+            //         const charSprites = spriteset._characterSprites;
+            //         const tilemap = spriteset._tilemap;
+            //         const sprite = charSprites.find((char_sprite)=>{
+            //             const character = char_sprite._character;
+            //             if(character == member){
+            //                 return true;
+            //             }
+            //         })
+            //         if(sprite){
+            //             tilemap.removeChild(sprite);
+            //             const index = charSprites.indexOf(sprite);
+            //             charSprites.splice(index, 1);
+            //         }
+            //     }
+            // }
         }
         while(this._data.length < follNum){
             const index = JsonEx.makeDeepCopy(this._data.length);
@@ -4614,7 +4618,6 @@ Game_BattlerBase.prototype.isPowerSkill = function(id){
 Game_BattlerBase.prototype.addPowerSkill = function(id){
     if(this.isPowerSkill(id))return;
     const configs = Syn_MC.SKILL_CONFIGURATIONS;
-    console.log(configs)
     const config = configs.find((configuration)=>{
         return configuration['Skill'] == id;
     })
@@ -5514,7 +5517,6 @@ Game_Enemy.prototype.setActionItem = function(action_index){
         const item = list[index];
         action.setItem(item.id);
         set_items.push(index);
-        console.log(action)
         return true;
     }
     return false;
@@ -6422,7 +6424,6 @@ SpritesetMC_Evolution.prototype.updateAnimations = function() {
 Syn_MC_WinBse_ConvEscChars = Window_Base.prototype.convertEscapeCharacters;
 Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = text.replace(/({Player Name})/gi, $gameSystem._player_name);
-    console.log(text)
     return Syn_MC_WinBse_ConvEscChars.call(this, text);
 }
 

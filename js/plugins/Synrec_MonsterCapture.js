@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.0.9 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.0 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -4476,24 +4476,6 @@ Game_Followers.prototype.initialize = function() {
             if(member){
                 member._memberIndex = i;
             }
-            // if(i >= follNum){
-            //     const member = this._data[i];
-            //     if(spriteset){
-            //         const charSprites = spriteset._characterSprites;
-            //         const tilemap = spriteset._tilemap;
-            //         const sprite = charSprites.find((char_sprite)=>{
-            //             const character = char_sprite._character;
-            //             if(character == member){
-            //                 return true;
-            //             }
-            //         })
-            //         if(sprite){
-            //             tilemap.removeChild(sprite);
-            //             const index = charSprites.indexOf(sprite);
-            //             charSprites.splice(index, 1);
-            //         }
-            //     }
-            // }
         }
         while(this._data.length < follNum){
             const index = JsonEx.makeDeepCopy(this._data.length);
@@ -4537,6 +4519,7 @@ Game_MonsterCharacter.prototype.screenZ = function() {
 
 Game_MonsterCharacter.prototype.setActor = function(actor){
     if(actor instanceof (Game_Actor)){
+        this._actor = actor;
         const char_name = actor.characterName();
         const char_index = actor.characterIndex();
         this.setImage(char_name, char_index);
@@ -7629,9 +7612,7 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
         character_sprite._character.setOpacity(0);
         return;
     }else{
-        const char_name = actor.characterName();
-        const char_indx = actor.characterIndex();
-        this._chara.setImage(char_name, char_indx);
+        this._chara.setActor(actor);
         this._chara.setDirection(eval(window_data['Character Direction']) || 2);
         this._chara._screenX = rect.x + (eval(window_data['Character X']) || 0);
         this._chara._screenY = rect.y + (eval(window_data['Character X']) || 0);
@@ -7641,6 +7622,10 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
         character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
         character_sprite._visibility = true;
         character_sprite._character.setOpacity(255);
+        console.log(index)
+        console.log(actor)
+        console.log(this._chara)
+        console.log(`name:${actor.characterName()}, index:${actor.characterIndex()}`)
     }
 }
 
@@ -7664,6 +7649,17 @@ WindowMC_ActorSelector.prototype.displayBattler = function(rect, index, actor){
         battler_sprite._visibility = true;
         battler_sprite._motionCD = 0;
     }
+}
+
+WindowMC_ActorSelector.prototype.refreshSprites = function(){
+    this.clearSprites();
+    this.createCharacterSprites();
+    this.createBattlerSprites();
+}
+
+WindowMC_ActorSelector.prototype.refresh = function(){
+    this.refreshSprites();
+    Window_Selectable.prototype.refresh.call(this, ...arguments);
 }
 
 function WindowMC_CustomCommand(){
@@ -10169,7 +10165,18 @@ SceneMC_MainMenu.prototype.selectCommand = function(){
     }
 }
 
+SceneMC_MainMenu.prototype.enableFormation = function(){
+    this._formation_mode = true;
+    this._swap_from = undefined;
+    this._actor_list_window.select(0);
+    this._actor_list_window.activate();
+}
+
 SceneMC_MainMenu.prototype.confirmActor = function(){
+    if(this._formation_mode){
+        this.confirmFormationActor();
+        return;
+    }
     const actor = this._actor_list_window.actor();
     $gameParty.setMenuActor(actor);
     const command = this._reserve_command;
@@ -10190,7 +10197,25 @@ SceneMC_MainMenu.prototype.confirmActor = function(){
     }
 }
 
+SceneMC_MainMenu.prototype.confirmFormationActor = function(){
+    const selc_index = this._actor_list_window.index();
+    const last_index = this._swap_from;
+    if(isNaN(last_index)){
+        this._swap_from = selc_index;
+    }else{
+        $gameParty.swapOrder(last_index, selc_index);
+        this._swap_from = undefined;
+        this._actor_list_window.refresh();
+    }
+    this._actor_list_window.activate();
+    console.log(this._actor_list_window)
+}
+
 SceneMC_MainMenu.prototype.cancelCommand = function(){
+    if(this._formation_mode){
+        this._actor_list_window.deselect();
+        this._formation_mode = false;
+    }
     this._reserve_command = null;
     this._actor_list_window.deactivate();
     this._command_window.activate();

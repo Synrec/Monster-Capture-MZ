@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.0 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.1 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -1094,7 +1094,7 @@
  * 
  * @param Region Settings
  * @desc Do specific settings per region
- * @type struct<regionSettings>
+ * @type struct<regionSettings>[]
  * @default []
  * 
  * @param Breeder EXP Growth

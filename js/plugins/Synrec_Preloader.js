@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.1.4 Preloads image and audio for the game on start
+ * @plugindesc v1.1.5 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -18,6 +18,11 @@
  * @desc Skips title if no save game
  * @type boolean
  * @default true
+ * 
+ * @param Title Video
+ * @desc Plays video before title scene
+ * Played from videos folder in project directory
+ * @type text
  * 
  * @param Loading Gauge
  * @desc Setup the loading gauge
@@ -159,6 +164,7 @@
 const Syn_Preload = {};
 Syn_Preload.Plugin = PluginManager.parameters(`Synrec_Preloader`);
 Syn_Preload.SKIP_TITLE = eval(Syn_Preload.Plugin['Skip Title']);
+Syn_Preload.TITLE_VIDEO = Syn_Preload.Plugin['Title Video'];
 
 function FONT_CONFIG_PARSER_PRELOAD(obj){
     try{
@@ -543,6 +549,93 @@ Scene_Base.prototype.isBusy = function() {
 //     );
 // }
 
+function ScenePreloader_LoadVideo(){
+    this.initialize(...arguments)
+}
+
+ScenePreloader_LoadVideo.prototype = Object.create(Scene_Base.prototype);
+ScenePreloader_LoadVideo.prototype.constructor = ScenePreloader_LoadVideo;
+
+ScenePreloader_LoadVideo.prototype.create = function(){
+    Scene_Base.prototype.create.call(this);
+    this.createVideoPIXI();
+}
+
+ScenePreloader_LoadVideo.prototype.createVideoPIXI = function(){
+    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
+    const sprite = new PIXI.Sprite();
+    const src = `videos/${Syn_Preload.TITLE_VIDEO}.webm`;
+    const videoTexture = mz_mode ? new PIXI.Texture.from(src) : new PIXI.Texture.fromVideo(src);
+    const source = mz_mode ? videoTexture.baseTexture.resource.source : videoTexture.baseTexture.source;
+    source.currentTime = 0;
+    source.muted = false;
+    source.loop = false;
+    source.preload = 'auto';
+    source.autoload = true;
+    source.autoplay = true;
+    sprite.texture = videoTexture;
+    sprite.x = 0;
+    sprite.y = 0;
+    sprite.width = videoTexture.width || Graphics.boxWidth;
+    sprite.height = videoTexture.height || Graphics.boxHeight;
+    sprite.alpha = 1;
+    if(mz_mode)source.play();
+    this.addChild(sprite);
+    sprite._need_resize = 60;
+    this._video = sprite;
+}
+
+ScenePreloader_LoadVideo.prototype.endVideo = function(){
+    const video = this._video
+    const mz_mode = this._mz_mode;
+    if(video){
+        const texture = video.texture;
+        const source = mz_mode ? texture.baseTexture.resource.source : texture.baseTexture.source;
+        source.loop = false;
+        source.muted = true;
+        source.autoplay = false;
+        source.currentTime = JsonEx.makeDeepCopy(source.duration);
+        source.pause();
+        this.removeChild(video);
+    }
+    SceneManager.goto(Scene_Title);
+}
+
+ScenePreloader_LoadVideo.prototype.update = function(){
+    Scene_Base.prototype.update.call(this);
+    this.updateVideo();
+}
+
+ScenePreloader_LoadVideo.prototype.updateVideo = function(){
+    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
+    const video = this._video;
+    const texture = video.texture;
+    texture.update();
+    const source = mz_mode ? texture.baseTexture.resource.source : texture.baseTexture.source;
+    if(
+        video._need_resize > 0 && 
+        !isNaN(video._need_resize) ||
+        (
+            video.width >= Infinity ||
+            video.height >= Infinity
+        )
+    ){
+        video.width = Graphics.boxWidth;
+        video.height = Graphics.boxHeight;
+        if(video._need_resize > 0)video._need_resize--;
+    }
+    const is_end = source.currentTime >= source.duration;
+    if(
+        is_end ||
+        Input.isTriggered('ok') ||
+        Input.isTriggered('cancel') ||
+        TouchInput.isTriggered() ||
+        TouchInput.isCancelled()
+    ){
+        this.endVideo(video)
+    }
+}
+
 Game_Temp.prototype.setPreloadList = function(list){
     if(!list)return;
     this._preloader_list = list;
@@ -762,7 +855,14 @@ Game_Temp.prototype.executePreload = function(){
     this.loadPreloadList();
     const preloaded = SceneManager._complete_preload;
     if(preloaded)return;
+    this.preloadTitleVideo();
     this._need_preload = true;
+}
+
+Game_Temp.prototype.preloadTitleVideo = function(){
+    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
+    const src = `videos/${Syn_Preload.TITLE_VIDEO}.webm`;
+    mz_mode ? new PIXI.Texture.from(src) : new PIXI.Texture.fromVideo(src);
 }
 
 Game_Temp.prototype.updatePreloadList = function(){
@@ -772,6 +872,9 @@ Game_Temp.prototype.updatePreloadList = function(){
     if(this.updateImagePreload())return;
     if(this.updateConfirmPreload())return;
     this._preload_complete = true;
+    if(Syn_Preload.TITLE_VIDEO){
+        SceneManager.goto(ScenePreloader_LoadVideo);
+    }
     delete this._need_preload;
 }
 

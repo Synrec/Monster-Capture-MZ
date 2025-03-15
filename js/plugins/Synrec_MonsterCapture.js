@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.1 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.2 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
@@ -188,7 +188,7 @@
  * @param Gameover Map
  * @desc Map to use for gameover
  * If not set or is zero, use default gameover.
- * @type text
+ * @type Map
  * @default 0
  * 
  * @param Map X
@@ -1079,7 +1079,7 @@
  * 
  * @param Map
  * @desc The ID of the map to use this data
- * @type text
+ * @type map
  * @default 0
  * 
  * @param Minimal Enemy Level

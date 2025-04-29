@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.1.5 Preloads image and audio for the game on start
+ * @plugindesc v1.1.6 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -587,7 +587,7 @@ ScenePreloader_LoadVideo.prototype.createVideoPIXI = function(){
 
 ScenePreloader_LoadVideo.prototype.endVideo = function(){
     const video = this._video
-    const mz_mode = this._mz_mode;
+    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
     if(video){
         const texture = video.texture;
         const source = mz_mode ? texture.baseTexture.resource.source : texture.baseTexture.source;
@@ -598,7 +598,7 @@ ScenePreloader_LoadVideo.prototype.endVideo = function(){
         source.pause();
         this.removeChild(video);
     }
-    SceneManager.goto(Scene_Title);
+    SceneManager.goto(Syn_Preload.SKIP_TITLE ? Scene_Map : Scene_Title);
 }
 
 ScenePreloader_LoadVideo.prototype.update = function(){

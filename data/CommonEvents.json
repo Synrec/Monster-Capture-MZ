@@ -1,7 +1,7 @@
 [
 null,
 {"id":1,"list":[{"code":101,"indent":0,"parameters":["",0,0,2,""]},{"code":401,"indent":0,"parameters":["This is an event."]},{"code":0,"indent":0,"parameters":[]}],"name":"Map Enemy Event","switchId":1,"trigger":0},
-{"id":2,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":2,"list":[{"code":122,"indent":0,"parameters":[5,5,0,4,"$gameParty.battleMembers().length"]},{"code":0,"indent":0,"parameters":[]}],"name":"Set game variable","switchId":7,"trigger":2},
 {"id":3,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
 {"id":4,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0}
 ]

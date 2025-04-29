@@ -7622,10 +7622,6 @@ WindowMC_ActorSelector.prototype.displayMapCharacter = function(rect, index, act
         character_sprite.scale.y = eval(window_data['Character Scale Y']) || 0;
         character_sprite._visibility = true;
         character_sprite._character.setOpacity(255);
-        console.log(index)
-        console.log(actor)
-        console.log(this._chara)
-        console.log(`name:${actor.characterName()}, index:${actor.characterIndex()}`)
     }
 }
 
@@ -10208,7 +10204,6 @@ SceneMC_MainMenu.prototype.confirmFormationActor = function(){
         this._actor_list_window.refresh();
     }
     this._actor_list_window.activate();
-    console.log(this._actor_list_window)
 }
 
 SceneMC_MainMenu.prototype.cancelCommand = function(){

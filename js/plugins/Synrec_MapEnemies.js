@@ -354,7 +354,7 @@ Game_MapSpawn.prototype.createTroop = function(){
         throw new Error(`You need to have enemies setup for your troop.`);
     }
     const min = eval(data['Minimal Number']);
-    const max = eval(data['Maximum Number']);
+    const max = eval(data['Maximum Number']) || 1;
     const num = min + (Math.randomInt(max - min));
     const game_enemies = [];
     for(let i = 0; i < num; i++){

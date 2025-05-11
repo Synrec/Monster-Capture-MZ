@@ -598,6 +598,10 @@ ScenePreloader_LoadVideo.prototype.endVideo = function(){
         source.pause();
         this.removeChild(video);
     }
+    if(DataManager.isBattleTest()){
+        SceneManager.goto(Scene_Battle);
+        return;
+    }
     SceneManager.goto(Syn_Preload.SKIP_TITLE ? Scene_Map : Scene_Title);
 }
 

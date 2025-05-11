@@ -494,7 +494,6 @@ Game_MapSpawn.prototype.updateOnPlayer = function(){
             $gameTroop.clear();
             $gameTroop._troopId = 1;
             $gameTroop._enemies = troop;
-            this.fixEnemyPositions();
             this._engaged = true;
             $gameTroop.makeUniqueNames();
             BattleManager.initMembers();
@@ -502,6 +501,7 @@ Game_MapSpawn.prototype.updateOnPlayer = function(){
             BattleManager._canEscape = $gameSystem._escapeMapEnemy || this._can_escape;
             BattleManager._canLose = $gameSystem._loseMapEnemy || this._can_lose;
             BattleManager.onEncounter();
+            this.fixEnemyPositions();
             SceneManager.push(Scene_Battle);
         }
     }

@@ -5723,7 +5723,7 @@ Game_Party.prototype.facesForSavefile = function() {
 
 Game_Party.prototype.refresh = function(){
     this.removeInvalidMembers();
-    if(SynrecMC.permaDeath)$gameParty.removeDeadMembers();
+    // if(SynrecMC.permaDeath)$gameParty.removeDeadMembers();
     $gamePlayer.refresh();
     $gameMap.refresh();
     if(!MONSTER_CAPTURE_MV)$gameTemp.requestBattleRefresh();
@@ -8455,7 +8455,7 @@ Scene_Battle.prototype.refreshAllSprites = function(){
     for(act = 0; act < actors.length; act++){
         let actor = actors[act];
         let battler = actor._battler;
-        if(battler && SynrecMC.GenderTraits){
+        if(battler){
             actor.setGendHex(battler);
             actor.setGendFilter(battler);
         }

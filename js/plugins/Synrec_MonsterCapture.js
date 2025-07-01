@@ -1,10 +1,57 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.2 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.4 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @help
  * 
  * Plugin has been remade from the base monster capture plugins set.
+ * 
+ * You can set a specified map for gameover along with penalties in the
+ * "Gameover Configuration" parameter.
+ * 
+ * If you want the player to be able to change character appearance,
+ * Simply set the game variable to use in the plugin parameters:
+ * "Player Configuration" > "Player Configuration Variable"
+ * 
+ * The value of the variable set here will determine which Player
+ * character configuration to use as set in:
+ * "Player Configuration" > "Player Configurations"
+ * 
+ * You can setup enemy "players" or NPC in the "Enemy Player Configurations"
+ * parameter. This allows you to setup an item pool, graphic, etc.
+ * As of current version, some of the parameters may not be functional.
+ * 
+ * "Actor Configurations" will allow you to setup evolutions, capture settings and
+ * genders available.
+ * 
+ * "Reserve Boxes" and "Reserve Box Size" will allow you to set the Number and size
+ * of reserve boxes in the game to be accessed normally.
+ * 
+ * "Enemy Configurations" is used to set the actor gained on capture amongst other
+ * settings you may experiment with.
+ * 
+ * "Skill Configurations" allows you to set use limit and capture rate
+ * (If using skill for capture)
+ * 
+ * "Item Configurations" allows for setting capture rate on item
+ * 
+ * "Gender Configurations" must be setup if you intend to specify specific
+ * genders for breeding combinations. You can also specify certain benefits for each 
+ * gender.
+ * 
+ * "Breeding Combinations" allows for setting up specific breeding combos for
+ * your project's actors. You may leave the "Gender" setting empty which will refer
+ * to the actor and ignore the gender. "Required Steps" is the number of steps
+ * you set for the actor to generate an [Egg] object in which case you then move
+ * around for set number of steps again for it to [Hatch]. Egg and Hatch are terms 
+ * you can define in your own project.
+ * 
+ * You can even ignore the whole breeding concept and use the system as a fusion
+ * system instead by setting up stats transfer.
+ * 
+ * "Map Configurations" is used to set the lowest and highest level of enemy
+ * available on that map. You may even specify specific level ranges for certain
+ * regions on said map. It also can be used to set the breeder exp gain per step.
  * 
  * Script Calls:
  * 
@@ -16,6 +63,20 @@
  * - id = Box ID to open
  * - id can be set out of bounds of normal access box
  *   for special reserve boxes
+ * 
+ * In the reserve box scene, press[SHIFT] to toggle between box and
+ * party window.
+ * 
+ * > Open Beastiary
+ * - SceneManager.push(SceneMC_Beastiary)
+ * 
+ * > Open Evolve Menu
+ * - SceneManager.push(SceneMC_Evolution)
+ * 
+ * > Open Breeder Scene
+ * - SceneManager.push(SceneMC_Breeder)
+ * - This scene is map specific, if the breeder scene is called
+ * on a different map, it will appear empty.
  * 
  * There are no notetags in this plugin. Everything relies on the
  * plugin parameters.
@@ -9553,6 +9614,7 @@ SceneMC_ReserveBoxes.prototype.changeWindowByTouch = function(){
             ty <= wy + wh
         ){
             SoundManager.playCursor();
+            party_window.deactivate();
             reserve_window.activate();
             this._changingWindows = true;
             this._last_window = 'reserve';
@@ -9570,6 +9632,7 @@ SceneMC_ReserveBoxes.prototype.changeWindowByTouch = function(){
         ){
             SoundManager.playCursor();
             party_window.activate();
+            reserve_window.deactivate();
             this._changingWindows = true;
             this._last_window = 'party';
         }

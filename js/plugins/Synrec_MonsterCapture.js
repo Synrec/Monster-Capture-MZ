@@ -4538,6 +4538,7 @@ Game_Followers.prototype.initialize = function() {
                 member._memberIndex = i;
             }
         }
+        this._data = this._data.slice(0, follNum);
         while(this._data.length < follNum){
             const index = JsonEx.makeDeepCopy(this._data.length);
 			this._data.push(new Game_Follower(index));

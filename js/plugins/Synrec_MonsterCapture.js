@@ -6502,15 +6502,19 @@ Window_BattleLog.prototype.endAction = function(subject) {
 Syn_MC_WinActrCmd_AddAtkCmd = Window_ActorCommand.prototype.addAttackCommand;
 Window_ActorCommand.prototype.addAttackCommand = function() {
     const actor = BattleManager.actor();
-    if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
-    Syn_MC_WinActrCmd_AddAtkCmd.call(this, ...arguments);
+    if(actor){
+        if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
+        Syn_MC_WinActrCmd_AddAtkCmd.call(this, ...arguments);
+    }
 }
 
 Syn_MC_WinActrCmd_AddSklCmds = Window_ActorCommand.prototype.addSkillCommands;
 Window_ActorCommand.prototype.addSkillCommands = function() {
     const actor = BattleManager.actor();
-    if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
-    Syn_MC_WinActrCmd_AddSklCmds.call(this, ...arguments);
+    if(actor){
+        if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
+        Syn_MC_WinActrCmd_AddSklCmds.call(this, ...arguments);
+    }
 }
 
 

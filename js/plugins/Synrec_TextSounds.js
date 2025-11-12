@@ -1,7 +1,17 @@
 /*:@author Synrec 
  * @target MZ
- *
- * @plugindesc v1.4 Create Text Sounds
+ * @url https://synrec.dev/
+ * @plugindesc v1.5 Create Text Sounds
+ * 
+ * @command Set Sound
+ * @desc Set the text sound
+ * 
+ * @arg Text Sound
+ * @desc Set a custom text sound
+ * @type struct<TxtSounds>
+ * 
+ * @command Clear Sound
+ * @desc Clear custom sound
  *
  * @help Create text sounds which play by default or based on
  * face graphic set.
@@ -110,7 +120,7 @@ try{
     SynrecTS.SoundJSON = JSON.parse(SynrecTS.Plugins['Custom Text Sounds']);
     for(let sound = 0; sound < SynrecTS.SoundJSON.length; sound++){
         SynrecTS.SoundJSON[sound] = JSON.parse(SynrecTS.SoundJSON[sound]);
-        var soundFX = {};
+        const soundFX = {};
         soundFX.index = sound;
         soundFX.file = SynrecTS.SoundJSON[sound]['Face File'] ? SynrecTS.SoundJSON[sound]['Face File'] : "";
         soundFX.indices = SynrecTS.SoundJSON[sound]['Face Indices'] ? JSON.parse(SynrecTS.SoundJSON[sound]['Face Indices']) : [];
@@ -128,6 +138,38 @@ try{
     console.error(`Failed to parse custom text sounds. ${e}`);
 }
 
+if(Utils.RPGMAKER_NAME == "MZ"){
+    PluginManager.registerCommand(`Synrec_TextSounds`, `Set Sound`, (obj)=>{
+        try{
+            const soundFX = JSON.parse(obj['Text Sound']);
+            try{
+                soundFX['Face Indices'] = JSON.parse(soundFX['Face Indices']).map(id => eval(id));
+            }catch(e){
+                soundFX['Face Indices'] = [];
+            }
+            soundFX.effectVol = eval(soundFX['Volume']);
+            soundFX.effectPch = eval(soundFX['Pitch']);
+            soundFX.effectPchVar = eval(soundFX['Pitch Variance']);
+            soundFX.effectPan = eval(soundFX['Pan']);
+            $gameSystem.setCustomTextSound(soundFX);
+        }catch(e){
+            return;
+        }
+    })
+}
+
+Game_System.prototype.customTextSound = function(){
+    return this._text_sound || null;
+}
+
+Game_System.prototype.setCustomTextSound = function(obj){
+    this._text_sound = obj;
+}
+
+Game_System.prototype.clearCustomTextSound = function(){
+    this._text_sound = null;
+}
+
 Window_Message.SOUNDS = SynrecTS.SoundObjects;
 
 SynrecTSWinMsgStrtMsg = Window_Message.prototype.startMessage;
@@ -136,10 +178,35 @@ Window_Message.prototype.startMessage = function() {
     this.createSoundData();
 }
 
-Window_Message.prototype.createSoundData = function(){
-    this._soundText = undefined;
+Window_Message.prototype.getCustomTextSound = function(){
     const faceName = $gameMessage._faceName;
     const faceIndex = $gameMessage._faceIndex;
+    const custom_sound = $gameSystem.customTextSound();
+    if(!custom_sound)return null;
+    const face_name = custom_sound['Face File'];
+    if(face_name == faceName){
+        const face_indicies = custom_sound['Face Indices'];
+        if(face_indicies.includes(faceIndex)){
+            return JsonEx.makeDeepCopy(custom_sound);
+        }
+    }
+    return null;
+}
+
+Window_Message.prototype.createSoundData = function(){
+    const faceName = $gameMessage._faceName;
+    const faceIndex = $gameMessage._faceIndex;
+    const sound = this.getCustomTextSound();
+    if(sound){
+        console.log(sound)
+        const name = sound['Sound Effect'];
+        const vol = sound.effectVol;
+        const pch = sound.effectPch;
+        const pan = sound.effectPan;
+        this._pchVar = sound.effectPchVar;
+        this._soundText = {name:name, pitch:pch, pan:pan, volume:vol};
+        return true;
+    }
     const soundObjs = SynrecTS.SoundObjects;
     for(let chkSnd = 0; chkSnd < soundObjs.length; chkSnd++){
         const sound = soundObjs[chkSnd];

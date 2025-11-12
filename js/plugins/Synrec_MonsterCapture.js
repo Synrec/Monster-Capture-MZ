@@ -2,6 +2,8 @@
  * @author Synrec/Kylestclr
  * @plugindesc v1.1.4 Allows for creation of a capture system in RPG Maker.
  * @target MZ
+ * @url https://synrec.dev/
+ * 
  * @help
  * 
  * Plugin has been remade from the base monster capture plugins set.

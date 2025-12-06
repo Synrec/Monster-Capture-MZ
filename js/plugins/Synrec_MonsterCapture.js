@@ -4,6 +4,9 @@
  * @target MZ
  * @url https://synrec.dev/
  * 
+ * @command Open Player Rename
+ * @desc Opens the player rename scene
+ * 
  * @command Open Beastiary
  * @desc Opens the beastiary
  * 
@@ -24,6 +27,30 @@
  * @desc The index of the reserve box to open
  * @type number
  * @default 0
+ * 
+ * @command Set Actor Battler Count
+ * @desc Set the number of battlers player can use
+ * Must be set before battle
+ * 
+ * @arg Count
+ * @desc The number of simultaneous battlers
+ * @type text
+ * @default 1
+ * 
+ * @command Set Enemy Battler Count
+ * @desc Set the number of battlers enemy can use
+ * Must be set before battle
+ * 
+ * @arg Count
+ * @desc The number of simultaneous battlers
+ * @type text
+ * @default 1
+ * 
+ * @command Start NPC Battle
+ * @desc An NPC battle
+ * 
+ * @arg Identifier
+ * @desc The identifier from 
  * 
  * @help
  * 
@@ -4043,6 +4070,28 @@ BattleManager.hideTargetsForCapture = function(action, targets){
 }
 
 if(Utils.RPGMAKER_NAME == "MZ"){
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Player Rename`, ()=>{
+        $gameTemp.renamePlayer()
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Set Actor Battler Count`, (obj)=>{
+        const count = eval(obj['Count']);
+        if(!count)return;
+        $gameTemp._numBattleActors = count || 1;
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Set Enemy Battler Count`, (obj)=>{
+        const count = eval(obj['Count']);
+        if(!count)return;
+        $gameTemp._numBattleEnemies = count || 1;
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Start NPC Battle`, (obj)=>{
+        const id = obj['Identifier'];
+        if(!id)return;
+        $gameTemp.startEnemyPlayerBattle(id);
+    })
+
     PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Beastiary`, ()=>{
         SceneManager.push(SceneMC_Beastiary);
     })

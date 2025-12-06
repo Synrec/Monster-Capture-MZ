@@ -1,8 +1,29 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.4 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.5 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @url https://synrec.dev/
+ * 
+ * @command Open Beastiary
+ * @desc Opens the beastiary
+ * 
+ * @command Open Evolution
+ * @desc Opens the evolution scene
+ * 
+ * @command Open Breeder
+ * @desc Opens the breeder scene
+ * This is map specific
+ * 
+ * @command Open Reserve Boxes
+ * @desc Opens reserve boxes as set in parameters
+ * 
+ * @command Open Specific Reserve Box
+ * @desc Opens a specific reserve box
+ * 
+ * @arg Box Index
+ * @desc The index of the reserve box to open
+ * @type number
+ * @default 0
  * 
  * @help
  * 
@@ -4019,6 +4040,29 @@ BattleManager.hideTargetsForCapture = function(action, targets){
             })
         }
     }
+}
+
+if(Utils.RPGMAKER_NAME == "MZ"){
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Beastiary`, ()=>{
+        SceneManager.push(SceneMC_Beastiary);
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Evolution`, ()=>{
+        SceneManager.push(SceneMC_Evolution);
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Breeder`, ()=>{
+        SceneManager.push(SceneMC_Breeder);
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Reserve Boxes`, ()=>{
+        $gameTemp.openMonsterReserve();
+    })
+
+    PluginManager.registerCommand(`Synrec_MonsterCapture`, `Open Specific Reserve Box`, (obj)=>{
+        const index = eval(obj['Box Index']);
+        $gameTemp.openMonsterReserve(index);
+    })
 }
 
 Game_Temp.prototype.setMaxBattlers = function(actors, enemies){
@@ -8680,6 +8724,16 @@ SceneMC_PlayerRename.prototype.createEditWindow = function() {
     this._editWindow = new WindowMC_PlayerNameEdit(rect);
     this._editWindow.setup();
     this.addWindow(this._editWindow);
+}
+
+SceneMC_PlayerRename.prototype.editWindowRect = function() {
+    const inputWindowHeight = 324;
+    const padding = 8;
+    const ww = 600;
+    const wh = ImageManager.faceHeight + padding * 2;
+    const wx = (Graphics.boxWidth - ww) / 2;
+    const wy = (Graphics.boxHeight - (wh + inputWindowHeight + 8)) / 2;
+    return new Rectangle(wx, wy, ww, wh);
 }
 
 SceneMC_PlayerRename.prototype.onInputOk = function() {

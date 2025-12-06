@@ -7941,11 +7941,21 @@ function WindowMC_PlayerNameEdit(){
 WindowMC_PlayerNameEdit.prototype = Object.create(Window_NameEdit.prototype);
 WindowMC_PlayerNameEdit.prototype.constructor = WindowMC_PlayerNameEdit;
 
+WindowMC_PlayerNameEdit.prototype.initialize = function(rect){
+    if(Utils.RPGMAKER_NAME == "MZ"){
+        Window_NameEdit.prototype.initialize.call(this, ...arguments);
+    }else{
+        const dummy = new Game_Actor(1);
+        Window_NameEdit.prototype.initialize.call(this, dummy);
+        this.setup();
+    }
+}
+
 WindowMC_PlayerNameEdit.prototype.setup = function() {
     const player = $gamePlayer;
     const custom_data = player.customData();
     this._face_name = custom_data ? custom_data['Face File'] : "";
-    this._face_index = custom_data ? eval(custom_data['Face File']) : 0;
+    this._face_index = custom_data ? eval(custom_data['Face Index']) : 0;
     this._maxLength = 32;
     this._name = $gameSystem._player_name.slice(0, this._maxLength);
     this._index = this._name.length;
@@ -7996,9 +8006,10 @@ WindowMC_PlayerNameEdit.prototype.charWidth = function() {
 }
 
 WindowMC_PlayerNameEdit.prototype.left = function() {
-    const nameCenter = (this.innerWidth + this.faceWidth()) / 2;
+    const iw = Utils.RPGMAKER_NAME == "MZ" ? this.innerWidth : this.contentsWidth() + this.standardPadding() + 8;
+    const nameCenter = (iw + this.faceWidth()) / 2;
     const nameWidth = (this._maxLength + 1) * this.charWidth();
-    return Math.min(nameCenter - nameWidth / 2, this.innerWidth - nameWidth);
+    return Math.min(nameCenter - nameWidth / 2, iw - nameWidth);
 }
 
 WindowMC_PlayerNameEdit.prototype.itemRect = function(index) {
@@ -8038,7 +8049,7 @@ WindowMC_PlayerNameEdit.prototype.drawChar = function(index) {
 
 WindowMC_PlayerNameEdit.prototype.refresh = function() {
     this.contents.clear();
-    this.drawPlayerFace(this._actor, 0, 0);
+    this.drawPlayerFace();
     for (let i = 0; i < this._maxLength; i++) {
         this.drawUnderline(i);
     }

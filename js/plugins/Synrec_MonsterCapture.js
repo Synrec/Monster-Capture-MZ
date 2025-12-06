@@ -8787,7 +8787,7 @@ SceneMC_PlayerRename.prototype.createEditWindow = function() {
 }
 
 SceneMC_PlayerRename.prototype.editWindowRect = function() {
-    const inputWindowHeight = 324;
+    const inputWindowHeight = Utils.RPGMAKER_NAME == "MV" ? 324 : this.calcWindowHeight(9, true);
     const padding = 8;
     const ww = 600;
     const wh = ImageManager.faceHeight + padding * 2;

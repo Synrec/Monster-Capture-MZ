@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.5 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.6 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @url https://synrec.dev/
  * 
@@ -3083,6 +3083,12 @@
  */
 /*~struct~battleUI:
  * 
+ * @param Wait Command Name
+ * @desc Name of the wait command
+ * Used when actor cannot move
+ * @type text
+ * @default Wait
+ * 
  * @param Swap Window Configuration
  * @desc Window display list of actors battler can swap to.
  * @type struct<actorSelcWindow>
@@ -4000,8 +4006,11 @@ BattleManager.setTeamMenu = function(teamMenu){
 
 Syn_MC_BattMngr_StrtBatt = BattleManager.startBattle;
 BattleManager.startBattle = function() {
+    const log_window = this._logWindow;
+    log_window.checkForDeathSwap();
     Syn_MC_BattMngr_StrtBatt.call(this);
     this.processActiveMembers();
+    log_window.checkForDeathSwap();
 }
 
 Syn_MC_BattMngr_StrtActrInpt = BattleManager.startActorInput;
@@ -4112,6 +4121,31 @@ if(Utils.RPGMAKER_NAME == "MZ"){
         const index = eval(obj['Box Index']);
         $gameTemp.openMonsterReserve(index);
     })
+}
+
+Syn_MC_BattMngr_ChkBattEnd = BattleManager.checkBattleEnd;
+BattleManager.checkBattleEnd = function() {
+    if(
+        (
+            $gameParty.isAllDead() &&
+            $gameParty.hasAliveSwap()
+        ) ||
+        (
+            $gameTroop.isAllDead() &&
+            $gameTroop.hasAliveSwap()
+        )
+    ){
+        return false;
+    }
+    return Syn_MC_BattMngr_ChkBattEnd.call(this, ...arguments);
+}
+
+BattleManager.forceSwapDeadParty = function(){
+    const all_members = $gameParty.allMembers();
+}
+
+BattleManager.forceSwapDeadTroop = function(){
+    const all_members = $gameTroop.members();
 }
 
 Game_Temp.prototype.setMaxBattlers = function(actors, enemies){
@@ -5662,6 +5696,15 @@ Game_Enemy.prototype.setActionItem = function(action_index){
     return false;
 }
 
+Game_Unit.prototype.hasAliveSwap = function(){
+    if(this.allMembers){
+        const members = this.allMembers();
+        return members.some(member => member.isAlive());
+    }
+    const members = this.members();
+    return members.some(member => member.isAlive());
+}
+
 Syn_MC_GmPrty_Init = Game_Party.prototype.initialize;
 Game_Party.prototype.initialize = function() {
     Syn_MC_GmPrty_Init.call(this);
@@ -5708,6 +5751,17 @@ Game_Party.prototype.maxReserveMonsters = function(){
 Game_Party.prototype.initBreeder = function(){
     this._map_breeder = {};
     this._breederArray = [];
+}
+
+Syn_MC_GmPrty_IsEsc = Game_Party.prototype.isEscaped;
+Game_Party.prototype.isEscaped = function() {
+    const all_members = this.allMembers();
+    if(all_members.some((member)=>{
+        return member._hp > 0;
+    })){
+        return Syn_MC_GmPrty_IsEsc.call(this, ...arguments);
+    }
+    return false;
 }
 
 Game_Party.prototype.allMembers = function() {
@@ -6613,11 +6667,18 @@ Window_ActorCommand.prototype.addSkillCommands = function() {
 }
 
 
-// Syn_MC_WinActrCmd_AddGrdCmd = Window_ActorCommand.prototype.addGuardCommand;
-// Window_ActorCommand.prototype.addGuardCommand = function() {
+Syn_MC_WinActrCmd_AddGrdCmd = Window_ActorCommand.prototype.addGuardCommand;
+Window_ActorCommand.prototype.addGuardCommand = function() {
+    const actor = BattleManager.actor();
+    if(!actor.canMove())return;
+    Syn_MC_WinActrCmd_AddGrdCmd.call(this, ...arguments);
+}
+
+// Syn_MC_WinActrCmd_AddItmCmd = Window_ActorCommand.prototype.addItemCommand;
+// Window_ActorCommand.prototype.addItemCommand = function() {
 //     const actor = BattleManager.actor();
-//     if(!actor.canMove() && Syn_MC.ALWAYS_ITEM)return;
-//     Syn_MC_WinActrCmd_AddGrdCmd.call(this, ...arguments);
+//     if(!actor.canMove())return;
+//     Syn_MC_WinActrCmd_AddItmCmd.call(this, ...arguments);
 // }
 
 Syn_MC_WinActrCmd_MkCmdList = Window_ActorCommand.prototype.makeCommandList;
@@ -6631,9 +6692,16 @@ Window_ActorCommand.prototype.makeCommandList = function() {
 }
 
 Window_ActorCommand.prototype.addSwapCommand = function(cmd_name){
-    this.addCommand(cmd_name, 'party');
     let scene = SceneManager._scene;
+    const actor = BattleManager.actor();
+    this.addCommand(cmd_name, 'party');
     this.setHandler('party', scene.swapBattler.bind(scene), this._actor.canSwap());
+    if(!actor.canMove()){
+        const UI_Config = Syn_MC.BATTLE_UI_CONFIGURATION;
+        const cmd_name = UI_Config['Wait Command Name'] || "Wait";
+        this.addCommand(cmd_name, 'wait');
+        this.setHandler('wait', scene.waitBattler.bind(scene));
+    };
 }
 
 Window_BattleLog.prototype.performSwap = function(subject) {
@@ -8568,6 +8636,10 @@ Scene_Battle.prototype.isAnyInputWindowActive = function() {
         Syn_MC_ScnBatt_IsAnyInptWinActv.call(this) ||
         this._swapWindow.active
     );
+}
+
+Scene_Battle.prototype.waitBattler = function(){
+    this.selectNextCommand();
 }
 
 Scene_Battle.prototype.swapBattler = function(){

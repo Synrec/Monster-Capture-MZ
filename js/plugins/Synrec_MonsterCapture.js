@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.6 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.1.7 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @url https://synrec.dev/
  * 
@@ -6765,7 +6765,7 @@ Window_BattleLog.prototype.checkForDeathSwap = function(){
         if(!member._hidden && member._hp <= 0){
             for(let i = 0; i < $gameParty.allMembers().length; i++){
                 let mem = $gameParty.allMembers()[i];
-                if(member != mem){
+                if(member != mem && mem._hidden){
                     if(mem._hp > 0){
                         member._swapId = i;
                         member.performSwap();
@@ -6781,7 +6781,7 @@ Window_BattleLog.prototype.checkForDeathSwap = function(){
         if(member._hp <= 0 && !member._hidden){
             for(let i = 0; i < $gameTroop.members().length; i++){
                 let mem = $gameTroop.members()[i];
-                if(member != mem){
+                if(member != mem && mem._hidden){
                     if(mem._hp > 0){
                         member._swapId = i;
                         member.performSwap();

@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.1.7 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.2.1 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @url https://synrec.dev/
  * 
@@ -132,6 +132,14 @@
  * plugin parameters.
  * 
  * You can reference player name in text with: {Player Name}
+ * 
+ * @param Selects
+ * @desc Debugging
+ * @type select[]
+ * @option Cow
+ * @option Borg
+ * @option Dem
+ * @default []
  * 
  * @param Gameover Configuration
  * @desc Setup what to do on gameover
@@ -1835,7 +1843,7 @@
  * @default 0
  * 
  */
-/*~struct~actorSPParamWindow:
+/*~struct~actorSpParamWindow:
  * 
  * @param Name
  * @desc No function.
@@ -3125,872 +3133,82 @@
  * 
  */
 
+
+
+function MONSTER_CAPTURE_DATA_PARSER(parameters){
+    if(typeof parameters == 'object'){
+        const keys = Object.keys(parameters);
+        keys.forEach((key)=>{
+            if(isNaN(parameters[key])){
+                try{
+                    parameters[key] = JSON.parse(parameters[key]);
+                }catch(e){
+                    parameters[key] = parameters[key];
+                }
+            }
+            if(typeof parameters[key] == 'object'){
+                parameters[key] = MONSTER_CAPTURE_DATA_PARSER(parameters[key]);
+            }else if(Array.isArray(parameters[key])){
+                parameters[key] = parameters[key].map((data)=>{
+                    if(isNaN(data)){
+                        try{
+                            data = JSON.parse(data);
+                        }catch(e){
+                            data = data;
+                        }
+                    }
+                    if(typeof data == 'object'){
+                        data = MONSTER_CAPTURE_DATA_PARSER(data);
+                    }
+                    return data;
+                })
+            }
+        })
+    }
+    return parameters;
+}
+
 const Syn_MC = {};
-Syn_MC.Plugin = PluginManager.parameters(`Synrec_MonsterCapture`);
+function LOAD_MONSTER_CAPTURE_DATA(){
+    Syn_MC.Plugin = PluginManager.parameters(`Synrec_MonsterCapture`);
+    Syn_MC.DATA = MONSTER_CAPTURE_DATA_PARSER(Syn_MC.Plugin);
 
-function GAMEOVER_CONFIGURATION_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
+    Syn_MC.GAMEOVER_CONFIGURATION = Syn_MC.DATA['Gameover Configuration'];
+    Syn_MC.PLAYER_DATA = Syn_MC.DATA['Player Configuration'];
+    Syn_MC.ENEMY_PLAYER_CONFIGURATIONS = Syn_MC.DATA['Enemy Player Configurations'];
+    Syn_MC.ENEMY_PLAYER_TROOP = eval(Syn_MC.DATA['Enemy Player Troop']) || 1;
+    Syn_MC.ACTOR_CONFIGURATIONS = Syn_MC.DATA['Actor Configurations'];
+    Syn_MC.RESERVE_BOX_COUNT = eval(Syn_MC.DATA['Reserve Boxes']) || 1;
+    Syn_MC.RESERVE_BOX_SIZE = eval(Syn_MC.DATA['Reserve Box Size']) || 1;
+    Syn_MC.ENEMY_CONFIGURATIONS = Syn_MC.DATA['Enemy Configurations'];
+    Syn_MC.SKILL_CONFIGURATIONS = Syn_MC.DATA['Skill Configurations'];
+    Syn_MC.ITEM_CONFIGURATIONS = Syn_MC.DATA['Item Configurations'];
+    Syn_MC.GENDER_CONFIGURATIONS = Syn_MC.DATA['Gender Configurations'];
+    Syn_MC.BREEDER_COMBINATIONS = Syn_MC.DATA['Breeder Combinations'];
+    Syn_MC.CAPTURE_FAIL_ANIMATION = eval(Syn_MC.DATA['Capture Fail Animation']) || 0;
+    Syn_MC.BREEDER_HATCH_GFX = Syn_MC.DATA['Breeder Hatcher Graphic'];
+    Syn_MC.BREEDER_HATCH_GFX_INDEX = eval(Syn_MC.DATA['Breeder Hatcher Graphic Index']) || 0;
+    Syn_MC.BREEDER_HATCH_GFX_DIRECTION = eval(Syn_MC.DATA['Breeder Hatcher Direction']) || 2;;
+    Syn_MC.BREEDER_HATCH_GFX_ANIM = Syn_MC.DATA['Breeder Hatcher Animation'];
+    Syn_MC.MAP_CONFIGURATIONS = Syn_MC.DATA['Map Configurations'];
+    Syn_MC.DEFAULT_MAX_BATTLE_ACTORS = eval(Syn_MC.DATA['Default Actor Battlers']) || 1;
+    Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES = eval(Syn_MC.DATA['Default Enemy Battlers']) || 1;
+    Syn_MC.ALWAYS_ITEM = eval(Syn_MC.DATA['Item Always']);
+
+    Syn_MC.MAIN_MENU_CONFIGURATION = Syn_MC.DATA['Main Menu UI Configuration'];
+    Syn_MC.PLAYER_UI_CONFIGURATION = Syn_MC.DATA['Player UI Configuration'];
+    Syn_MC.RESERVE_BOX_UI_CONFIGURATION = Syn_MC.DATA['Reserve Box UI Configuration'];
+    Syn_MC.EVOLUTION_UI_CONFIGURATION = Syn_MC.DATA['Evolve UI Configuration'];
+    Syn_MC.BREEDER_UI_CONFIGURATION = Syn_MC.DATA['Breeder UI Configuration'];
+    Syn_MC.BEASTIARY_UI_CONFIGURATION = Syn_MC.DATA['Beastiary UI Configuration'];
+    Syn_MC.BATTLE_UI_CONFIGURATION = Syn_MC.DATA['Battle UI Configuration'];
 }
 
-Syn_MC.GAMEOVER_CONFIGURATION = GAMEOVER_CONFIGURATION_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Gameover Configuration']);
-
-function PLAYER_CONFIGURATION_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
+function RELOAD_MONSTER_CAPTURE_DATA(){
+    LOAD_MONSTER_CAPTURE_DATA();
 }
 
-function PLAYER_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Player Configurations'] = JSON.parse(obj['Player Configurations']).map((config)=>{
-                return PLAYER_CONFIGURATION_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Use Custom Player'] = false;
-            obj['Player Configurations'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.PLAYER_DATA = PLAYER_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Player Configuration']);
-
-function ROSTER_ENEMY_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ENEMY_PLAYER_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Enemy Roster'] = JSON.parse(obj['Enemy Roster']).map((config)=>{
-                return ROSTER_ENEMY_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Enemy Roster'] = [];
-        }
-        try{
-            obj['Item Pool'] = JSON.parse(obj['Item Pool']);
-        }catch(e){
-            obj['Item Pool'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.ENEMY_PLAYER_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Enemy Player Configurations']).map((config)=>{
-        return ENEMY_PLAYER_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean);
-}catch(e){
-    Syn_MC.ENEMY_PLAYER_CONFIGURATIONS = [];
-}
-
-Syn_MC.ENEMY_PLAYER_TROOP = eval(Syn_MC.Plugin['Enemy Player Troop']) || 1;
-
-function EVOLUTION_REQUIREMENTS_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Equip Weapons'] = JSON.parse(obj['Equip Weapons']);
-        }catch(e){
-            obj['Equip Weapons'] = [];
-        }
-        try{
-            obj['Equip Armors'] = JSON.parse(obj['Equip Armors']);
-        }catch(e){
-            obj['Equip Armors'] = [];
-        }
-        try{
-            obj['Items'] = JSON.parse(obj['Items']);
-        }catch(e){
-            obj['Items'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function CAPTURE_SETTINGS_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ACTOR_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Genders'] = JSON.parse(obj['Genders']).filter(Boolean).map(gen => gen.toLowerCase());
-        }catch(e){
-            obj['Genders'] = [];
-        }
-        obj['Evolution Settings'] = EVOLUTION_REQUIREMENTS_PARSER_MONSTERCAPTURE(obj['Evolution Settings']);
-        obj['Capture Settings'] = CAPTURE_SETTINGS_PARSER_MONSTERCAPTURE(obj['Capture Settings']);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.ACTOR_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Actor Configurations']).map((config)=>{
-        return ACTOR_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean)
-}catch(e){
-    Syn_MC.ACTOR_CONFIGURATIONS = [];
-}
-
-Syn_MC.RESERVE_BOX_COUNT = eval(Syn_MC.Plugin['Reserve Boxes']) || 1;
-Syn_MC.RESERVE_BOX_SIZE = eval(Syn_MC.Plugin['Reserve Box Size']) || 1;
-
-function ENEMY_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Allow Capture States'] = JSON.parse(obj['Allow Capture States']);
-        }catch(e){
-            obj['Allow Capture States'] = [];
-        }
-        try{
-            obj['Block Capture States'] = JSON.parse(obj['Block Capture States']);
-        }catch(e){
-            obj['Block Capture States'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.ENEMY_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Enemy Configurations']).map((config)=>{
-        return ENEMY_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean)
-}catch(e){
-    Syn_MC.ENEMY_CONFIGURATIONS = [];
-}
-
-Syn_MC.CAPTURE_FAIL_ANIMATION = eval(Syn_MC.Plugin['Capture Fail Animation']);
-
-function SKILL_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.SKILL_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Skill Configurations']).map((config)=>{
-        return SKILL_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean);
-}catch(e){
-    Syn_MC.SKILL_CONFIGURATIONS = [];
-}
-
-function ITEM_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.ITEM_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Item Configurations']).map((config)=>{
-        return ITEM_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean);
-}catch(e){
-    Syn_MC.ITEM_CONFIGURATIONS = [];
-}
-
-function GENDER_HEX_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function GENDER_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Gender Hex Blend'] = GENDER_HEX_PARSER_MONSTERCAPTURE(obj['Gender Hex Blend']);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.GENDER_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Gender Configurations']).map((config)=>{
-        return GENDER_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean)
-}catch(e){
-    Syn_MC.GENDER_CONFIGURATIONS = [];
-}
-
-function BREEDER_ACTOR_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function BREEDER_COMBINATION_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Actor 1 Required'] = BREEDER_ACTOR_PARSER_MONSTERCAPTURE(obj['Actor 1 Required']);
-        obj['Actor 2 Required'] = BREEDER_ACTOR_PARSER_MONSTERCAPTURE(obj['Actor 2 Required']);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.BREEDER_COMBINATIONS = JSON.parse(Syn_MC.Plugin['Breeder Combinations']).map((config)=>{
-        return BREEDER_COMBINATION_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean)
-}catch(e){
-    Syn_MC.BREEDER_COMBINATIONS = [];
-}
-
-Syn_MC.BREEDER_HATCH_GFX = Syn_MC.Plugin['Breeder Hatcher Graphic'];
-Syn_MC.BREEDER_HATCH_GFX_INDEX = eval(Syn_MC.Plugin['Breeder Hatcher Graphic Index']) || 0;
-Syn_MC.BREEDER_HATCH_GFX_DIRECTION = eval(Syn_MC.Plugin['Breeder Hatcher Direction']) || 2;;
-Syn_MC.BREEDER_HATCH_GFX_ANIM = Syn_MC.Plugin['Breeder Hatcher Animation'];
-
-function REGION_DATA_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function MAP_DATA_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Region Settings'] = JSON.parse(obj['Region Settings']).map((config)=>{
-                return REGION_DATA_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Region Settings'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-try{
-    Syn_MC.MAP_CONFIGURATIONS = JSON.parse(Syn_MC.Plugin['Map Configurations']).map((config)=>{
-        return MAP_DATA_PARSER_MONSTERCAPTURE(config);
-    }).filter(Boolean)
-}catch(e){
-    Syn_MC.MAP_CONFIGURATIONS = [];
-}
-
-Syn_MC.DEFAULT_MAX_BATTLE_ACTORS = eval(Syn_MC.Plugin['Default Actor Battlers']) || 1;
-Syn_MC.DEFAULT_MAX_BATTLE_ENEMIES = eval(Syn_MC.Plugin['Default Enemy Battlers']) || 1;
-
-Syn_MC.ALWAYS_ITEM = eval(Syn_MC.Plugin['Item Always']);
-
-function ANIM_IMAGE_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function TILING_IMAGE_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['X'] = eval(obj['X']);
-        obj['Y'] = eval(obj['Y']);
-        obj['Width'] = eval(obj['Width']);
-        obj['Height'] = eval(obj['Height']);
-    }catch(e){
-        console.warn(`Failed to parse dimension configuration. ${e}`);
-        const obj = {};
-        obj['X'] = 0;
-        obj['Y'] = 0;
-        obj['Width'] = 1;
-        obj['Height'] = 1;
-    }
-    return obj;
-}
-
-function WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj)
-        obj['Font Size'] = eval(obj['Font Size']);
-        obj['Font Outline Thickness'] = eval(obj['Font Outline Thickness']);
-        obj['Window Opacity'] = eval(obj['Window Opacity']);
-        obj['Show Window Dimmer'] = eval(obj['Show Window Dimmer']);
-    }catch(e){
-        console.warn(`Failed to parse window style. ${e}`);
-        const obj = {};
-        obj['Font Size'] = 16;
-        obj['Font Face'] = 'sans-serif';
-        obj['Base Font Color'] = '#ffffff';
-        obj['Font Outline Color'] = 'rgba(0, 0, 0, 0.5)';
-        obj['Font Outline Thickness'] = 3;
-        obj['Window Skin'] = 'Window';
-        obj['Window Opacity'] = 255;
-        obj['Show Window Dimmer'] = false;
-    }
-    return obj;
-}
-
-function GAUGE_DRAW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
-        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
-        try{
-            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
-                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Gauges'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ACTOR_BASE_PARAM_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ACTOR_EX_PARAM_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ACTOR_SP_PARAM_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
-        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
-        try{
-            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
-                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Gauges'] = [];
-        }
-        try{
-            obj['Draw Base Params'] = JSON.parse(obj['Draw Base Params']).map((data)=>{
-                return ACTOR_BASE_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Draw Base Params'] = [];
-        }
-        try{
-            obj['Draw Ex Params'] = JSON.parse(obj['Draw Ex Params']).map((data)=>{
-                return ACTOR_EX_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Draw Ex Params'] = [];
-        }
-        try{
-            obj['Draw Sp Params'] = JSON.parse(obj['Draw Sp Params']).map((data)=>{
-                return ACTOR_SP_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Draw Sp Params'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
-        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
-        try{
-            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
-                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Gauges'] = [];
-        }
-        try{
-            obj['Draw Base Params'] = JSON.parse(obj['Draw Base Params']).map((data)=>{
-                return ACTOR_BASE_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Draw Base Params'] = [];
-        }
-        try{
-            obj['Draw Ex Params'] = JSON.parse(obj['Draw Ex Params']).map((data)=>{
-                return ACTOR_EX_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Draw Ex Params'] = [];
-        }
-        try{
-            obj['Draw Sp Params'] = JSON.parse(obj['Draw Sp Params']).map((data)=>{
-                return ACTOR_SP_PARAM_WINDOW_PARSER_MONSTERCAPTURE(data);
-            }).filter(Boolean);
-        }catch(e){
-            obj['Draw Sp Params'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function COMMAND_OPTION_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Execute Script'] = JSON.parse(obj['Execute Script']);
-        }catch(e){
-            obj['Execute Script'] = "";
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
-        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);
-        try{
-            obj['Commands'] = JSON.parse(obj['Commands']).map((opt_config)=>{
-                return COMMAND_OPTION_PARSER_MONSTERCAPTURE(opt_config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Commands'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function MAINMENU_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
-                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Backgrounds'] = [];
-        }
-        try{
-            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
-                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Back Graphics'] = [];
-        }
-        try{
-            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
-                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Game Data Windows'] = [];
-        }
-        try{
-            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Actor Data Windows'] = [];
-        }
-        obj['Actor Select Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor Select Window']);
-        obj['Command Window'] = COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj['Command Window']);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.MAIN_MENU_CONFIGURATION = MAINMENU_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Main Menu UI Configuration']);
-
-function PLAYER_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
-                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Backgrounds'] = [];
-        }
-        try{
-            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
-                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Back Graphics'] = [];
-        }
-        try{
-            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
-                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Game Data Windows'] = [];
-        }
-        try{
-            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Actor Data Windows'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.PLAYER_UI_CONFIGURATION = PLAYER_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Player UI Configuration']);
-
-function RESERVE_BOX_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
-                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Backgrounds'] = [];
-        }
-        try{
-            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
-                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Back Graphics'] = [];
-        }
-        try{
-            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
-                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Game Data Windows'] = [];
-        }
-        obj['Party Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Party Actor List Window']);
-        try{
-            obj['Party Actor Data Windows'] = JSON.parse(obj['Party Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Party Actor Data Windows'] = [];
-        }
-        obj['Reserve Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Reserve Actor List Window']);
-        try{
-            obj['Reserve Actor Data Windows'] = JSON.parse(obj['Reserve Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Reserve Actor Data Windows'] = [];
-        }
-        try{
-            obj['Held Actor Data Windows'] = JSON.parse(obj['Held Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Held Actor Data Windows'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.RESERVE_BOX_UI_CONFIGURATION = RESERVE_BOX_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Reserve Box UI Configuration']);
-
-function EVOLVE_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
-                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Backgrounds'] = [];
-        }
-        try{
-            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
-                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Back Graphics'] = [];
-        }
-        obj['Actor Select Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor Select Window']);
-        try{
-            obj['Evolve Block States'] = JSON.parse(obj['Evolve Block States']);
-        }catch(e){
-            obj['Evolve Block States'] = [];
-        }
-        try{
-            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Actor Data Windows'] = [];
-        }
-        try{
-            obj['Evolve Actor Data Windows'] = JSON.parse(obj['Evolve Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Evolve Actor Data Windows'] = [];
-        }
-        return obj;
-    }catch(e){}
-}
-
-Syn_MC.EVOLUTION_UI_CONFIGURATION = EVOLVE_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Evolve UI Configuration']);
-
-function BREEDER_COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
-        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);     
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function BREEDER_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
-                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Backgrounds'] = [];
-        }
-        try{
-            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
-                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Back Graphics'] = [];
-        }
-        obj['Breeder Command Window'] = BREEDER_COMMAND_WINDOW_PARSER_MONSTERCAPTURE(obj['Breeder Command Window']);
-        try{
-            obj['Actor 1 Data Windows'] = JSON.parse(obj['Actor 1 Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Actor 1 Data Windows'] = [];
-        }
-        try{
-            obj['Actor 2 Data Windows'] = JSON.parse(obj['Actor 2 Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Actor 2 Data Windows'] = [];
-        }
-        obj['Party List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Party List Window']);
-        try{
-            obj['Party Actor Data Windows'] = JSON.parse(obj['Party Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Party Actor Data Windows'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.BREEDER_UI_CONFIGURATION = BREEDER_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Breeder UI Configuration']);
-
-function BEASTIARY_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Backgrounds'] = JSON.parse(obj['Backgrounds']).map((config)=>{
-                return TILING_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Backgrounds'] = [];
-        }
-        try{
-            obj['Back Graphics'] = JSON.parse(obj['Back Graphics']).map((config)=>{
-                return ANIM_IMAGE_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Back Graphics'] = [];
-        }
-        try{
-            obj['Actor Data Windows'] = JSON.parse(obj['Actor Data Windows']).map((config)=>{
-                return ACTOR_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Actor Data Windows'] = [];
-        }
-        try{
-            obj['Game Data Windows'] = JSON.parse(obj['Game Data Windows']).map((config)=>{
-                return GAME_DATA_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Game Data Windows'] = [];
-        }
-        obj['Actor List Window'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Actor List Window']);
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.BEASTIARY_UI_CONFIGURATION = BEASTIARY_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Beastiary UI Configuration']);
-
-function BATTLE_INFO_WINDOW_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Dimension Configuration'] = DIMENSION_CONFIGURATION_PARSER_MONSTERCAPTURE(obj['Dimension Configuration']);
-        obj['Window Font and Style Configuration'] = WINDOW_STYLE_PARSER_MONSTERCAPTURE(obj['Window Font and Style Configuration']);     
-        try{
-            obj['Gauges'] = JSON.parse(obj['Gauges']).map((gauge_draw_config)=>{
-                return GAUGE_DRAW_PARSER_MONSTERCAPTURE(gauge_draw_config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Gauges'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-function BATTLE_INFO_WINDOW_GROUP_PARSER(obj){
-    try{
-        obj = JSON.parse(obj);
-        try{
-            obj['Info Windows'] = JSON.parse(obj['Info Windows']).map((config)=>{
-                return BATTLE_INFO_WINDOW_PARSER_MONSTERCAPTURE(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Info Windows'] = [];
-        }
-        return obj;
-    }catch(e){
-        return obj;
-    }
-}
-
-function BATTLE_UI_PARSER_MONSTERCAPTURE(obj){
-    try{
-        obj = JSON.parse(obj);
-        obj['Swap Window Configuration'] = ACTOR_SELECT_WINDOW_PARSER_MONSTERCAPTURE(obj['Swap Window Configuration']);
-        try{
-            obj['Swap Block States'] = JSON.parse(obj['Swap Block States']);
-        }catch(e){
-            obj['Swap Block States'] = [];
-        }
-        try{
-            obj['Party Info Windows'] = JSON.parse(obj['Party Info Windows']).map((config)=>{
-                return BATTLE_INFO_WINDOW_GROUP_PARSER(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Party Info Windows'] = [];
-        }
-        try{
-            obj['Troop Info Windows'] = JSON.parse(obj['Troop Info Windows']).map((config)=>{
-                return BATTLE_INFO_WINDOW_GROUP_PARSER(config);
-            }).filter(Boolean)
-        }catch(e){
-            obj['Troop Info Windows'] = [];
-        }
-        return obj;
-    }catch(e){
-        return;
-    }
-}
-
-Syn_MC.BATTLE_UI_CONFIGURATION = BATTLE_UI_PARSER_MONSTERCAPTURE(Syn_MC.Plugin['Battle UI Configuration']);
+LOAD_MONSTER_CAPTURE_DATA();
 
 Syn_MC_ScnMngr_Push = SceneManager.push;
 SceneManager.push = function(sceneClass) {
@@ -6852,10 +6070,10 @@ WindowMC_GameData.prototype.createCharacterSprite = function(){
 
 WindowMC_GameData.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
-    const x = dimension_config['X'];
-    const y = dimension_config['Y'];
-    const w = dimension_config['Width'];
-    const h = dimension_config['Height'];
+    const x = eval(dimension_config['X']);
+    const y = eval(dimension_config['Y']);
+    const w = eval(dimension_config['Width']);
+    const h = eval(dimension_config['Height']);
     return new Rectangle(x,y,w,h);
 }
 
@@ -6877,7 +6095,7 @@ WindowMC_GameData.prototype.resetFontSettings = function() {
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
-    const font_size = custom_config['Font Size'] || 16;
+    const font_size = eval(custom_config['Font Size']) || 16;
     const font_outline_size = custom_config['Font Outline Thickness'] || 3;
     this.contents.fontFace = font_face;
     this.contents.fontSize = font_size;
@@ -6899,7 +6117,7 @@ WindowMC_GameData.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
-    const win_opacity = custom_config['Window Opacity'] || 0;
+    const win_opacity = eval(custom_config['Window Opacity']) || 0;
     this.opacity = win_opacity;
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
@@ -7149,10 +6367,10 @@ WindowMC_ActorData.prototype.createBattlerSprite = function(){
 
 WindowMC_ActorData.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
-    const x = dimension_config['X'];
-    const y = dimension_config['Y'];
-    const w = dimension_config['Width'];
-    const h = dimension_config['Height'];
+    const x = eval(dimension_config['X']);
+    const y = eval(dimension_config['Y']);
+    const w = eval(dimension_config['Width']);
+    const h = eval(dimension_config['Height']);
     return new Rectangle(x,y,w,h);
 }
 
@@ -7174,7 +6392,7 @@ WindowMC_ActorData.prototype.resetFontSettings = function() {
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
-    const font_size = custom_config['Font Size'] || 16;
+    const font_size = eval(custom_config['Font Size']) || 16;
     const font_outline_size = custom_config['Font Outline Thickness'] || 3;
     this.contents.fontFace = font_face;
     this.contents.fontSize = font_size;
@@ -7196,7 +6414,7 @@ WindowMC_ActorData.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
-    const win_opacity = custom_config['Window Opacity'] || 0;
+    const win_opacity = eval(custom_config['Window Opacity']) || 0;
     this.opacity = win_opacity;
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
@@ -7525,10 +6743,10 @@ WindowMC_ActorSelector.prototype.itemHeight = function(){
 
 WindowMC_ActorSelector.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
-    const x = dimension_config['X'];
-    const y = dimension_config['Y'];
-    const w = dimension_config['Width'];
-    const h = dimension_config['Height'];
+    const x = eval(dimension_config['X']);
+    const y = eval(dimension_config['Y']);
+    const w = eval(dimension_config['Width']);
+    const h = eval(dimension_config['Height']);
     return new Rectangle(x,y,w,h);
 }
 
@@ -7550,7 +6768,7 @@ WindowMC_ActorSelector.prototype.resetFontSettings = function() {
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
-    const font_size = custom_config['Font Size'] || 16;
+    const font_size = eval(custom_config['Font Size']) || 16;
     const font_outline_size = custom_config['Font Outline Thickness'] || 3;
     this.contents.fontFace = font_face;
     this.contents.fontSize = font_size;
@@ -7572,7 +6790,7 @@ WindowMC_ActorSelector.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
-    const win_opacity = custom_config['Window Opacity'] || 0;
+    const win_opacity = eval(custom_config['Window Opacity']) || 0;
     this.opacity = win_opacity;
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
@@ -7935,10 +7153,10 @@ WindowMC_CustomCommand.prototype.itemHeight = function(){
 
 WindowMC_CustomCommand.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
-    const x = dimension_config['X'];
-    const y = dimension_config['Y'];
-    const w = dimension_config['Width'];
-    const h = dimension_config['Height'];
+    const x = eval(dimension_config['X']);
+    const y = eval(dimension_config['Y']);
+    const w = eval(dimension_config['Width']);
+    const h = eval(dimension_config['Height']);
     return new Rectangle(x,y,w,h);
 }
 
@@ -7960,7 +7178,7 @@ WindowMC_CustomCommand.prototype.resetFontSettings = function() {
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
-    const font_size = custom_config['Font Size'] || 16;
+    const font_size = eval(custom_config['Font Size']) || 16;
     const font_outline_size = custom_config['Font Outline Thickness'] || 3;
     this.contents.fontFace = font_face;
     this.contents.fontSize = font_size;
@@ -7982,7 +7200,7 @@ WindowMC_CustomCommand.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
-    const win_opacity = custom_config['Window Opacity'] || 0;
+    const win_opacity = eval(custom_config['Window Opacity']) || 0;
     this.opacity = win_opacity;
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
@@ -8195,10 +7413,10 @@ WindowMC_BreederCommand.prototype.itemHeight = function(){
 
 WindowMC_BreederCommand.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
-    const x = dimension_config['X'];
-    const y = dimension_config['Y'];
-    const w = dimension_config['Width'];
-    const h = dimension_config['Height'];
+    const x = eval(dimension_config['X']);
+    const y = eval(dimension_config['Y']);
+    const w = eval(dimension_config['Width']);
+    const h = eval(dimension_config['Height']);
     return new Rectangle(x,y,w,h);
 }
 
@@ -8220,7 +7438,7 @@ WindowMC_BreederCommand.prototype.resetFontSettings = function() {
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
-    const font_size = custom_config['Font Size'] || 16;
+    const font_size = eval(custom_config['Font Size']) || 16;
     const font_outline_size = custom_config['Font Outline Thickness'] || 3;
     this.contents.fontFace = font_face;
     this.contents.fontSize = font_size;
@@ -8242,7 +7460,7 @@ WindowMC_BreederCommand.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
-    const win_opacity = custom_config['Window Opacity'] || 0;
+    const win_opacity = eval(custom_config['Window Opacity']) || 0;
     this.opacity = win_opacity;
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
@@ -8315,10 +7533,10 @@ WindowMC_BattlerInfo.prototype.initialize = function(data){
 
 WindowMC_BattlerInfo.prototype.createRect = function(data){
     const dimension_config = data['Dimension Configuration'];
-    const x = dimension_config['X'];
-    const y = dimension_config['Y'];
-    const w = dimension_config['Width'];
-    const h = dimension_config['Height'];
+    const x = eval(dimension_config['X']);
+    const y = eval(dimension_config['Y']);
+    const w = eval(dimension_config['Width']);
+    const h = eval(dimension_config['Height']);
     return new Rectangle(x,y,w,h);
 }
 
@@ -8340,7 +7558,7 @@ WindowMC_BattlerInfo.prototype.resetFontSettings = function() {
     const custom_config = this._style_data;
     if(!custom_config)return base.call(this);
     const font_face = custom_config['Font Face'] || "sans-serif";
-    const font_size = custom_config['Font Size'] || 16;
+    const font_size = eval(custom_config['Font Size']) || 16;
     const font_outline_size = custom_config['Font Outline Thickness'] || 3;
     this.contents.fontFace = font_face;
     this.contents.fontSize = font_size;
@@ -8362,7 +7580,7 @@ WindowMC_BattlerInfo.prototype.setOpacityAndDimmer = function(){
     const custom_config = this._style_data;
     if(!custom_config)return;
     const show_dimmer = custom_config['Show Window Dimmer'] || false;
-    const win_opacity = custom_config['Window Opacity'] || 0;
+    const win_opacity = eval(custom_config['Window Opacity']) || 0;
     this.opacity = win_opacity;
     show_dimmer ? this.showBackgroundDimmer() : this.hideBackgroundDimmer();
 }
@@ -8516,6 +7734,13 @@ WindowMC_BattlerInfo.prototype.drawResTP = function(){
     const tx = eval(window_data['TP X']) || 0;
     const ty = eval(window_data['TP Y']) || 0;
     this.drawTextEx(text, tx, ty);
+}
+
+
+Syn_MC_ScnBse_SynPlugReload = Scene_Base.prototype.synrecPluginReload
+Scene_Base.prototype.synrecPluginReload = function(){
+    RELOAD_MONSTER_CAPTURE_DATA();
+    Syn_MC_ScnBse_SynPlugReload.call(this, ...arguments);
 }
 
 Syn_MC_ScnMap_Strt = Scene_Map.prototype.start;
@@ -8703,7 +7928,11 @@ Scene_Battle.prototype.refreshAllSprites = function(){
             actor.setGendHex(battler);
             actor.setGendFilter(battler);
         }
-        actor._updateColorFilter();
+        if(actor._updateColorFilter){
+            actor._updateColorFilter();
+        }else{
+            actor._refresh();
+        }
     }
 }
 

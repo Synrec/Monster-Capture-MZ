@@ -274,7 +274,7 @@ try{
         return ENEMY_POSITION_PARSER_MAP_ENEMIES(pos);
     }).filter(Boolean);
 }catch(e){
-    Syn_ME.F = [];
+    Syn_ME.EnemyPositions = [];
 }
 
 SynrecME_BattMngr_EndBatt = BattleManager.endBattle

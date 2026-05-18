@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.2 Changes default battle action
+ * @plugindesc v1.0 Changes default battle action
  * @target MZ
  * 
  * @help
@@ -201,12 +201,10 @@ Window_BattleLog.prototype.startAction = function(subject, action, targets) {
                         const target_sprite = sprites.find((sprite)=>{
                             return sprite._battler == target;
                         })
-                        if(target_sprite){
-                            const x = target_sprite.x;
-                            const y = target_sprite.y;
-                            total_x += x || 0;
-                            total_y += y || 0;
-                        }
+                        const x = target_sprite.x;
+                        const y = target_sprite.y;
+                        total_x += x || 0;
+                        total_y += y || 0;
                     }
                 })
                 let sw = 0;
@@ -374,7 +372,6 @@ Spriteset_Battle.prototype.update = function() {
 }
 
 Spriteset_Battle.prototype.updateBattlersLayer = function(){
-    const is_mv = Utils.RPGMAKER_NAME == 'MV';
     const field = this._battleField;
     const childs = field.children;
     const index_add = 0//childs.indexOf(this._back2Sprite);
@@ -419,10 +416,9 @@ Spriteset_Battle.prototype.updateBattlersLayer = function(){
                 sprite.parent.removeChild(sprite);
             }
         })
-        const field_childs = is_mv ? field.children.length : 0;
         while(sorted_battlers.length > 0){
             const sprite = sorted_battlers.pop();
-            field.addChildAt(sprite, index_add + field_childs);
+            field.addChildAt(sprite, index_add);
         }
     })
 }

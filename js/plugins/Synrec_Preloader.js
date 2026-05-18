@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclair
- * @plugindesc v1.1.6 Preloads image and audio for the game on start
+ * @plugindesc v1.1.0 Preloads image and audio for the game on start
  * @url https://synrec.itch.io
  * @target MZ
  * 
@@ -18,11 +18,6 @@
  * @desc Skips title if no save game
  * @type boolean
  * @default true
- * 
- * @param Title Video
- * @desc Plays video before title scene
- * Played from videos folder in project directory
- * @type text
  * 
  * @param Loading Gauge
  * @desc Setup the loading gauge
@@ -164,7 +159,6 @@
 const Syn_Preload = {};
 Syn_Preload.Plugin = PluginManager.parameters(`Synrec_Preloader`);
 Syn_Preload.SKIP_TITLE = eval(Syn_Preload.Plugin['Skip Title']);
-Syn_Preload.TITLE_VIDEO = Syn_Preload.Plugin['Title Video'];
 
 function FONT_CONFIG_PARSER_PRELOAD(obj){
     try{
@@ -430,10 +424,6 @@ ImageManager.loadBitmap = function(folder, filename) {
     return base;
 }
 
-ImageManager.clear = function() {
-    //! DO NOT CLEAR CACHE!!!
-}
-
 
 AudioManager.addPreloadedData = function(folder, filename, audio){
     if(!this._preloaded_data)this._preloaded_data = {};
@@ -548,97 +538,6 @@ Scene_Base.prototype.isBusy = function() {
 //         !$gameTemp._need_preload
 //     );
 // }
-
-function ScenePreloader_LoadVideo(){
-    this.initialize(...arguments)
-}
-
-ScenePreloader_LoadVideo.prototype = Object.create(Scene_Base.prototype);
-ScenePreloader_LoadVideo.prototype.constructor = ScenePreloader_LoadVideo;
-
-ScenePreloader_LoadVideo.prototype.create = function(){
-    Scene_Base.prototype.create.call(this);
-    this.createVideoPIXI();
-}
-
-ScenePreloader_LoadVideo.prototype.createVideoPIXI = function(){
-    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
-    const sprite = new PIXI.Sprite();
-    const src = `videos/${Syn_Preload.TITLE_VIDEO}.webm`;
-    const videoTexture = mz_mode ? new PIXI.Texture.from(src) : new PIXI.Texture.fromVideo(src);
-    const source = mz_mode ? videoTexture.baseTexture.resource.source : videoTexture.baseTexture.source;
-    source.currentTime = 0;
-    source.muted = false;
-    source.loop = false;
-    source.preload = 'auto';
-    source.autoload = true;
-    source.autoplay = true;
-    sprite.texture = videoTexture;
-    sprite.x = 0;
-    sprite.y = 0;
-    sprite.width = videoTexture.width || Graphics.boxWidth;
-    sprite.height = videoTexture.height || Graphics.boxHeight;
-    sprite.alpha = 1;
-    if(mz_mode)source.play();
-    this.addChild(sprite);
-    sprite._need_resize = 60;
-    this._video = sprite;
-}
-
-ScenePreloader_LoadVideo.prototype.endVideo = function(){
-    const video = this._video
-    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
-    if(video){
-        const texture = video.texture;
-        const source = mz_mode ? texture.baseTexture.resource.source : texture.baseTexture.source;
-        source.loop = false;
-        source.muted = true;
-        source.autoplay = false;
-        source.currentTime = JsonEx.makeDeepCopy(source.duration);
-        source.pause();
-        this.removeChild(video);
-    }
-    if(DataManager.isBattleTest()){
-        SceneManager.goto(Scene_Battle);
-        return;
-    }
-    SceneManager.goto(Syn_Preload.SKIP_TITLE ? Scene_Map : Scene_Title);
-}
-
-ScenePreloader_LoadVideo.prototype.update = function(){
-    Scene_Base.prototype.update.call(this);
-    this.updateVideo();
-}
-
-ScenePreloader_LoadVideo.prototype.updateVideo = function(){
-    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
-    const video = this._video;
-    const texture = video.texture;
-    texture.update();
-    const source = mz_mode ? texture.baseTexture.resource.source : texture.baseTexture.source;
-    if(
-        video._need_resize > 0 && 
-        !isNaN(video._need_resize) ||
-        (
-            video.width >= Infinity ||
-            video.height >= Infinity
-        )
-    ){
-        video.width = Graphics.boxWidth;
-        video.height = Graphics.boxHeight;
-        if(video._need_resize > 0)video._need_resize--;
-    }
-    const is_end = source.currentTime >= source.duration;
-    if(
-        is_end ||
-        Input.isTriggered('ok') ||
-        Input.isTriggered('cancel') ||
-        TouchInput.isTriggered() ||
-        TouchInput.isCancelled()
-    ){
-        this.endVideo(video)
-    }
-}
 
 Game_Temp.prototype.setPreloadList = function(list){
     if(!list)return;
@@ -859,14 +758,7 @@ Game_Temp.prototype.executePreload = function(){
     this.loadPreloadList();
     const preloaded = SceneManager._complete_preload;
     if(preloaded)return;
-    this.preloadTitleVideo();
     this._need_preload = true;
-}
-
-Game_Temp.prototype.preloadTitleVideo = function(){
-    const mz_mode = Utils.RPGMAKER_NAME == 'MZ';
-    const src = `videos/${Syn_Preload.TITLE_VIDEO}.webm`;
-    mz_mode ? new PIXI.Texture.from(src) : new PIXI.Texture.fromVideo(src);
 }
 
 Game_Temp.prototype.updatePreloadList = function(){
@@ -876,9 +768,6 @@ Game_Temp.prototype.updatePreloadList = function(){
     if(this.updateImagePreload())return;
     if(this.updateConfirmPreload())return;
     this._preload_complete = true;
-    if(Syn_Preload.TITLE_VIDEO){
-        SceneManager.goto(ScenePreloader_LoadVideo);
-    }
     delete this._need_preload;
 }
 
@@ -954,8 +843,7 @@ Game_Temp.prototype.checkReservedImages = function(obj){
             }
             img_obj.attempts++;
         }else if(bitmap.isReady()){
-            if(!Array.isArray(this._loading_bitmaps))this._loading_bitmaps = [];
-            this._loading_bitmaps.push(ImageManager.loadBitmap(folder, file));
+            ImageManager.loadBitmap(folder, file);
             img_obj.delete = true;
         }else if(bitmap.isError() && attempts >= 3){
             const preload_list = $gameTemp.preloadList();
@@ -1034,8 +922,7 @@ Game_Temp.prototype.checkReservedAudios = function(obj){
                 aud_obj.attempts = 3;
             }
         }else if(audio.isReady()){
-            if(!Array.isArray(this._loading_audios))this._loading_audios = [];
-            this._loading_audios.push(AudioManager.createBuffer(folder, file));
+            AudioManager.createBuffer(folder, file);
             aud_obj.delete = true;
         }else if(audio.isError() && attempts >= 3){
             const preload_list = $gameTemp.preloadList();
@@ -1082,47 +969,9 @@ Game_Temp.prototype.updateConfirmPreload = function(){
             TouchInput.isCancelled() ||
             Syn_Preload.BYPASS_LOAD_CONFIRM
         ){
-            if(
-                !this.imageLoading() &&
-                !this.audioLoading()
-            ){
-                this._confirm_preload = true;
-                return false;
-            }
+            this._confirm_preload = true;
+            return false;
         }
     }
     return true;
-}
-
-Game_Temp.prototype.imageLoading = function(){
-    if(!Array.isArray(this._loading_bitmaps))return false;
-    for(let i = 0; i < this._loading_bitmaps.length; i++){
-        const bitmap = this._loading_bitmaps[i];
-        if(bitmap._loadingState == 'loaded'){
-            this._loading_bitmaps.splice(i, 1);
-            i--;
-        }else{
-            console.warn('Synrec Preloader: Loading images!');
-            return true;
-        }
-    }
-    return false;
-}
-
-Game_Temp.prototype.audioLoading = function(){
-    if(!Array.isArray(this._loading_audios))return false;
-    for(let i = 0; i < this._loading_audios.length; i++){
-        const audio = this._loading_audios[i];
-        if(
-            audio._isLoaded || 
-            (audio.isReady ? audio.isReady() : false)
-        ){
-            this._loading_audios.splice(i, 1);
-            i--;
-        }else{
-            console.warn('Synrec Preloader: Loading audios!');
-            return true;
-        }
-    }
-    return false;
 }

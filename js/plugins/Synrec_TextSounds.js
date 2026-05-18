@@ -1,17 +1,7 @@
 /*:@author Synrec 
  * @target MZ
- * @url https://synrec.dev/
- * @plugindesc v1.6 Create Text Sounds
- * 
- * @command Set Sound
- * @desc Set the text sound
- * 
- * @arg Text Sound
- * @desc Set a custom text sound
- * @type struct<TxtSounds>
- * 
- * @command Clear Sound
- * @desc Clear custom sound
+ *
+ * @plugindesc v1.4 Create Text Sounds
  *
  * @help Create text sounds which play by default or based on
  * face graphic set.
@@ -102,92 +92,40 @@
  * @default 0
  * 
  */
-function SYN_TEXTSOUNDS_DATA_PARSER(parameters){
-    if(typeof parameters == 'object'){
-        const keys = Object.keys(parameters);
-        keys.forEach((key)=>{
-            if(isNaN(parameters[key])){
-                try{
-                    parameters[key] = JSON.parse(parameters[key]);
-                }catch(e){
-                    parameters[key] = parameters[key];
-                }
-            }
-            if(typeof parameters[key] == 'object'){
-                parameters[key] = SYN_TEXTSOUNDS_DATA_PARSER(parameters[key]);
-            }else if(Array.isArray(parameters[key])){
-                parameters[key] = parameters[key].map((data)=>{
-                    if(isNaN(data)){
-                        try{
-                            data = JSON.parse(data);
-                        }catch(e){
-                            data = data;
-                        }
-                    }
-                    if(typeof data == 'object'){
-                        data = SYN_TEXTSOUNDS_DATA_PARSER(data);
-                    }
-                    return data;
-                })
-            }
-        })
-    }
-    return parameters;
-}
 
-const SynrecTS = {};
-function LOAD_SYNREC_TEXTSOUNDS_DATA(){
-    SynrecTS.Plugins = PluginManager.parameters('Synrec_TextSounds');
-    SynrecTS.DATA = SYN_TEXTSOUNDS_DATA_PARSER(SynrecTS.Plugins);
+let SynrecTS = {};
+SynrecTS.Plugins = PluginManager.parameters('Synrec_TextSounds');
 
-    SynrecTS.UseFontVol = eval(SynrecTS.DATA['Use Font Size Volume']);
+SynrecTS.UseFontVol = eval(SynrecTS.Plugins['Use Font Size Volume']);
 
-    SynrecTS.DefaultSound = SynrecTS.DATA['Default Se'];
-    SynrecTS.DefaultVol = eval(SynrecTS.DATA['Default Volume']);
-    SynrecTS.DefaultPch = eval(SynrecTS.DATA['Default Pitch']);
-    SynrecTS.DefaultPchVar = eval(SynrecTS.DATA['Default Pitch Variance']);
-    SynrecTS.DefaultPan = eval(SynrecTS.DATA['Default Pan']);
-    SynrecTS.DefaultPan = eval(SynrecTS.DATA['Default Pan']);
+SynrecTS.DefaultSound = SynrecTS.Plugins['Default Se'];
+SynrecTS.DefaultVol = eval(SynrecTS.Plugins['Default Volume']);
+SynrecTS.DefaultPch = eval(SynrecTS.Plugins['Default Pitch']);
+SynrecTS.DefaultPchVar = eval(SynrecTS.Plugins['Default Pitch Variance']);
+SynrecTS.DefaultPan = eval(SynrecTS.Plugins['Default Pan']);
+SynrecTS.DefaultPan = eval(SynrecTS.Plugins['Default Pan']);
 
-    SynrecTS.SoundObjects = SynrecTS.DATA['Custom Text Sounds'] || [];
-}
-
-function RELOAD_SYNREC_TEXTSOUNDS_DATA(){
-    LOAD_SYNREC_TEXTSOUNDS_DATA();
-}
-
-LOAD_SYNREC_TEXTSOUNDS_DATA();
-
-if(Utils.RPGMAKER_NAME == "MZ"){
-    PluginManager.registerCommand(`Synrec_TextSounds`, `Set Sound`, (obj)=>{
-        try{
-            const soundFX = JSON.parse(obj['Text Sound']);
-            try{
-                soundFX['Face Indices'] = JSON.parse(soundFX['Face Indices']).map(id => eval(id));
-            }catch(e){
-                soundFX['Face Indices'] = [];
-            }
-            soundFX.effectVol = eval(soundFX['Volume']);
-            soundFX.effectPch = eval(soundFX['Pitch']);
-            soundFX.effectPchVar = eval(soundFX['Pitch Variance']);
-            soundFX.effectPan = eval(soundFX['Pan']);
-            $gameSystem.setCustomTextSound(soundFX);
-        }catch(e){
-            return;
+SynrecTS.SoundObjects = [];
+try{
+    SynrecTS.SoundJSON = JSON.parse(SynrecTS.Plugins['Custom Text Sounds']);
+    for(let sound = 0; sound < SynrecTS.SoundJSON.length; sound++){
+        SynrecTS.SoundJSON[sound] = JSON.parse(SynrecTS.SoundJSON[sound]);
+        var soundFX = {};
+        soundFX.index = sound;
+        soundFX.file = SynrecTS.SoundJSON[sound]['Face File'] ? SynrecTS.SoundJSON[sound]['Face File'] : "";
+        soundFX.indices = SynrecTS.SoundJSON[sound]['Face Indices'] ? JSON.parse(SynrecTS.SoundJSON[sound]['Face Indices']) : [];
+        for(idces = 0; idces < soundFX.indices.length; idces++){
+            soundFX.indices[idces] = eval(soundFX.indices[idces]);
         }
-    })
-}
-
-Game_System.prototype.customTextSound = function(){
-    return this._text_sound || null;
-}
-
-Game_System.prototype.setCustomTextSound = function(obj){
-    this._text_sound = obj;
-}
-
-Game_System.prototype.clearCustomTextSound = function(){
-    this._text_sound = null;
+        soundFX.effectName = SynrecTS.SoundJSON[sound]['Sound Effect'] ? SynrecTS.SoundJSON[sound]['Sound Effect'] : SynrecTS.DefaultSound;
+        soundFX.effectVol = !isNaN(SynrecTS.SoundJSON[sound]['Volume']) ? eval(SynrecTS.SoundJSON[sound]['Volume']) : SynrecTS.DefaultVol;
+        soundFX.effectPch = !isNaN(SynrecTS.SoundJSON[sound]['Pitch']) ? eval(SynrecTS.SoundJSON[sound]['Pitch']) : SynrecTS.DefaultPch;
+        soundFX.effectPchVar = !isNaN(SynrecTS.SoundJSON[sound]['Pitch']) ? eval(SynrecTS.SoundJSON[sound]['Pitch Variance']) : SynrecTS.DefaultPchVar;
+        soundFX.effectPan = !isNaN(SynrecTS.SoundJSON[sound]['Pan']) ? eval(SynrecTS.SoundJSON[sound]['Pan']) : SynrecTS.DefaultPan;
+        SynrecTS.SoundObjects.push(soundFX);
+    }
+}catch(e){
+    console.error(`Failed to parse custom text sounds. ${e}`);
 }
 
 Window_Message.SOUNDS = SynrecTS.SoundObjects;
@@ -198,34 +136,10 @@ Window_Message.prototype.startMessage = function() {
     this.createSoundData();
 }
 
-Window_Message.prototype.getCustomTextSound = function(){
-    const faceName = $gameMessage._faceName;
-    const faceIndex = $gameMessage._faceIndex;
-    const custom_sound = $gameSystem.customTextSound();
-    if(!custom_sound)return null;
-    const face_name = custom_sound['Face File'];
-    if(face_name == faceName){
-        const face_indicies = custom_sound['Face Indices'];
-        if(face_indicies.includes(faceIndex)){
-            return JsonEx.makeDeepCopy(custom_sound);
-        }
-    }
-    return null;
-}
-
 Window_Message.prototype.createSoundData = function(){
+    this._soundText = undefined;
     const faceName = $gameMessage._faceName;
     const faceIndex = $gameMessage._faceIndex;
-    const sound = this.getCustomTextSound();
-    if(sound){
-        const name = sound['Sound Effect'];
-        const vol = sound.effectVol;
-        const pch = sound.effectPch;
-        const pan = sound.effectPan;
-        this._pchVar = sound.effectPchVar;
-        this._soundText = {name:name, pitch:pch, pan:pan, volume:vol};
-        return true;
-    }
     const soundObjs = SynrecTS.SoundObjects;
     for(let chkSnd = 0; chkSnd < soundObjs.length; chkSnd++){
         const sound = soundObjs[chkSnd];
@@ -305,10 +219,4 @@ Window_Message.prototype.playSound = function(textState){
             AudioManager.playSe(sound);
         }
     }
-}
-
-SynrecTS_ScnBse_SynPlugReload = Scene_Base.prototype.synrecPluginReload
-Scene_Base.prototype.synrecPluginReload = function(){
-    RELOAD_SYNREC_TEXTSOUNDS_DATA();
-    SynrecTS_ScnBse_SynPlugReload.call(this, ...arguments);
 }

@@ -354,7 +354,7 @@ Game_MapSpawn.prototype.createTroop = function(){
         throw new Error(`You need to have enemies setup for your troop.`);
     }
     const min = eval(data['Minimal Number']);
-    const max = eval(data['Maximum Number']) || 1;
+    const max = eval(data['Maximum Number']);
     const num = min + (Math.randomInt(max - min));
     const game_enemies = [];
     for(let i = 0; i < num; i++){
@@ -494,6 +494,7 @@ Game_MapSpawn.prototype.updateOnPlayer = function(){
             $gameTroop.clear();
             $gameTroop._troopId = 1;
             $gameTroop._enemies = troop;
+            this.fixEnemyPositions();
             this._engaged = true;
             $gameTroop.makeUniqueNames();
             BattleManager.initMembers();
@@ -501,7 +502,6 @@ Game_MapSpawn.prototype.updateOnPlayer = function(){
             BattleManager._canEscape = $gameSystem._escapeMapEnemy || this._can_escape;
             BattleManager._canLose = $gameSystem._loseMapEnemy || this._can_lose;
             BattleManager.onEncounter();
-            this.fixEnemyPositions();
             SceneManager.push(Scene_Battle);
         }
     }

@@ -1,6 +1,6 @@
 /*:
  * @author Synrec/Kylestclr
- * @plugindesc v1.2.1 Allows for creation of a capture system in RPG Maker.
+ * @plugindesc v1.2.0 Allows for creation of a capture system in RPG Maker.
  * @target MZ
  * @url https://synrec.dev/
  * 
@@ -132,14 +132,6 @@
  * plugin parameters.
  * 
  * You can reference player name in text with: {Player Name}
- * 
- * @param Selects
- * @desc Debugging
- * @type select[]
- * @option Cow
- * @option Borg
- * @option Dem
- * @default []
  * 
  * @param Gameover Configuration
  * @desc Setup what to do on gameover
@@ -3169,7 +3161,7 @@ function MONSTER_CAPTURE_DATA_PARSER(parameters){
 }
 
 const Syn_MC = {};
-function LOAD_MONSTER_CAPTURE_DATA(){
+function LOAD_PLUGIN_DATA(){
     Syn_MC.Plugin = PluginManager.parameters(`Synrec_MonsterCapture`);
     Syn_MC.DATA = MONSTER_CAPTURE_DATA_PARSER(Syn_MC.Plugin);
 
@@ -3204,11 +3196,11 @@ function LOAD_MONSTER_CAPTURE_DATA(){
     Syn_MC.BATTLE_UI_CONFIGURATION = Syn_MC.DATA['Battle UI Configuration'];
 }
 
-function RELOAD_MONSTER_CAPTURE_DATA(){
-    LOAD_MONSTER_CAPTURE_DATA();
+function RELOAD_PLUGIN_DATA(){
+    LOAD_PLUGIN_DATA();
 }
 
-LOAD_MONSTER_CAPTURE_DATA();
+LOAD_PLUGIN_DATA();
 
 Syn_MC_ScnMngr_Push = SceneManager.push;
 SceneManager.push = function(sceneClass) {
@@ -7739,7 +7731,7 @@ WindowMC_BattlerInfo.prototype.drawResTP = function(){
 
 Syn_MC_ScnBse_SynPlugReload = Scene_Base.prototype.synrecPluginReload
 Scene_Base.prototype.synrecPluginReload = function(){
-    RELOAD_MONSTER_CAPTURE_DATA();
+    RELOAD_PLUGIN_DATA();
     Syn_MC_ScnBse_SynPlugReload.call(this, ...arguments);
 }
 
